@@ -1,4 +1,4 @@
-export const tg = window.Telegram?.WebApp;
+export const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
 
 export function initTelegram() {
   if (tg) {
