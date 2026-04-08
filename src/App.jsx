@@ -1,40 +1,40 @@
-import { initTelegram, getUser } from "./telegram";
+import { useState } from "react";
+import AddAd from "./components/AddAd";
+import AdList from "./components/AdList";
+import AdPage from "./components/AdPage";
+import "./App.css";
+import { useEffect } from "react";
+import { initTelegram } from "./telegram";
 
-export default App;
-
-import { useEffect, useState } from "react";
-import { addAd, getAds } from "./firebase";
-
-function App() {
-  const [ads, setAds] = useState([]);
-  const [title, setTitle] = useState("");
+export default function App() {
+  const [page, setPage] = useState("list");
+  const [selectedAd, setSelectedAd] = useState(null);
 
   useEffect(() => {
-    loadAds();
-  }, []);
-
-  async function loadAds() {
-    const data = await getAds();
-    setAds(data);
-  }
-
-  async function handleAdd() {
-    await addAd({ title });
-    loadAds();
-  }
+  initTelegram();
+}, []);
 
   return (
-    <div>
-      <h1>Барахолка</h1>
+    <div className="app">
+      {page === "list" && (
+        <AdList
+          onOpen={(ad) => {
+            setSelectedAd(ad);
+            setPage("view");
+          }}
+        />
+      )}
 
-      <input onChange={e => setTitle(e.target.value)} />
-      <button onClick={handleAdd}>Добавить</button>
+      {page === "add" && <AddAd />}
 
-      {ads.map(ad => (
-        <div key={ad.id}>
-          {ad.title}
-        </div>
-      ))}
+      {page === "view" && (
+        <AdPage ad={selectedAd} onBack={() => setPage("list")} />
+      )}
+
+      <div className="bottom">
+        <button onClick={() => setPage("list")}>🏠</button>
+        <button onClick={() => setPage("add")}>＋</button>
+      </div>
     </div>
   );
 }

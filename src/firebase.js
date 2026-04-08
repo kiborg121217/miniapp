@@ -1,6 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import { query, where } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB4cSRFhtCSVSbLrymCeGtRsvj9XvmzU2Q",
@@ -20,6 +21,25 @@ export async function addAd(ad) {
 }
 
 export async function getAds() {
-  const snap = await getDocs(collection(db, "ads"));
+  const q = query(
+    collection(db, "ads"),
+    where("status", "==", "approved")
+  );
+
+  const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch("https://api.imgbb.com/1/upload?key=b60e952b6fc11497de56be77ee165530", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  return data.data.url;
 }
