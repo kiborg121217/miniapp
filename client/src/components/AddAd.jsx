@@ -43,7 +43,7 @@ const handleSubmit = async () => {
       firstName: user?.first_name || "Гость"
     });
 
-    await fetch("http://localhost:3000/new-ad", {
+    await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
