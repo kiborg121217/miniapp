@@ -5,8 +5,6 @@ import { getUser } from "../telegram";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-const id = Date.now().toString();
-
 export default function AddAd() {
     const [image, setImage] = useState(null);
   const [title, setTitle] = useState("");
@@ -16,6 +14,10 @@ export default function AddAd() {
 
 const handleSubmit = async () => {
   const user = getUser();
+  console.log("USER:", user);
+
+  const id = Date.now().toString();
+
   if (!title || !price) {
     setMessage("Заполни название и цену");
     return;
@@ -39,7 +41,7 @@ const handleSubmit = async () => {
       createdAt: Date.now(),
 
       userId: user?.id || null,
-      username: user?.username || null,
+      username: user?.username || "no_username",
       firstName: user?.first_name || "Гость"
     });
 
