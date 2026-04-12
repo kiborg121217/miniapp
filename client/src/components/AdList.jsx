@@ -14,38 +14,29 @@ export default function AdList({ onOpen }) {
     // показываем только одобренные
     const approved = data.filter(ad => ad.status === "approved");
 
-    setAds(approved);
+    setAds(approved.sort((a, b) => b.createdAt - a.createdAt));
   };
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Объявления</h2>
-        {ads.map(ad => (
-      <div className="grid"
-        key={ad.id} 
-        onClick={() => onOpen(ad)}
-        style={{
-          border: "1px solid #333",
-          padding: 10,
-          marginBottom: 10,
-          borderRadius: 10,
-          cursor: "pointer"
-        }}>
-            {ad.imageUrl && (
-            <img
-                src={ad.imageUrl}
-                style={{
-                width: "100%",
-                borderRadius: 10,
-                marginBottom: 10
-                }}
-            />
-            )}
+return (
+  <div style={{ padding: 20 }}>
+    <h2>Объявления</h2>
 
-            <h3>{ad.title}</h3>
-            <p>{ad.price} ₽</p>
+    <div className="grid">
+      {ads.map(ad => (
+        <div
+          className="card"
+          key={ad.id}
+          onClick={() => onOpen(ad)}
+        >
+          {ad.imageUrl && (
+            <img src={ad.imageUrl} />
+          )}
+
+          <h3>{ad.title}</h3>
+          <p>{ad.price} ₽</p>
         </div>
-        ))}
+      ))}
     </div>
-  );
+  </div>
+);
 }

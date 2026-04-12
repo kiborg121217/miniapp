@@ -25,7 +25,7 @@ export default function AdPage({ ad, onBack }) {
 
         {contactLink && (
         <a href={contactLink} target="_blank">
-            <button>Связаться</button>
+          <button className="contact-btn">Связаться</button>
         </a>
         )}
     </div>
