@@ -1,7 +1,12 @@
 body {
   margin: 0;
   font-family: -apple-system, sans-serif;
-  background: linear-gradient(180deg, #0f0f10, #1c1c1e);
+
+  background:
+    radial-gradient(circle at 20% 10%, #2b2b35, transparent),
+    radial-gradient(circle at 80% 0%, #1a1a2e, transparent),
+    #0f0f10;
+
   min-height: 100vh;
   color: white;
 }
@@ -22,6 +27,11 @@ button {
   border-radius: 10px;
   background: #2b7cff;
   color: white;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+button:active {
+  transform: scale(0.92);
 }
 
 /* .bottom {
@@ -63,7 +73,7 @@ button {
   height: 60px;
   border-radius: 50%;
 
-  font-size: 20px;
+  font-size: 22px;
   color: white;
 
   background: rgba(255,255,255,0.15);
@@ -179,16 +189,15 @@ button {
   top: 20px;
   left: 20px;
 
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  padding: 8px 14px;
+  border-radius: 12px;
 
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.15);
   backdrop-filter: blur(10px);
 
   border: none;
   color: white;
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .header {
@@ -196,8 +205,11 @@ button {
   top: 0;
   z-index: 100;
 
+  width: 100%;
+  left: 0;
+
   text-align: center;
-  padding: 15px 10px;
+  padding: 15px 0;
 
   font-size: 20px;
   font-weight: 600;
@@ -212,4 +224,80 @@ button {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
+}
+
+a {
+  text-decoration: none;
+}
+
+.form {
+  padding: 20px;
+}
+
+.form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 12px;
+
+  border-radius: 14px;
+  border: none;
+
+  background: rgba(255,255,255,0.05);
+  color: white;
+
+  font-size: 14px;
+}
+
+.form textarea {
+  min-height: 100px;
+}
+
+.form input::placeholder,
+.form textarea::placeholder {
+  color: #888;
+}
+
+.form button {
+  width: 100%;
+  padding: 14px;
+
+  border-radius: 14px;
+  border: none;
+
+  background: linear-gradient(135deg, #2b7cff, #1a5eff);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+
+  box-shadow: 0 6px 20px rgba(43,124,255,0.4);
+}
+
+.skeleton-card {
+  height: 180px;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    90deg,
+    #1c1c1e 25%,
+    #2a2a2c 50%,
+    #1c1c1e 75%
+  );
+
+  background-size: 200% 100%;
+  animation: skeleton 1.2s infinite;
+}
+
+@keyframes skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }

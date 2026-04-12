@@ -69,7 +69,7 @@ const handleSubmit = async () => {
 };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="form">
       <h2>Создать объявление</h2>
 
       <input

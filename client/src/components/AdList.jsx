@@ -7,15 +7,32 @@ export default function AdList({ onOpen }) {
   useEffect(() => {
     loadAds();
   }, []);
+  
+  const [loading, setLoading] = useState(true);
 
   const loadAds = async () => {
     const data = await getAds();
-
-    // показываем только одобренные
     const approved = data.filter(ad => ad.status === "approved");
 
-    setAds(approved.sort((a, b) => b.createdAt - a.createdAt));
+    setAds(approved);
+    setLoading(false);
   };
+
+  if (loading) {
+  return (
+    <div style={{ padding: "10px 10px 120px" }}>
+      <div className="header">
+        <h2>Объявления</h2>
+      </div>
+
+      <div className="grid">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="skeleton-card"></div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 return (
   <div style={{ padding: "10px 10px 120px" }}>

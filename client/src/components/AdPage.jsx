@@ -49,7 +49,7 @@ export default function AdPage({ ad, onBack }) {
                 setModalImage(null);
               }}
             >
-              ✕
+              Закрыть
             </button>
 
             <img

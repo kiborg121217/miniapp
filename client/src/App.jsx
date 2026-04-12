@@ -42,8 +42,8 @@ export default function App() {
 
       {page !== "view" && (
         <div className="bottom">
-          <button onClick={() => setPage("list")}>🏠</button>
-          <button onClick={() => setPage("add")}>＋</button>
+          <button onClick={() => setPage("list")}>⌂</button>
+          <button onClick={() => setPage("add")}>✚</button>
         </div>
       )}
     </div>
