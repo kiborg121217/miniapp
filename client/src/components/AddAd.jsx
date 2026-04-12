@@ -14,7 +14,7 @@ export default function AddAd() {
 
 const handleSubmit = async () => {
   const user = getUser();
-  console.log("USER:", user);
+  console.log("USER FROM BUTTON:", user);
 
   const id = Date.now().toString();
 
