@@ -9,9 +9,18 @@ import { initTelegram } from "./telegram";
 export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
+  const [tgUser, setTgUser] = useState(null);
 
   useEffect(() => {
   initTelegram();
+
+  const tg = window.Telegram?.WebApp;
+  if (tg?.initDataUnsafe?.user) {
+    setTgUser(tg.initDataUnsafe.user);
+    console.log("USER SAVED:", tg.initDataUnsafe.user);
+  } else {
+    console.log("USER NOT FOUND");
+  }
 }, []);
 
   return (
@@ -25,7 +34,7 @@ export default function App() {
         />
       )}
 
-      {page === "add" && <AddAd />}
+      {page === "add" && <AddAd user={tgUser} />}
 
       {page === "view" && (
         <AdPage ad={selectedAd} onBack={() => setPage("list")} />
