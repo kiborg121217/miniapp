@@ -21,7 +21,7 @@ export default function AdList({ onOpen }) {
     <div style={{ padding: 20 }}>
       <h2>Объявления</h2>
         {ads.map(ad => (
-      <div 
+      <div className="grid"
         key={ad.id} 
         onClick={() => onOpen(ad)}
         style={{

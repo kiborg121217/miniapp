@@ -9,7 +9,7 @@ export default function AdPage({ ad, onBack }) {
 
   return (
     <div style={{ padding: 20 }}>
-      <button onClick={onBack}>← Назад</button>
+      <button className="back-btn" onClick={onBack}>←</button>
 
       {ad.imageUrl && (
         <img
