@@ -86,7 +86,7 @@ button {
   height: 40px;
   border-radius: 50%;
 
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.15);
   backdrop-filter: blur(20px);
 
   border: none;
@@ -98,6 +98,12 @@ button {
   background: #1c1c1e;
   border-radius: 16px;
   padding: 10px;
+
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.02);
 }
 
 .card img {
@@ -110,11 +116,13 @@ button {
 .card h3 {
   font-size: 14px;
   margin: 6px 0 2px;
+  font-weight: 600;
 }
 
 .card p {
-  font-size: 13px;
-  color: #aaa;
+  font-size: 14px;
+  color: #2b7cff;
+  font-weight: bold;
 }
 
 .grid {
@@ -122,17 +130,27 @@ button {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   padding: 10px;
+  padding-bottom: 120px;
 }
 
 .contact-btn {
-  width: auto;
-  padding: 12px 20px;
-  margin-top: 20px;
-  border-radius: 12px;
+  width: 80%;
+  padding: 14px;
+  margin-top: 25px;
 
-  background: #2b7cff;
-  color: white;
+  border-radius: 14px;
   border: none;
+
+  background: linear-gradient(135deg, #2b7cff, #1a5eff);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+
+  box-shadow: 0 6px 20px rgba(43,124,255,0.4);
 }
 
 .modal {
@@ -171,4 +189,27 @@ button {
   border: none;
   color: white;
   font-size: 18px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  text-align: center;
+  padding: 15px 10px;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(20px);
+
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }

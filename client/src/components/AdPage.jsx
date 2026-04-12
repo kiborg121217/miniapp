@@ -11,7 +11,7 @@ export default function AdPage({ ad, onBack }) {
     : null;
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: "70px 20px 120px" }}>
       <button className="back-btn" onClick={onBack}>←</button>
 
       {ad.imageUrl && (
@@ -36,18 +36,28 @@ export default function AdPage({ ad, onBack }) {
 
         {contactLink && (
         <a href={contactLink} target="_blank">
-          <button className="contact-btn">Связаться</button>
+          <button className="contact-btn">Написать</button>
         </a>
         )}
         {modalImage && (
-        <div className="modal" onClick={() => setModalImage(null)}>
-          <img
-            src={modalImage}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button className="modal-close">✕</button>
-          <img src={modalImage} />
-        </div>
+          <div className="modal" onClick={() => setModalImage(null)}>
+            
+            <button
+              className="modal-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setModalImage(null);
+              }}
+            >
+              ✕
+            </button>
+
+            <img
+              src={modalImage}
+              onClick={(e) => e.stopPropagation()}
+            />
+
+          </div>
         )}
     </div>
   );

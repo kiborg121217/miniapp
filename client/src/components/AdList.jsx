@@ -18,8 +18,10 @@ export default function AdList({ onOpen }) {
   };
 
 return (
-  <div style={{ padding: 20 }}>
-    <h2>Объявления</h2>
+  <div style={{ padding: "10px 10px 120px" }}>
+    <div className="header">
+      <h2>Объявления</h2>
+    </div>
 
     <div className="grid">
       {ads.map(ad => (
