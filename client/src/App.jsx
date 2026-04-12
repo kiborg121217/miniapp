@@ -40,10 +40,12 @@ export default function App() {
         <AdPage ad={selectedAd} onBack={() => setPage("list")} />
       )}
 
-      <div className="bottom">
-        <button onClick={() => setPage("list")}>🏠</button>
-        <button onClick={() => setPage("add")}>＋</button>
-      </div>
+      {page !== "view" && (
+        <div className="bottom">
+          <button onClick={() => setPage("list")}>🏠</button>
+          <button onClick={() => setPage("add")}>＋</button>
+        </div>
+      )}
     </div>
   );
 }

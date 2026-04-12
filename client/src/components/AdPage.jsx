@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 export default function AdPage({ ad, onBack }) {
+  const [modalImage, setModalImage] = useState(null);
   if (!ad) return null;
 
     const contactLink = ad.username
@@ -14,7 +17,15 @@ export default function AdPage({ ad, onBack }) {
       {ad.imageUrl && (
         <img
           src={ad.imageUrl}
-          style={{ width: "100%", borderRadius: 10, marginTop: 10 }}
+          onClick={() => setModalImage(ad.imageUrl)}
+          style={{
+            width: "100%",
+            height: "300px",
+            objectFit: "cover",
+            borderRadius: 12,
+            marginTop: 10,
+            cursor: "pointer"
+          }}
         />
       )}
 
@@ -27,6 +38,16 @@ export default function AdPage({ ad, onBack }) {
         <a href={contactLink} target="_blank">
           <button className="contact-btn">Связаться</button>
         </a>
+        )}
+        {modalImage && (
+        <div className="modal" onClick={() => setModalImage(null)}>
+          <img
+            src={modalImage}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button className="modal-close">✕</button>
+          <img src={modalImage} />
+        </div>
         )}
     </div>
   );
