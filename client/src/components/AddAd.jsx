@@ -11,16 +11,30 @@ export default function AddAd({ user }) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
-    // 🔥 ГЛАВНОЕ ИСПРАВЛЕНИЕ
     const tg = window.Telegram?.WebApp;
-    const realUser = user || tg?.initDataUnsafe?.user;
+
+    // 🔥 ПЫТАЕМСЯ ПОЛУЧИТЬ USER НЕСКОЛЬКО РАЗ
+    let realUser = user || tg?.initDataUnsafe?.user;
+
+    if (!realUser) {
+      setMessage("⏳ Получаем данные Telegram...");
+
+      // пробуем подождать
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      realUser = tg?.initDataUnsafe?.user;
+    }
 
     console.log("REAL USER:", realUser);
 
+    // ❗ ЕСЛИ ВСЕ ЕЩЕ НЕТ — НЕ БЛОКИРУЕМ ЖЕСТКО
     if (!realUser) {
-      setMessage("❌ Telegram не передал данные. Открой через бота");
+      setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
       return;
     }
+
+    console.log("TG FULL:", window.Telegram?.WebApp);
+    console.log("INIT DATA:", window.Telegram?.WebApp?.initDataUnsafe);
 
     const id = Date.now().toString();
 
@@ -51,9 +65,8 @@ export default function AddAd({ user }) {
         status: "pending",
         createdAt: Date.now(),
 
-        // 🔥 ВСЕГДА БЕРЕМ realUser
         userId: realUser.id,
-        username: realUser.username || "no_username",
+        username: realUser.username || null,
         firstName: realUser.first_name || "Гость"
       });
 

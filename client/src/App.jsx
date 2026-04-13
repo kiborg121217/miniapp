@@ -13,20 +13,23 @@ export default function App() {
   const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
-    initTelegram();
-
     const tg = window.Telegram?.WebApp;
 
-    setTimeout(() => {
-      if (tg?.initDataUnsafe?.user) {
-        setTgUser(tg.initDataUnsafe.user);
-        console.log("USER SAVED:", tg.initDataUnsafe.user);
-      } else {
-        console.log("USER NOT FOUND");
-      }
+    if (!tg) return;
 
-      setLoadingUser(false);
-    }, 500); // даём Telegram время
+    tg.ready();
+
+    const checkUser = () => {
+      if (tg.initDataUnsafe?.user) {
+        setTgUser(tg.initDataUnsafe.user);
+        console.log("USER OK:", tg.initDataUnsafe.user);
+      } else {
+        console.log("USER STILL NULL");
+        setTimeout(checkUser, 300); // 🔥 ПОВТОРЯЕМ ДО ТЕХ ПОР
+      }
+    };
+
+    checkUser();
   }, []);
 
   return (
