@@ -92,3 +92,21 @@ bot.on("callback_query", async (query) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Server started on " + PORT));
+
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, 
+    "👋 Приветствую тебя!\n\nЧтобы посмотреть объявления или подать своё — нажми кнопку ниже 👇",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "🚀 Открыть",
+              web_app: { url: "https://miniapp-9vf5.vercel.app" }
+            }
+          ]
+        ]
+      }
+    }
+  );
+});

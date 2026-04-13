@@ -30,6 +30,7 @@ export default function App() {
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
+            window.scrollTo(0, 0);
           }}
         />
       )}

@@ -32,7 +32,7 @@ export default function AdPage({ ad, onBack }) {
       <h2>{ad.title}</h2>
       <h3>{ad.price} ₽</h3>
 
-      <p>{ad.description}</p>
+      <p style={{ wordBreak: "break-word" }}>{ad.description}</p>
 
         {contactLink && (
         <a href={contactLink} target="_blank">

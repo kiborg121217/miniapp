@@ -16,8 +16,15 @@ const handleSubmit = async () => {
 
   const id = Date.now().toString();
 
-  if (!title || !price) {
-    setMessage("Заполни название и цену");
+  const missing = [];
+
+  if (!title) missing.push("Название");
+  if (!price) missing.push("Цена");
+  if (!description) missing.push("Описание");
+  if (!image) missing.push("Изображение");
+
+  if (missing.length > 0) {
+    setMessage("Заполните: " + missing.join(", "));
     return;
   }
 

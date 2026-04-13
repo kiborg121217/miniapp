@@ -14,7 +14,7 @@ export default function AdList({ onOpen }) {
     const data = await getAds();
     const approved = data.filter(ad => ad.status === "approved");
 
-    setAds(approved);
+    setAds(approved.sort((a, b) => b.createdAt - a.createdAt));
     setLoading(false);
   };
 
