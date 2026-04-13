@@ -15,17 +15,23 @@ export default function App() {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
 
-    if (!tg) return;
+    if (!tg) {
+      setLoadingUser(false);
+      return;
+    }
 
     tg.ready();
 
     const checkUser = () => {
-      if (tg.initDataUnsafe?.user) {
-        setTgUser(tg.initDataUnsafe.user);
-        console.log("USER OK:", tg.initDataUnsafe.user);
+      const u = tg.initDataUnsafe?.user;
+
+      if (u) {
+        setTgUser(u);
+        console.log("USER OK:", u);
+        setLoadingUser(false); // ✅ ВАЖНО
       } else {
-        console.log("USER STILL NULL");
-        setTimeout(checkUser, 300); // 🔥 ПОВТОРЯЕМ ДО ТЕХ ПОР
+        console.log("WAITING USER...");
+        setTimeout(checkUser, 300);
       }
     };
 
@@ -45,9 +51,7 @@ export default function App() {
       )}
 
       {page === "add" && (
-        loadingUser
-          ? <div style={{ padding: 20 }}>Загрузка...</div>
-          : <AddAd user={tgUser} />
+        <AddAd user={tgUser} />
       )}
 
       {page === "view" && (
