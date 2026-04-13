@@ -11,8 +11,8 @@ export default function AddAd({ user }) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
+    alert(JSON.stringify(window.Telegram?.WebApp?.initDataUnsafe));
     const tg = window.Telegram?.WebApp;
-
     // 🔥 ПЫТАЕМСЯ ПОЛУЧИТЬ USER НЕСКОЛЬКО РАЗ
     let realUser = user || tg?.initDataUnsafe?.user;
 
