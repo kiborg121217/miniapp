@@ -19,5 +19,21 @@ export function initTelegram() {
 
 export function getUser() {
   const tg = getTelegram();
-  return tg?.initDataUnsafe?.user || null;
+
+  if (!tg) {
+    alert("НЕ Telegram");
+    return null;
+  }
+
+  if (!tg.initDataUnsafe) {
+    alert("НЕТ initDataUnsafe");
+    return null;
+  }
+
+  if (!tg.initDataUnsafe.user) {
+    alert("НЕТ USER В TELEGRAM");
+    return null;
+  }
+
+  return tg.initDataUnsafe.user;
 }
