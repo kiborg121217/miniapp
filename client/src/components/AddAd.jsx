@@ -14,6 +14,11 @@ export default function AddAd({ user }) {
 
 const handleSubmit = async () => {
 
+  if (!user) {
+  setMessage("❌ Ошибка Telegram. Перезапусти приложение");
+  return;
+  }
+
   const id = Date.now().toString();
 
   const missing = [];

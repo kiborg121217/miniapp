@@ -4,10 +4,8 @@ export default function AdPage({ ad, onBack }) {
   const [modalImage, setModalImage] = useState(null);
   if (!ad) return null;
 
-    const contactLink = ad.username
-    ? `https://t.me/${ad.username}`
-    : ad.userId
-    ? `https://t.me/user?id=${ad.userId}`
+  const contactLink = ad.userId
+    ? `tg://user?id=${ad.userId}`
     : null;
 
   return (
