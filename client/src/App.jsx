@@ -13,6 +13,8 @@ export default function App() {
   const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
+    initTelegram();
+
     const tg = window.Telegram?.WebApp;
 
     if (!tg) {
@@ -20,7 +22,7 @@ export default function App() {
       return;
     }
 
-    tg.ready();
+    let attempts = 0;
 
     const checkUser = () => {
       const u = tg.initDataUnsafe?.user;
@@ -28,9 +30,16 @@ export default function App() {
       if (u) {
         setTgUser(u);
         console.log("USER OK:", u);
-        setLoadingUser(false); // ✅ ВАЖНО
+        setLoadingUser(false);
       } else {
-        console.log("WAITING USER...");
+        attempts++;
+
+        if (attempts > 10) {
+          console.log("USER NOT FOUND AFTER 10 TRIES");
+          setLoadingUser(false);
+          return;
+        }
+
         setTimeout(checkUser, 300);
       }
     };
