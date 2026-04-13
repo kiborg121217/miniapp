@@ -10,18 +10,24 @@ export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
   const [tgUser, setTgUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
-  initTelegram();
+    initTelegram();
 
-  const tg = window.Telegram?.WebApp;
-  if (tg?.initDataUnsafe?.user) {
-    setTgUser(tg.initDataUnsafe.user);
-    console.log("USER SAVED:", tg.initDataUnsafe.user);
-  } else {
-    console.log("USER NOT FOUND");
-  }
-}, []);
+    const tg = window.Telegram?.WebApp;
+
+    setTimeout(() => {
+      if (tg?.initDataUnsafe?.user) {
+        setTgUser(tg.initDataUnsafe.user);
+        console.log("USER SAVED:", tg.initDataUnsafe.user);
+      } else {
+        console.log("USER NOT FOUND");
+      }
+
+      setLoadingUser(false);
+    }, 500); // даём Telegram время
+  }, []);
 
   return (
     <div className="app">
@@ -35,7 +41,11 @@ export default function App() {
         />
       )}
 
-      {page === "add" && <AddAd user={tgUser} />}
+      {page === "add" && (
+        loadingUser
+          ? <div style={{ padding: 20 }}>Загрузка...</div>
+          : <AddAd user={tgUser} />
+      )}
 
       {page === "view" && (
         <AdPage ad={selectedAd} onBack={() => setPage("list")} />

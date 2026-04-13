@@ -20,7 +20,7 @@ export default function AdList({ onOpen }) {
 
   if (loading) {
   return (
-    <div style={{ padding: "70px 10px 120px" }}>
+    <div style={{ padding: "80px 10px 120px" }}>
       <div className="header" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
         <h2>Объявления</h2>
       </div>
@@ -36,7 +36,10 @@ export default function AdList({ onOpen }) {
 
 return (
   <div style={{ padding: "10px 10px 120px" }}>
-    <div className="header">
+    <div 
+      className="header"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+    >
       <h2>Объявления</h2>
     </div>
 
