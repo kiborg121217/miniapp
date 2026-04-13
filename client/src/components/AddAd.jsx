@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { addAd } from "../firebase";
 import { uploadImage } from "../firebase";
-import { getUser } from "../telegram";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
