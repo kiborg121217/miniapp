@@ -93,9 +93,9 @@ export default function AddAd({ user }) {
       } catch (err) {
         console.error(err);
         setMessage("❌ Ошибка отправки в модерацию");
-      }
+      };
 
-  return (
+return (
     <div className="form">
       <h2>Создать объявление</h2>
 
