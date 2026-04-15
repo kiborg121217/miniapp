@@ -32,16 +32,29 @@ export default function AdPage({ ad, onBack }) {
 
       <p style={{ wordBreak: "break-word" }}>{ad.description}</p>
 
-      {ad.userId && (
+      {(ad.username || ad.userId) && (
         <button
           className="contact-btn"
           onClick={() => {
             const tg = window.Telegram?.WebApp;
 
-            if (tg && ad.userId) {
-              tg.openTelegramLink(`https://t.me/user?id=${ad.userId}`);
-            } else {
-              window.open(`https://t.me/user?id=${ad.userId}`, "_blank");
+            if (ad.username) {
+              const url = `https://t.me/${ad.username}`;
+              if (tg) {
+                tg.openTelegramLink(url);
+              } else {
+                window.open(url, "_blank");
+              }
+              return;
+            }
+
+            if (ad.userId) {
+              const url = `tg://user?id=${ad.userId}`;
+              if (tg) {
+                window.location.href = url;
+              } else {
+                window.open(url, "_blank");
+              }
             }
           }}
         >
