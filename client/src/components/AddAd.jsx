@@ -11,15 +11,12 @@ export default function AddAd({ user }) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
-    alert(JSON.stringify(window.Telegram?.WebApp?.initDataUnsafe));
     const tg = window.Telegram?.WebApp;
-    // 🔥 ПЫТАЕМСЯ ПОЛУЧИТЬ USER НЕСКОЛЬКО РАЗ
     let realUser = user || tg?.initDataUnsafe?.user;
 
     if (!realUser) {
       setMessage("⏳ Получаем данные Telegram...");
 
-      // пробуем подождать
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       realUser = tg?.initDataUnsafe?.user;
@@ -27,7 +24,6 @@ export default function AddAd({ user }) {
 
     console.log("REAL USER:", realUser);
 
-    // ❗ ЕСЛИ ВСЕ ЕЩЕ НЕТ — НЕ БЛОКИРУЕМ ЖЕСТКО
     if (!realUser) {
       setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
       return;
@@ -64,13 +60,12 @@ export default function AddAd({ user }) {
         imageUrl,
         status: "pending",
         createdAt: Date.now(),
-
         userId: realUser.id,
         username: realUser.username || null,
         firstName: realUser.first_name || "Гость"
       });
 
-      await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
+      const response = await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,6 +78,12 @@ export default function AddAd({ user }) {
         }),
       });
 
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Сервер не принял объявление");
+      }
+
       setTitle("");
       setPrice("");
       setDescription("");
@@ -91,9 +92,8 @@ export default function AddAd({ user }) {
       setMessage("✅ Отправлено на модерацию");
     } catch (err) {
       console.error(err);
-      setMessage("❌ Ошибка загрузки");
-    }
-  };
+      setMessage("❌ Ошибка отправки в модерацию");
+    };
 
   return (
     <div className="form">

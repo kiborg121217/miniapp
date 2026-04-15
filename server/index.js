@@ -27,9 +27,10 @@ const bot = new TelegramBot("8550022754:AAHZuJJlafWJuF3YGQSv2RE5-eOZ9NrfM4M", { 
 const ADMIN_ID = 8393018883;
 
 app.post("/new-ad", async (req, res) => {
-  const ad = req.body;
+  try {
+    const ad = req.body;
 
-  const text = `
+    const text = `
 📦 Новое объявление
 
 📌 ${ad.title}
@@ -37,19 +38,26 @@ app.post("/new-ad", async (req, res) => {
 📝 ${ad.description}
 `;
 
-  bot.sendPhoto(ADMIN_ID, ad.imageUrl, {
-    caption: text,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-          { text: "❌ Отклонить", callback_data: `reject_${ad.id}` }
+    await bot.sendPhoto(ADMIN_ID, ad.imageUrl, {
+      caption: text,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "✅ Принять", callback_data: `approve_${ad.id}` },
+            { text: "❌ Отклонить", callback_data: `reject_${ad.id}` }
+          ]
         ]
-      ]
-    }
-  });
+      }
+    });
 
-  res.send({ ok: true });
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Ошибка /new-ad:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || "Не удалось отправить объявление в бота"
+    });
+  }
 });
 
 bot.on("callback_query", async (query) => {
@@ -65,7 +73,6 @@ bot.on("callback_query", async (query) => {
 
     bot.sendMessage(chatId, "✅ Объявление опубликовано");
 
-    // уведомление пользователю
     const ad = (await db.collection("ads").doc(id).get()).data();
 
     if (ad.userId) {
