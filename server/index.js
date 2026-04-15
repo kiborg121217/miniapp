@@ -21,8 +21,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const BOT_TOKEN =
-  process.env.BOT_TOKEN || "8550022754:AAEBjOgQvsfdH2iVINv2_33r3tQdb58d8ks";
+const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_ID = Number(process.env.ADMIN_ID || 8393018883);
 const WEB_APP_URL =
   process.env.WEB_APP_URL || "https://miniapp-9vf5.vercel.app";
