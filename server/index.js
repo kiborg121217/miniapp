@@ -50,17 +50,37 @@ app.post("/new-ad", async (req, res) => {
 💰 ${ad.price} ₽
 📝 ${ad.description}`;
 
-    await bot.sendPhoto(ADMIN_ID, ad.imageUrl, {
-      caption: text,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-            { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
+    // 1. Скачиваем картинку
+    const imageResponse = await fetch(ad.imageUrl);
+
+    if (!imageResponse.ok) {
+      throw new Error("Не удалось скачать изображение с ImgBB");
+    }
+
+    // 2. Превращаем в Buffer
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const photoBuffer = Buffer.from(arrayBuffer);
+
+    // 3. Отправляем как файл в Telegram
+    await bot.sendPhoto(
+      ADMIN_ID,
+      photoBuffer,
+      {
+        caption: text,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "✅ Принять", callback_data: `approve_${ad.id}` },
+              { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
+            ],
           ],
-        ],
+        },
       },
-    });
+      {
+        filename: `ad_${ad.id}.jpg`,
+        contentType: "image/jpeg",
+      }
+    );
 
     return res.status(200).json({ ok: true });
   } catch (error) {

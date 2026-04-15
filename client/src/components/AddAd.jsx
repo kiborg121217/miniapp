@@ -57,20 +57,25 @@ export default function AddAd({ user }) {
 
       const response = await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
           title,
           price,
           description,
           imageUrl,
-          userId: realUser.id,
+          userId: realUser.id
         }),
       });
 
-      const result = await response.json();
+      const text = await response.text();
+
+      let result = {};
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error("Сервер вернул не JSON: " + text);
+      }
 
       if (!response.ok || !result.ok) {
         throw new Error(result.error || "Сервер не принял объявление");
