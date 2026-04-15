@@ -90,10 +90,10 @@ export default function AddAd({ user }) {
       setImage(null);
 
       setMessage("✅ Отправлено на модерацию");
-    } catch (err) {
-      console.error(err);
-      setMessage("❌ Ошибка отправки в модерацию");
-    };
+      } catch (err) {
+        console.error(err);
+        setMessage("❌ Ошибка отправки в модерацию");
+      }
 
   return (
     <div className="form">
