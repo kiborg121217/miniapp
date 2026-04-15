@@ -1,4 +1,7 @@
 const admin = require("firebase-admin");
+const express = require("express");
+const TelegramBot = require("node-telegram-bot-api");
+const cors = require("cors");
 
 let serviceAccount;
 
@@ -14,36 +17,39 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-const express = require("express");
-const TelegramBot = require("node-telegram-bot-api");
-const cors = require("cors");
-
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const bot = new TelegramBot("8550022754:AAHZuJJlafWJuF3YGQSv2RE5-eOZ9NrfM4M", {
-  polling: {
-    autoStart: true,
-    params: {
-      timeout: 10
-    }
-  }
-});
+const BOT_TOKEN =
+  process.env.BOT_TOKEN || "8550022754:AAEBjOgQvsfdH2iVINv2_33r3tQdb58d8ks";
+const ADMIN_ID = Number(process.env.ADMIN_ID || 8393018883);
+const WEB_APP_URL =
+  process.env.WEB_APP_URL || "https://miniapp-9vf5.vercel.app";
 
-const ADMIN_ID = 8393018883;
+// ВАЖНО: polling выключен на старте, запускаем его вручную после app.listen
+const bot = new TelegramBot(BOT_TOKEN, { polling: false });
+
+app.get("/", (req, res) => {
+  res.send("Server is working 🚀");
+});
 
 app.post("/new-ad", async (req, res) => {
   try {
     const ad = req.body;
 
-    const text = `
-📦 Новое объявление
+    if (!ad?.id || !ad?.title || !ad?.price || !ad?.description || !ad?.imageUrl) {
+      return res.status(400).json({
+        ok: false,
+        error: "Не хватает данных объявления",
+      });
+    }
+
+    const text = `📦 Новое объявление
 
 📌 ${ad.title}
 💰 ${ad.price} ₽
-📝 ${ad.description}
-`;
+📝 ${ad.description}`;
 
     await bot.sendPhoto(ADMIN_ID, ad.imageUrl, {
       caption: text,
@@ -51,10 +57,10 @@ app.post("/new-ad", async (req, res) => {
         inline_keyboard: [
           [
             { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-            { text: "❌ Отклонить", callback_data: `reject_${ad.id}` }
-          ]
-        ]
-      }
+            { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
+          ],
+        ],
+      },
     });
 
     return res.status(200).json({ ok: true });
@@ -62,65 +68,117 @@ app.post("/new-ad", async (req, res) => {
     console.error("Ошибка /new-ad:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message || "Не удалось отправить объявление в Telegram"
+      error: error.message || "Не удалось отправить объявление в Telegram",
     });
   }
 });
 
 bot.on("callback_query", async (query) => {
-  const data = query.data;
-  const chatId = query.message.chat.id;
+  try {
+    const data = query.data;
+    const chatId = query.message.chat.id;
 
-  if (data.startsWith("approve_")) {
-    const id = data.split("_")[1];
+    if (data.startsWith("approve_")) {
+      const id = data.split("_")[1];
 
-    await db.collection("ads").doc(id).update({
-      status: "approved"
-    });
+      await db.collection("ads").doc(id).update({
+        status: "approved",
+      });
 
-    bot.sendMessage(chatId, "✅ Объявление опубликовано");
+      await bot.sendMessage(chatId, "✅ Объявление опубликовано");
 
-    const ad = (await db.collection("ads").doc(id).get()).data();
+      const ad = (await db.collection("ads").doc(id).get()).data();
 
-    if (ad.userId) {
-      bot.sendMessage(ad.userId, `✅ Ваше объявление "${ad.title}" опубликовано!`);
+      if (ad?.userId) {
+        await bot.sendMessage(
+          ad.userId,
+          `✅ Ваше объявление "${ad.title}" опубликовано!`
+        );
+      }
     }
+
+    if (data.startsWith("reject_")) {
+      const id = data.split("_")[1];
+
+      await db.collection("ads").doc(id).update({
+        status: "rejected",
+      });
+
+      await bot.sendMessage(chatId, "❌ Объявление отклонено");
+
+      const ad = (await db.collection("ads").doc(id).get()).data();
+
+      if (ad?.userId) {
+        await bot.sendMessage(
+          ad.userId,
+          `❌ Ваше объявление "${ad.title}" отклонено.`
+        );
+      }
+    }
+
+    await bot.answerCallbackQuery(query.id);
+  } catch (error) {
+    console.error("Ошибка callback_query:", error);
+    try {
+      await bot.answerCallbackQuery(query.id, {
+        text: "Ошибка обработки действия",
+        show_alert: false,
+      });
+    } catch (_) {}
   }
+});
 
-  if (data.startsWith("reject_")) {
-    const id = data.split("_")[1];
-
-    await db.collection("ads").doc(id).update({
-      status: "rejected"
-    });
-
-    bot.sendMessage(chatId, "❌ Объявление отклонено");
-
-    const ad = (await db.collection("ads").doc(id).get()).data();
-
-    if (ad.userId) {
-      bot.sendMessage(ad.userId, `❌ Ваше объявление "${ad.title}" отклонено.`);
-    }
+bot.onText(/\/start/, async (msg) => {
+  try {
+    await bot.sendMessage(
+      msg.chat.id,
+      "👋 Приветствую тебя!\n\nЧтобы посмотреть объявления или подать своё — нажми кнопку ниже 👇",
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🚀 Открыть",
+                web_app: { url: WEB_APP_URL },
+              },
+            ],
+          ],
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Ошибка /start:", error);
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server started on " + PORT));
 
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, 
-    "👋 Приветствую тебя!\n\nЧтобы посмотреть объявления или подать своё — нажми кнопку ниже 👇",
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "🚀 Открыть",
-              web_app: { url: "https://miniapp-9vf5.vercel.app" }
-            }
-          ]
-        ]
-      }
-    }
-  );
+app.listen(PORT, async () => {
+  console.log("Server started on " + PORT);
+
+  try {
+    // Сбрасываем webhook и pending updates перед polling
+    await bot.deleteWebHook({ drop_pending_updates: true });
+
+    // Небольшая пауза, чтобы Telegram успел освободить getUpdates
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    await bot.startPolling({
+      restart: true,
+      params: { timeout: 10 },
+    });
+
+    console.log("Bot polling started");
+  } catch (error) {
+    console.error("Failed to start polling:", error.message);
+  }
+});
+
+// Логируем ошибки polling, чтобы было видно причину в Render
+bot.on("polling_error", (error) => {
+  console.error("polling_error:", error);
+});
+
+bot.on("error", (error) => {
+  console.error("bot_error:", error);
 });
