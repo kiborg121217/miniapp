@@ -22,7 +22,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const bot = new TelegramBot("8550022754:AAHZuJJlafWJuF3YGQSv2RE5-eOZ9NrfM4M", { polling: true });
+const bot = new TelegramBot("8550022754:AAHZuJJlafWJuF3YGQSv2RE5-eOZ9NrfM4M", {
+  polling: {
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
 
 const ADMIN_ID = 8393018883;
 
@@ -55,7 +62,7 @@ app.post("/new-ad", async (req, res) => {
     console.error("Ошибка /new-ad:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message || "Не удалось отправить объявление в бота"
+      error: error.message || "Не удалось отправить объявление в Telegram"
     });
   }
 });
