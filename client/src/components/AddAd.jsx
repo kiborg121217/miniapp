@@ -12,30 +12,20 @@ export default function AddAd({ user }) {
 
   const handleSubmit = async () => {
     const tg = window.Telegram?.WebApp;
-    let realUser = user || tg?.initDataUnsafe?.user;
+    let realUser = user || tg?.initDataUnsafe?.user || null;
 
     if (!realUser) {
       setMessage("⏳ Получаем данные Telegram...");
-
       await new Promise((resolve) => setTimeout(resolve, 800));
-
-      realUser = tg?.initDataUnsafe?.user;
+      realUser = tg?.initDataUnsafe?.user || null;
     }
-
-    console.log("REAL USER:", realUser);
 
     if (!realUser) {
       setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
       return;
     }
 
-    console.log("TG FULL:", window.Telegram?.WebApp);
-    console.log("INIT DATA:", window.Telegram?.WebApp?.initDataUnsafe);
-
-    const id = Date.now().toString();
-
     const missing = [];
-
     if (!title) missing.push("Название");
     if (!price) missing.push("Цена");
     if (!description) missing.push("Описание");
@@ -46,11 +36,11 @@ export default function AddAd({ user }) {
       return;
     }
 
-    let imageUrl = "";
+    const id = Date.now().toString();
 
     try {
       setMessage("Загрузка фото...");
-      imageUrl = await uploadImage(image);
+      const imageUrl = await uploadImage(image);
 
       await setDoc(doc(db, "ads", id), {
         id,
@@ -62,19 +52,21 @@ export default function AddAd({ user }) {
         createdAt: Date.now(),
         userId: realUser.id,
         username: realUser.username || null,
-        firstName: realUser.first_name || "Гость"
+        firstName: realUser.first_name || "Гость",
       });
 
       const response = await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           id,
           title,
           price,
           description,
           imageUrl,
-          userId: realUser.id
+          userId: realUser.id,
         }),
       });
 
@@ -88,14 +80,14 @@ export default function AddAd({ user }) {
       setPrice("");
       setDescription("");
       setImage(null);
-
       setMessage("✅ Отправлено на модерацию");
-      } catch (err) {
-        console.error(err);
-        setMessage("❌ Ошибка отправки в модерацию");
-      };
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Ошибка отправки в модерацию");
+    }
+  };
 
-return (
+  return (
     <div className="form">
       <h2>Создать объявление</h2>
 
@@ -117,11 +109,14 @@ return (
         onChange={(e) => setDescription(e.target.value)}
       />
 
-      <input type="file" onChange={(e) => setImage(e.target.files[0])} />
+      <input
+        type="file"
+        onChange={(e) => setImage(e.target.files?.[0] || null)}
+      />
 
       <button onClick={handleSubmit}>Опубликовать</button>
 
       <p>{message}</p>
     </div>
   );
-}}
+}
