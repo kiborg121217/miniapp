@@ -124,4 +124,4 @@ export default function AddAd({ user }) {
       <p>{message}</p>
     </div>
   );
-}
+}}
