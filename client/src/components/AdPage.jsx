@@ -32,11 +32,22 @@ export default function AdPage({ ad, onBack }) {
 
       <p style={{ wordBreak: "break-word" }}>{ad.description}</p>
 
-        {contactLink && (
-        <a href={contactLink} target="_blank">
-          <button className="contact-btn">Написать</button>
-        </a>
-        )}
+      {ad.userId && (
+        <button
+          className="contact-btn"
+          onClick={() => {
+            const tg = window.Telegram?.WebApp;
+
+            if (tg && ad.userId) {
+              tg.openTelegramLink(`https://t.me/user?id=${ad.userId}`);
+            } else {
+              window.open(`https://t.me/user?id=${ad.userId}`, "_blank");
+            }
+          }}
+        >
+          Написать
+        </button>
+      )}
         {modalImage && (
           <div className="modal" onClick={() => setModalImage(null)}>
             
