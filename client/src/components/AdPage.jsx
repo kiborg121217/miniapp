@@ -18,6 +18,27 @@ export default function AdPage({ ad, onBack }) {
       ? [ad.imageUrl]
       : [];
 
+  const openModal = (index) => {
+    setCurrentImage(index);
+    setModalImage(gallery[index]);
+  };
+
+  const prevImage = () => {
+    if (currentImage > 0) {
+      const nextIndex = currentImage - 1;
+      setCurrentImage(nextIndex);
+      setModalImage(gallery[nextIndex]);
+    }
+  };
+
+  const nextImage = () => {
+    if (currentImage < gallery.length - 1) {
+      const nextIndex = currentImage + 1;
+      setCurrentImage(nextIndex);
+      setModalImage(gallery[nextIndex]);
+    }
+  };
+
   return (
     <div className="page-enter ad-page-wrap">
       <button className="back-btn premium-back-btn" onClick={onBack}>
@@ -30,12 +51,20 @@ export default function AdPage({ ad, onBack }) {
 
       <div className="ad-page-shell">
         {gallery.length > 0 && (
-          <img
-            className="ad-hero-image"
-            src={gallery[currentImage]}
-            alt={ad.title}
-            onClick={() => setModalImage(gallery[currentImage])}
-          />
+          <div className="ad-hero-wrap">
+            <img
+              className="ad-hero-image"
+              src={gallery[currentImage]}
+              alt={ad.title}
+              onClick={() => openModal(currentImage)}
+            />
+
+            {gallery.length > 1 && (
+              <div className="gallery-counter">
+                {currentImage + 1} из {gallery.length}
+              </div>
+            )}
+          </div>
         )}
 
         {gallery.length > 1 && (
@@ -107,6 +136,40 @@ export default function AdPage({ ad, onBack }) {
           >
             Закрыть
           </button>
+
+          {gallery.length > 1 && (
+            <>
+              <button
+                className="gallery-nav left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                disabled={currentImage === 0}
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M14.5 6.5L9 12l5.5 5.5" />
+                </svg>
+              </button>
+
+              <button
+                className="gallery-nav right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                disabled={currentImage === gallery.length - 1}
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M9.5 6.5L15 12l-5.5 5.5" />
+                </svg>
+              </button>
+
+              <div className="gallery-counter">
+                {currentImage + 1} из {gallery.length}
+              </div>
+            </>
+          )}
 
           <img
             src={modalImage}
