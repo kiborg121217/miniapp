@@ -52,9 +52,32 @@ export default function App() {
       )}
 
       {page !== "view" && (
-        <div className="bottom">
-          <button onClick={() => setPage("list")}>⌂</button>
-          <button onClick={() => setPage("add")}>✚</button>
+        <div className="bottom-nav">
+          <button
+            className={`nav-item ${page === "list" ? "active" : ""}`}
+            onClick={() => setPage("list")}
+          >
+            <span className="nav-icon">▣</span>
+            <span className="nav-label">Магазин</span>
+          </button>
+
+          <button
+            className={`nav-item ${page === "add" ? "active" : ""}`}
+            onClick={() => setPage("add")}
+          >
+            <span className="nav-icon">◉</span>
+            <span className="nav-label">Аккаунт</span>
+          </button>
+
+          <button
+            className="nav-item"
+            onClick={() =>
+              alert("Для помощи напишите администратору или откройте нужное объявление и нажмите «Написать».")
+            }
+          >
+            <span className="nav-icon">?</span>
+            <span className="nav-label">Помощь</span>
+          </button>
         </div>
       )}
     </div>
