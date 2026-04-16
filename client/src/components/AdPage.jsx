@@ -6,9 +6,13 @@ export default function AdPage({ ad, onBack }) {
   if (!ad) return null;
 
   return (
-    <div style={{ padding: "78px 18px 135px", maxWidth: 760, margin: "0 auto" }}>
-      <button className="back-btn" onClick={onBack}>
-        ←
+    <div className="page-enter ad-page-wrap" style={{ padding: "78px 18px 120px", maxWidth: 760, margin: "0 auto" }}>
+      <button className="back-btn premium-back-btn" onClick={onBack}>
+        <span className="back-btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M14.5 6.5L9 12l5.5 5.5" />
+          </svg>
+        </span>
       </button>
 
       {ad.imageUrl && (
