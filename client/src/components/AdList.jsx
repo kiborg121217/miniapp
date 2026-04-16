@@ -3,62 +3,61 @@ import { getAds } from "../firebase";
 
 export default function AdList({ onOpen }) {
   const [ads, setAds] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAds();
   }, []);
-  
-  const [loading, setLoading] = useState(true);
 
   const loadAds = async () => {
     const data = await getAds();
-    const approved = data.filter(ad => ad.status === "approved");
-
+    const approved = data.filter((ad) => ad.status === "approved");
     setAds(approved.sort((a, b) => b.createdAt - a.createdAt));
     setLoading(false);
   };
 
   if (loading) {
+    return (
+      <div style={{ padding: "82px 10px 135px" }}>
+        <div
+          className="header"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          <h2>Объявления</h2>
+        </div>
+
+        <div className="grid">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="skeleton-card"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: "100px 10px 120px" }}>
-      <div className="header" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+    <div style={{ padding: "82px 10px 135px" }}>
+      <div
+        className="header"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
         <h2>Объявления</h2>
       </div>
 
       <div className="grid">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="skeleton-card"></div>
+        {ads.map((ad) => (
+          <div
+            className="card"
+            key={ad.id}
+            onClick={() => onOpen(ad)}
+          >
+            {ad.imageUrl && <img src={ad.imageUrl} alt={ad.title} />}
+
+            <h3>{ad.title}</h3>
+            <p>{ad.price} ₽</p>
+          </div>
         ))}
       </div>
     </div>
   );
-}
-
-return (
-  <div style={{ padding: "100px 10px 135px" }}>
-    <div 
-      className="header"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-    >
-      <h2>Объявления</h2>
-    </div>
-
-    <div className="grid">
-      {ads.map(ad => (
-        <div
-          className="card"
-          key={ad.id}
-          onClick={() => onOpen(ad)}
-        >
-          {ad.imageUrl && (
-            <img src={ad.imageUrl} />
-          )}
-
-          <h3>{ad.title}</h3>
-          <p>{ad.price} ₽</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 }

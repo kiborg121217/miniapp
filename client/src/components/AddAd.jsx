@@ -64,7 +64,7 @@ export default function AddAd({ user }) {
           price,
           description,
           imageUrl,
-          userId: realUser.id
+          userId: realUser.id,
         }),
       });
 
@@ -94,34 +94,93 @@ export default function AddAd({ user }) {
 
   return (
     <div className="form">
-      <h2>Создать объявление</h2>
+      <div
+        style={{
+          marginBottom: 18,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            color: "rgba(255,255,255,0.46)",
+            fontSize: 13,
+            marginBottom: 8,
+          }}
+        >
+          Новое объявление
+        </div>
 
-      <input
-        placeholder="Название"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+        <h2>Создать объявление</h2>
 
-      <input
-        placeholder="Цена"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
+        <div
+          style={{
+            maxWidth: 460,
+            margin: "10px auto 0",
+            color: "rgba(255,255,255,0.58)",
+            fontSize: 14,
+            lineHeight: 1.45,
+          }}
+        >
+          Заполни карточку товара, добавь фото и отправь объявление на модерацию.
+        </div>
+      </div>
 
-      <textarea
-        placeholder="Описание"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+      <div
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 24,
+          padding: 14,
+          boxShadow: "0 16px 34px rgba(0,0,0,0.16)",
+        }}
+      >
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
+            Название
+          </div>
+          <input
+            placeholder="Например: iPhone 13 128 GB"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
 
-      <input
-        type="file"
-        onChange={(e) => setImage(e.target.files?.[0] || null)}
-      />
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
+            Цена
+          </div>
+          <input
+            placeholder="Например: 35000"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </div>
 
-      <button onClick={handleSubmit}>Опубликовать</button>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
+            Описание
+          </div>
+          <textarea
+            placeholder="Опиши состояние, комплектацию и важные детали"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
 
-      <p>{message}</p>
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
+            Фото
+          </div>
+          <input
+            type="file"
+            onChange={(e) => setImage(e.target.files?.[0] || null)}
+          />
+        </div>
+
+        <button onClick={handleSubmit}>Опубликовать</button>
+
+        <p>{message}</p>
+      </div>
     </div>
   );
 }

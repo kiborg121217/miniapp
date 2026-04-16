@@ -1,34 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddAd from "./components/AddAd";
 import AdList from "./components/AdList";
 import AdPage from "./components/AdPage";
 import "./App.css";
-import { useEffect } from "react";
 import { initTelegram } from "./telegram";
 
 export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
   const [tgUser, setTgUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
+    initTelegram();
+
     const tg = window.Telegram?.WebApp;
 
-    if (!tg) {
-      console.log("НЕ TELEGRAM");
-      return;
-    }
+    if (!tg) return;
 
     tg.ready();
     tg.expand();
 
-    const user = tg.initDataUnsafe?.user;
+    const user = tg.initDataUnsafe?.user || null;
+    setTgUser(user);
 
     console.log("INIT DATA:", tg.initDataUnsafe);
     console.log("USER:", user);
-
-    setTgUser(user || null);
   }, []);
 
   return (
@@ -38,17 +34,21 @@ export default function App() {
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       )}
 
-      {page === "add" && (
-        <AddAd user={tgUser} />
-      )}
+      {page === "add" && <AddAd user={tgUser} />}
 
       {page === "view" && (
-        <AdPage ad={selectedAd} onBack={() => setPage("list")} />
+        <AdPage
+          ad={selectedAd}
+          onBack={() => {
+            setPage("list");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       )}
 
       {page !== "view" && (
@@ -65,7 +65,7 @@ export default function App() {
                 <path d="M10 7.25H14" />
               </svg>
             </span>
-            <span className="nav-label">Магазин</span>
+            <span className="nav-label">Главная</span>
           </button>
 
           <button
@@ -78,13 +78,15 @@ export default function App() {
                 <path d="M5.5 18.5C6.8 15.7 9.1 14.5 12 14.5C14.9 14.5 17.2 15.7 18.5 18.5" />
               </svg>
             </span>
-            <span className="nav-label">Аккаунт</span>
+            <span className="nav-label">Создать</span>
           </button>
 
           <button
             className="nav-item"
             onClick={() =>
-              alert("Для помощи напишите администратору или откройте объявление и нажмите «Написать».")
+              alert(
+                "Нужна помощь? Открой объявление и нажми «Написать» или свяжись с администратором."
+              )
             }
           >
             <span className="nav-icon" aria-hidden="true">
