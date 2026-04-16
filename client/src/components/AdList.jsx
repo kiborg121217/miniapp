@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getAds } from "../firebase";
 
-export default function AdList({ onOpen }) {
+export default function AdList({ onOpen, theme, onToggleTheme }) {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -23,10 +23,7 @@ export default function AdList({ onOpen }) {
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const loadAds = async () => {
@@ -39,12 +36,33 @@ export default function AdList({ onOpen }) {
   if (loading) {
     return (
       <div style={{ padding: "92px 10px 120px" }}>
-        <div
-          className={`header ${headerHidden ? "header-hidden" : ""}`}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        >
-          <div className="header-kicker">Барахолка | Вологда</div>
-          <h2>Объявления</h2>
+        <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
+          <div
+            className="header compact-header"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            <h2>Объявления</h2>
+          </div>
+
+          <button className="theme-toggle" onClick={onToggleTheme}>
+            {theme === "dark" ? (
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2.5V5" />
+                <path d="M12 19V21.5" />
+                <path d="M4.93 4.93L6.7 6.7" />
+                <path d="M17.3 17.3L19.07 19.07" />
+                <path d="M2.5 12H5" />
+                <path d="M19 12H21.5" />
+                <path d="M4.93 19.07L6.7 17.3" />
+                <path d="M17.3 6.7L19.07 4.93" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
+              </svg>
+            )}
+          </button>
         </div>
 
         <div className="grid">
@@ -58,12 +76,33 @@ export default function AdList({ onOpen }) {
 
   return (
     <div style={{ padding: "92px 10px 120px" }}>
-      <div
-        className={`header ${headerHidden ? "header-hidden" : ""}`}
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      >
-        <div className="header-kicker">Барахолка | Вологда</div>
-        <h2>Объявления</h2>
+      <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
+        <div
+          className="header compact-header"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          <h2>Объявления</h2>
+        </div>
+
+        <button className="theme-toggle" onClick={onToggleTheme}>
+          {theme === "dark" ? (
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2.5V5" />
+              <path d="M12 19V21.5" />
+              <path d="M4.93 4.93L6.7 6.7" />
+              <path d="M17.3 17.3L19.07 19.07" />
+              <path d="M2.5 12H5" />
+              <path d="M19 12H21.5" />
+              <path d="M4.93 19.07L6.7 17.3" />
+              <path d="M17.3 6.7L19.07 4.93" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
+            </svg>
+          )}
+        </button>
       </div>
 
       {ads.length === 0 ? (
@@ -78,15 +117,14 @@ export default function AdList({ onOpen }) {
           </div>
           <h3>Пока объявлений нет</h3>
           <p>
-            Будь первым, кто разместит товар. Нажми <strong>«Создать»</strong> в
-            нижнем меню и оформи своё объявление.
+            Нажми <strong>«Создать»</strong> внизу и размести первое объявление.
           </p>
         </div>
       ) : (
         <div className="grid">
           {ads.map((ad, index) => (
             <div
-              className="card card-appear"
+              className="card card-appear card-press"
               style={{ animationDelay: `${index * 45}ms` }}
               key={ad.id}
               onClick={() => onOpen(ad)}

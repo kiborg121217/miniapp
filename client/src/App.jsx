@@ -20,8 +20,7 @@ function HelpPage({ onBackToShop }) {
       <div className="help-card">
         <div className="help-card-title">Как купить</div>
         <p>
-          Открой понравившееся объявление и нажми <strong>«Написать»</strong>,
-          чтобы перейти к продавцу.
+          Открой понравившееся объявление и нажми <strong>«Написать»</strong>.
         </p>
       </div>
 
@@ -33,17 +32,21 @@ function HelpPage({ onBackToShop }) {
         </p>
       </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Что важно</div>
-        <p>
-          Указывай честное описание, реальную цену и качественные фото. Так
-          объявление быстрее пройдёт модерацию.
-        </p>
-      </div>
-
       <button className="help-primary" onClick={onBackToShop}>
         Перейти к объявлениям
       </button>
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="loading-screen">
+      <div className="loading-orb" />
+      <div className="loading-card">
+        <div className="loading-title">Барахолка</div>
+        <div className="loading-subtitle">Подготавливаем витрину…</div>
+      </div>
     </div>
   );
 }
@@ -52,24 +55,43 @@ export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
   const [tgUser, setTgUser] = useState(null);
+  const [bootLoading, setBootLoading] = useState(true);
+  const [theme, setTheme] = useState(
+    localStorage.getItem("theme") || "dark"
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     initTelegram();
 
     const tg = window.Telegram?.WebApp;
-    if (!tg) return;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      const user = tg.initDataUnsafe?.user || null;
+      setTgUser(user);
+    }
 
-    tg.ready();
-    tg.expand();
-
-    const user = tg.initDataUnsafe?.user || null;
-    setTgUser(user);
+    const t = setTimeout(() => setBootLoading(false), 900);
+    return () => clearTimeout(t);
   }, []);
+
+  if (bootLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="app">
       {page === "list" && (
         <AdList
+          theme={theme}
+          onToggleTheme={() =>
+            setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+          }
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");

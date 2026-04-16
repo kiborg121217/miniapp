@@ -782,3 +782,250 @@ a {
     font-size: 10px;
   }
 }
+
+[data-theme="light"] {
+  --bg: #f4f6fb;
+  --bg-2: #eef2f8;
+  --panel: rgba(255, 255, 255, 0.74);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --panel-soft: rgba(20, 24, 34, 0.04);
+  --border: rgba(14, 18, 28, 0.08);
+  --border-strong: rgba(14, 18, 28, 0.12);
+  --text: #111827;
+  --muted: rgba(17, 24, 39, 0.62);
+  --muted-2: rgba(17, 24, 39, 0.42);
+  --accent: #4f7cff;
+  --accent-2: #6c63ff;
+  --accent-soft: rgba(79, 124, 255, 0.14);
+  --shadow-xl: 0 24px 60px rgba(24, 32, 56, 0.12);
+  --shadow-lg: 0 14px 34px rgba(24, 32, 56, 0.1);
+  --shadow-md: 0 8px 20px rgba(24, 32, 56, 0.08);
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(79, 124, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 85% 0%, rgba(108, 99, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #f8faff 0%, #f2f5fb 40%, #eef2f8 100%);
+  color: var(--text);
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .header,
+[data-theme="light"] .bottom-nav,
+[data-theme="light"] .help-hero,
+[data-theme="light"] .help-card,
+[data-theme="light"] .empty-state {
+  color: var(--text);
+}
+
+[data-theme="light"] .card p {
+  color: #356cff;
+}
+
+[data-theme="light"] .form input,
+[data-theme="light"] .form textarea,
+[data-theme="light"] input,
+[data-theme="light"] textarea {
+  background: rgba(20, 24, 34, 0.035);
+  color: var(--text);
+}
+
+[data-theme="light"] .form input::placeholder,
+[data-theme="light"] .form textarea::placeholder,
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(17, 24, 39, 0.42);
+}
+
+.header-shell {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    transform 0.26s ease,
+    opacity 0.22s ease;
+}
+
+.compact-header {
+  position: static;
+  left: auto;
+  right: auto;
+  min-height: 54px;
+  padding: 12px 22px;
+  width: auto;
+  max-width: none;
+  border-radius: 999px;
+}
+
+.compact-header h2 {
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.theme-toggle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  padding: 0;
+  flex: 0 0 auto;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+    rgba(18, 18, 24, 0.72);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-orb {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(91,140,255,0.22), transparent 60%);
+  filter: blur(18px);
+  animation: orbPulse 2.2s ease-in-out infinite;
+}
+
+.loading-card {
+  position: relative;
+  z-index: 1;
+  min-width: 220px;
+  padding: 22px 24px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+    rgba(18, 18, 24, 0.72);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  text-align: center;
+  box-shadow: var(--shadow-xl);
+}
+
+.loading-title {
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+.loading-subtitle {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+.card-press {
+  will-change: transform, box-shadow;
+}
+
+.card-press:active {
+  transform: scale(0.975) translateY(1px);
+}
+
+.card-press img {
+  transition:
+    transform 0.28s ease,
+    filter 0.28s ease;
+}
+
+.card-press:hover img {
+  transform: scale(1.02);
+  filter: saturate(1.04);
+}
+
+.form {
+  position: relative;
+}
+
+.form > div:last-child {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.022)),
+    rgba(22, 22, 30, 0.8) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow:
+    0 24px 54px rgba(0,0,0,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+
+.form h2,
+.help-hero h2,
+.empty-state h3 {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    sans-serif;
+}
+
+.back-btn.premium-back-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+    rgba(18, 18, 24, 0.76);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.back-btn.premium-back-btn:hover {
+  filter: brightness(1.04);
+}
+
+@media (max-width: 420px) {
+  .compact-header {
+    min-height: 50px;
+    padding: 11px 18px;
+  }
+
+  .theme-toggle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .loading-card {
+    min-width: 200px;
+    padding: 20px;
+  }
+}
