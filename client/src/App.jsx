@@ -6,6 +6,10 @@ import "./App.css";
 import { initTelegram } from "./telegram";
 
 function HelpPage({ onBackToShop }) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
   return (
     <div className="page-enter help-page">
       <div className="help-hero">
@@ -20,7 +24,8 @@ function HelpPage({ onBackToShop }) {
       <div className="help-card">
         <div className="help-card-title">Как купить</div>
         <p>
-          Открой понравившееся объявление и нажми <strong>«Написать»</strong>.
+          Открой объявление и нажми <strong>«Написать»</strong>, чтобы перейти к
+          продавцу.
         </p>
       </div>
 
@@ -42,10 +47,12 @@ function HelpPage({ onBackToShop }) {
 function LoadingScreen() {
   return (
     <div className="loading-screen">
-      <div className="loading-orb" />
+      <div className="loading-orb loading-orb-1" />
+      <div className="loading-orb loading-orb-2" />
       <div className="loading-card">
         <div className="loading-title">Барахолка</div>
         <div className="loading-subtitle">Подготавливаем витрину…</div>
+        <div className="loading-shimmer" />
       </div>
     </div>
   );
@@ -56,9 +63,7 @@ export default function App() {
   const [selectedAd, setSelectedAd] = useState(null);
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
-  const [theme, setTheme] = useState(
-    localStorage.getItem("theme") || "dark"
-  );
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -76,16 +81,21 @@ export default function App() {
       setTgUser(user);
     }
 
-    const t = setTimeout(() => setBootLoading(false), 900);
+    const t = setTimeout(() => setBootLoading(false), 950);
     return () => clearTimeout(t);
   }, []);
+
+  const goToPage = (nextPage) => {
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
 
   if (bootLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <div className="app">
+    <div className="app theme-animate">
       {page === "list" && (
         <AdList
           theme={theme}
@@ -95,7 +105,7 @@ export default function App() {
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
       )}
@@ -106,7 +116,7 @@ export default function App() {
         <HelpPage
           onBackToShop={() => {
             setPage("list");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
       )}
@@ -116,7 +126,7 @@ export default function App() {
           ad={selectedAd}
           onBack={() => {
             setPage("list");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
       )}
@@ -125,7 +135,7 @@ export default function App() {
         <div className="bottom-nav">
           <button
             className={`nav-item ${page === "list" ? "active" : ""}`}
-            onClick={() => setPage("list")}
+            onClick={() => goToPage("list")}
           >
             <span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -140,7 +150,7 @@ export default function App() {
 
           <button
             className={`nav-item ${page === "add" ? "active" : ""}`}
-            onClick={() => setPage("add")}
+            onClick={() => goToPage("add")}
           >
             <span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -154,7 +164,7 @@ export default function App() {
 
           <button
             className={`nav-item ${page === "help" ? "active" : ""}`}
-            onClick={() => setPage("help")}
+            onClick={() => goToPage("help")}
           >
             <span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">

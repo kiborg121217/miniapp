@@ -8,6 +8,7 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
   const lastY = useRef(0);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
     loadAds();
 
     const onScroll = () => {
@@ -33,6 +34,28 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
     setLoading(false);
   };
 
+  const ThemeButton = () => (
+    <button className="theme-toggle floating-theme-toggle" onClick={onToggleTheme}>
+      {theme === "dark" ? (
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2.5V5" />
+          <path d="M12 19V21.5" />
+          <path d="M4.93 4.93L6.7 6.7" />
+          <path d="M17.3 17.3L19.07 19.07" />
+          <path d="M2.5 12H5" />
+          <path d="M19 12H21.5" />
+          <path d="M4.93 19.07L6.7 17.3" />
+          <path d="M17.3 6.7L19.07 4.93" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
+        </svg>
+      )}
+    </button>
+  );
+
   if (loading) {
     return (
       <div style={{ padding: "92px 10px 120px" }}>
@@ -43,27 +66,9 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
           >
             <h2>Объявления</h2>
           </div>
-
-          <button className="theme-toggle" onClick={onToggleTheme}>
-            {theme === "dark" ? (
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2.5V5" />
-                <path d="M12 19V21.5" />
-                <path d="M4.93 4.93L6.7 6.7" />
-                <path d="M17.3 17.3L19.07 19.07" />
-                <path d="M2.5 12H5" />
-                <path d="M19 12H21.5" />
-                <path d="M4.93 19.07L6.7 17.3" />
-                <path d="M17.3 6.7L19.07 4.93" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
-              </svg>
-            )}
-          </button>
         </div>
+
+        <ThemeButton />
 
         <div className="grid">
           {[...Array(6)].map((_, i) => (
@@ -83,27 +88,9 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
         >
           <h2>Объявления</h2>
         </div>
-
-        <button className="theme-toggle" onClick={onToggleTheme}>
-          {theme === "dark" ? (
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2.5V5" />
-              <path d="M12 19V21.5" />
-              <path d="M4.93 4.93L6.7 6.7" />
-              <path d="M17.3 17.3L19.07 19.07" />
-              <path d="M2.5 12H5" />
-              <path d="M19 12H21.5" />
-              <path d="M4.93 19.07L6.7 17.3" />
-              <path d="M17.3 6.7L19.07 4.93" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
-            </svg>
-          )}
-        </button>
       </div>
+
+      <ThemeButton />
 
       {ads.length === 0 ? (
         <div className="empty-state page-enter">
