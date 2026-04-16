@@ -1,9 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdPage({ ad, onBack }) {
   const [modalImage, setModalImage] = useState(null);
+  const [currentImage, setCurrentImage] = useState(0);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    setCurrentImage(0);
+  }, [ad]);
 
   if (!ad) return null;
+
+  const gallery =
+    ad.imageUrls?.length
+      ? ad.imageUrls
+      : ad.imageUrl
+      ? [ad.imageUrl]
+      : [];
 
   return (
     <div className="page-enter ad-page-wrap">
@@ -16,13 +29,27 @@ export default function AdPage({ ad, onBack }) {
       </button>
 
       <div className="ad-page-shell">
-        {ad.imageUrl && (
+        {gallery.length > 0 && (
           <img
             className="ad-hero-image"
-            src={ad.imageUrl}
+            src={gallery[currentImage]}
             alt={ad.title}
-            onClick={() => setModalImage(ad.imageUrl)}
+            onClick={() => setModalImage(gallery[currentImage])}
           />
+        )}
+
+        {gallery.length > 1 && (
+          <div className="thumb-row">
+            {gallery.map((img, index) => (
+              <button
+                key={index}
+                className={`thumb-btn ${currentImage === index ? "active" : ""}`}
+                onClick={() => setCurrentImage(index)}
+              >
+                <img src={img} alt={`thumb-${index}`} />
+              </button>
+            ))}
+          </div>
         )}
 
         <div className="ad-content">

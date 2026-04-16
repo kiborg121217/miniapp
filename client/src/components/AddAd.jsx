@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadImage } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function AddAd({ user }) {
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   const handleSubmit = async () => {
     const tg = window.Telegram?.WebApp;
@@ -29,7 +33,7 @@ export default function AddAd({ user }) {
     if (!title) missing.push("Название");
     if (!price) missing.push("Цена");
     if (!description) missing.push("Описание");
-    if (!image) missing.push("Изображение");
+    if (!images.length) missing.push("Изображение");
 
     if (missing.length > 0) {
       setMessage("Заполните: " + missing.join(", "));
@@ -40,14 +44,20 @@ export default function AddAd({ user }) {
 
     try {
       setMessage("Загрузка фото...");
-      const imageUrl = await uploadImage(image);
+
+      const imageUrls = [];
+      for (const file of images) {
+        const uploaded = await uploadImage(file);
+        imageUrls.push(uploaded);
+      }
 
       await setDoc(doc(db, "ads", id), {
         id,
         title,
         price,
         description,
-        imageUrl,
+        imageUrls,
+        imageUrl: imageUrls[0],
         status: "pending",
         createdAt: Date.now(),
         userId: realUser.id,
@@ -63,7 +73,8 @@ export default function AddAd({ user }) {
           title,
           price,
           description,
-          imageUrl,
+          imageUrls,
+          imageUrl: imageUrls[0],
           userId: realUser.id,
         }),
       });
@@ -84,7 +95,7 @@ export default function AddAd({ user }) {
       setTitle("");
       setPrice("");
       setDescription("");
-      setImage(null);
+      setImages([]);
       setMessage("✅ Отправлено на модерацию");
     } catch (err) {
       console.error(err);
@@ -135,8 +146,14 @@ export default function AddAd({ user }) {
           <label className="field-label">Фото</label>
           <input
             type="file"
-            onChange={(e) => setImage(e.target.files?.[0] || null)}
+            multiple
+            onChange={(e) => setImages(Array.from(e.target.files || []))}
           />
+          {!!images.length && (
+            <div className="upload-note">
+              Выбрано файлов: {images.length}
+            </div>
+          )}
         </div>
 
         <button className="form-submit" onClick={handleSubmit}>

@@ -24,16 +24,14 @@ function HelpPage({ onBackToShop }) {
       <div className="help-card">
         <div className="help-card-title">Как купить</div>
         <p>
-          Открой объявление и нажми <strong>«Написать»</strong>, чтобы перейти к
-          продавцу.
+          Открой объявление и нажми <strong>«Написать»</strong>, чтобы перейти к продавцу.
         </p>
       </div>
 
       <div className="help-card">
         <div className="help-card-title">Как разместить</div>
         <p>
-          Нажми <strong>«Создать»</strong>, заполни форму, добавь фото и отправь
-          объявление на модерацию.
+          Нажми <strong>«Создать»</strong>, заполни форму, добавь фото и отправь объявление на модерацию.
         </p>
       </div>
 
@@ -63,7 +61,9 @@ export default function App() {
   const [selectedAd, setSelectedAd] = useState(null);
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+
+  // dark по умолчанию + запоминание выбора
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -99,9 +99,7 @@ export default function App() {
       {page === "list" && (
         <AdList
           theme={theme}
-          onToggleTheme={() =>
-            setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-          }
+          onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");

@@ -58,7 +58,7 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
 
   if (loading) {
     return (
-      <div style={{ padding: "92px 10px 120px" }}>
+      <div style={{ padding: "92px 8px 120px" }}>
         <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
           <div
             className="header compact-header"
@@ -80,7 +80,7 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
   }
 
   return (
-    <div style={{ padding: "92px 10px 120px" }}>
+    <div style={{ padding: "92px 8px 120px" }}>
       <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
         <div
           className="header compact-header"
