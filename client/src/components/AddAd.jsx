@@ -93,62 +93,28 @@ export default function AddAd({ user }) {
   };
 
   return (
-    <div className="form">
-      <div
-        style={{
-          marginBottom: 18,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            color: "rgba(255,255,255,0.46)",
-            fontSize: 13,
-            marginBottom: 8,
-          }}
-        >
-          Новое объявление
-        </div>
-
-        <h2>Создать объявление</h2>
-
-        <div
-          style={{
-            maxWidth: 460,
-            margin: "10px auto 0",
-            color: "rgba(255,255,255,0.58)",
-            fontSize: 14,
-            lineHeight: 1.45,
-          }}
-        >
-          Заполни карточку товара, добавь фото и отправь объявление на модерацию.
-        </div>
+    <div className="form page-enter">
+      <div className="form-hero">
+        <div className="form-kicker">Новое объявление</div>
+        <h2>Разместить товар</h2>
+        <p className="form-subtitle">
+          Добавь понятное название, честное описание, цену и фото — так объявление
+          будет смотреться аккуратно и быстрее пройдёт модерацию.
+        </p>
       </div>
 
-      <div
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 24,
-          padding: 14,
-          boxShadow: "0 16px 34px rgba(0,0,0,0.16)",
-        }}
-      >
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
-            Название
-          </div>
+      <div className="form-panel">
+        <div className="field-block">
+          <label className="field-label">Название</label>
           <input
-            placeholder="Например: iPhone 13 128 GB"
+            placeholder="Например: iPhone 13, 128 GB"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
-            Цена
-          </div>
+        <div className="field-block">
+          <label className="field-label">Цена</label>
           <input
             placeholder="Например: 35000"
             value={price}
@@ -156,30 +122,28 @@ export default function AddAd({ user }) {
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
-            Описание
-          </div>
+        <div className="field-block">
+          <label className="field-label">Описание</label>
           <textarea
-            placeholder="Опиши состояние, комплектацию и важные детали"
+            placeholder="Опиши состояние, комплектацию, дефекты, торг и всё важное для покупателя"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 
-        <div style={{ marginBottom: 4 }}>
-          <div style={{ marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,0.52)" }}>
-            Фото
-          </div>
+        <div className="field-block">
+          <label className="field-label">Фото</label>
           <input
             type="file"
             onChange={(e) => setImage(e.target.files?.[0] || null)}
           />
         </div>
 
-        <button onClick={handleSubmit}>Опубликовать</button>
+        <button className="form-submit" onClick={handleSubmit}>
+          Опубликовать
+        </button>
 
-        <p>{message}</p>
+        {!!message && <p className="form-message">{message}</p>}
       </div>
     </div>
   );
