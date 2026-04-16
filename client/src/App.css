@@ -345,13 +345,13 @@ a {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.52);
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
 
   transition:
     background 0.18s ease,
@@ -363,7 +363,9 @@ a {
 .nav-item.active {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  box-shadow: inset 0 1px 12px rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 12px rgba(255, 255, 255, 0.03),
+    0 4px 18px rgba(0, 0, 0, 0.14);
 }
 
 .nav-item:active {
@@ -371,15 +373,21 @@ a {
 }
 
 .nav-icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
 
   display: flex;
   align-items: center;
   justify-content: center;
+}
 
-  font-size: 28px;
-  line-height: 1;
+.nav-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .nav-label {
@@ -395,8 +403,10 @@ a {
     bottom: 10px;
   }
 
-  .nav-icon {
-    font-size: 26px;
+  .nav-icon,
+  .nav-icon svg {
+    width: 29px;
+    height: 29px;
   }
 
   .nav-label {

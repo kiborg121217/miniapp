@@ -35,7 +35,7 @@ export default function AdList({ onOpen }) {
 }
 
 return (
-  <div style={{ padding: "100px 10px 120px" }}>
+  <div style={{ padding: "100px 10px 135px" }}>
     <div 
       className="header"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
