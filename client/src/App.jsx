@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import AddAd from "./components/AddAd";
 import AdList from "./components/AdList";
 import AdPage from "./components/AdPage";
+import ProfilePage from "./components/ProfilePage";
+import SettingsPage from "./components/SettingsPage";
+import SellerPage from "./components/SellerPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 
-function HelpPage({ onBackToShop }) {
+function HelpPage({ onBack }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
@@ -23,20 +26,16 @@ function HelpPage({ onBackToShop }) {
 
       <div className="help-card">
         <div className="help-card-title">Как купить</div>
-        <p>
-          Открой объявление и нажми <strong>«Написать»</strong>, чтобы перейти к продавцу.
-        </p>
+        <p>Открой объявление и нажми «Написать».</p>
       </div>
 
       <div className="help-card">
         <div className="help-card-title">Как разместить</div>
-        <p>
-          Нажми <strong>«Создать»</strong>, заполни форму, добавь фото и отправь объявление на модерацию.
-        </p>
+        <p>Нажми «Создать», заполни форму и отправь объявление на модерацию.</p>
       </div>
 
-      <button className="help-primary" onClick={onBackToShop}>
-        Перейти к объявлениям
+      <button className="help-primary" onClick={onBack}>
+        Назад
       </button>
     </div>
   );
@@ -59,10 +58,9 @@ function LoadingScreen() {
 export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
+  const [selectedSellerId, setSelectedSellerId] = useState(null);
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
-
-  // dark по умолчанию + запоминание выбора
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
@@ -110,10 +108,33 @@ export default function App() {
 
       {page === "add" && <AddAd user={tgUser} />}
 
-      {page === "help" && (
-        <HelpPage
-          onBackToShop={() => {
-            setPage("list");
+      {page === "profile" && (
+        <ProfilePage
+          user={tgUser}
+          onOpenAd={(ad) => {
+            setSelectedAd(ad);
+            setPage("view");
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }}
+        />
+      )}
+
+      {page === "settings" && (
+        <SettingsPage
+          theme={theme}
+          onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+          onOpenHelp={() => goToPage("help")}
+        />
+      )}
+
+      {page === "help" && <HelpPage onBack={() => goToPage("settings")} />}
+
+      {page === "seller" && (
+        <SellerPage
+          sellerId={selectedSellerId}
+          onOpenAd={(ad) => {
+            setSelectedAd(ad);
+            setPage("view");
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
@@ -124,6 +145,11 @@ export default function App() {
           ad={selectedAd}
           onBack={() => {
             setPage("list");
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }}
+          onOpenSeller={(sellerId) => {
+            setSelectedSellerId(sellerId);
+            setPage("seller");
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
@@ -161,19 +187,30 @@ export default function App() {
           </button>
 
           <button
-            className={`nav-item ${page === "help" ? "active" : ""}`}
-            onClick={() => goToPage("help")}
+            className={`nav-item ${page === "profile" ? "active" : ""}`}
+            onClick={() => goToPage("profile")}
           >
             <span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" />
-                <path d="M9.7 9.3C10 8.3 10.9 7.6 12 7.6C13.3 7.6 14.3 8.5 14.3 9.7C14.3 10.7 13.8 11.3 12.9 11.9C12.2 12.4 12 12.8 12 13.6" />
-                <circle cx="12" cy="16.6" r="0.7" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="8.2" r="3.2" />
+                <path d="M5.5 18.5C6.8 15.7 9.1 14.5 12 14.5C14.9 14.5 17.2 15.7 18.5 18.5" />
               </svg>
             </span>
-            <span className="nav-label">Помощь</span>
+            <span className="nav-label">Профиль</span>
           </button>
         </div>
+      )}
+
+      {page === "list" && (
+        <button
+          className="theme-toggle floating-theme-toggle"
+          onClick={() => goToPage("settings")}
+        >
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 8.2a3.8 3.8 0 1 0 0 7.6a3.8 3.8 0 0 0 0-7.6Z" />
+            <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a1.2 1.2 0 1 1-1.7 1.7l-.1-.1a1 1 0 0 0-1.1-.2a1 1 0 0 0-.6.9V19a1.2 1.2 0 1 1-2.4 0v-.2a1 1 0 0 0-.7-.9a1 1 0 0 0-1.1.2l-.1.1a1.2 1.2 0 1 1-1.7-1.7l.1-.1a1 1 0 0 0 .2-1.1a1 1 0 0 0-.9-.6H5a1.2 1.2 0 1 1 0-2.4h.2a1 1 0 0 0 .9-.7a1 1 0 0 0-.2-1.1l-.1-.1a1.2 1.2 0 1 1 1.7-1.7l.1.1a1 1 0 0 0 1.1.2a1 1 0 0 0 .6-.9V5a1.2 1.2 0 1 1 2.4 0v.2a1 1 0 0 0 .7.9a1 1 0 0 0 1.1-.2l.1-.1a1.2 1.2 0 1 1 1.7 1.7l-.1.1a1 1 0 0 0-.2 1.1a1 1 0 0 0 .9.6H19a1.2 1.2 0 1 1 0 2.4h-.2a1 1 0 0 0-.9.7Z" />
+          </svg>
+        </button>
       )}
     </div>
   );
