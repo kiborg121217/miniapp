@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function AdPage({ ad, onBack }) {
   const [modalImage, setModalImage] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -36,6 +38,23 @@ export default function AdPage({ ad, onBack }) {
       const nextIndex = currentImage + 1;
       setCurrentImage(nextIndex);
       setModalImage(gallery[nextIndex]);
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    const delta = touchStartX.current - touchEndX.current;
+
+    if (Math.abs(delta) < 40) return;
+
+    if (delta > 0) {
+      nextImage();
+    } else {
+      prevImage();
     }
   };
 
@@ -109,13 +128,9 @@ export default function AdPage({ ad, onBack }) {
                   return;
                 }
 
+                // временный fallback для пользователей без username
                 if (ad.userId) {
-                  const url = `tg://user?id=${ad.userId}`;
-                  if (tg) {
-                    window.location.href = url;
-                  } else {
-                    window.open(url, "_blank");
-                  }
+                  alert("У этого пользователя нет username. Ниже дам, как сделать надёжную связь через бота.");
                 }
               }}
             >
@@ -138,43 +153,17 @@ export default function AdPage({ ad, onBack }) {
           </button>
 
           {gallery.length > 1 && (
-            <>
-              <button
-                className="gallery-nav left"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prevImage();
-                }}
-                disabled={currentImage === 0}
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M14.5 6.5L9 12l5.5 5.5" />
-                </svg>
-              </button>
-
-              <button
-                className="gallery-nav right"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nextImage();
-                }}
-                disabled={currentImage === gallery.length - 1}
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M9.5 6.5L15 12l-5.5 5.5" />
-                </svg>
-              </button>
-
-              <div className="gallery-counter">
-                {currentImage + 1} из {gallery.length}
-              </div>
-            </>
+            <div className="gallery-counter">
+              {currentImage + 1} из {gallery.length}
+            </div>
           )}
 
           <img
             src={modalImage}
             alt="preview"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           />
         </div>
       )}
