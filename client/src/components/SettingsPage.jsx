@@ -6,40 +6,80 @@ export default function SettingsPage({
   onBack,
 }) {
   return (
-    <div className="help-page page-enter">
+    <div className="page-enter help-page">
       <PageBackButton onClick={onBack} />
 
       <div className="help-hero">
-        <div className="help-badge">Настройки</div>
-        <h2>Настройки приложения</h2>
+        <div className="help-badge">Помощь</div>
+        <h2>Как пользоваться барахолкой</h2>
         <p>
-          Здесь можно открыть помощь и посмотреть документы сервиса.
+          Здесь можно покупать и продавать товары через Telegram. Все объявления
+          проходят модерацию перед публикацией.
         </p>
       </div>
 
-      <div className="settings-list">
-        <button className="settings-tile" onClick={onOpenHelp}>
-          <div className="settings-tile-title">Помощь</div>
-          <div className="settings-tile-sub">Как пользоваться приложением</div>
-        </button>
-
-        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("agreement")}>
-          <div className="settings-tile-title">Пользовательское соглашение</div>
-          <div className="settings-tile-sub">Открыть документ</div>
-        </button>
-
-        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("privacy")}>
-          <div className="settings-tile-title">Политика конфиденциальности</div>
-          <div className="settings-tile-sub">Открыть документ</div>
-        </button>
-
-        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("terms")}>
-          <div className="settings-tile-title">Условия использования</div>
-          <div className="settings-tile-sub">Открыть документ</div>
-        </button>
+      <div className="help-card">
+        <div className="help-card-title">Как посмотреть объявления</div>
+        <p>
+          На главной странице отображаются все опубликованные объявления. Нажми
+          на карточку, чтобы открыть полное описание, посмотреть фото и перейти
+          к профилю продавца.
+        </p>
       </div>
 
-      <div className="settings-version">Версия приложения 1.0.0</div>
+      <div className="help-card">
+        <div className="help-card-title">Как разместить объявление</div>
+        <p>
+          Нажми кнопку «Создать», заполни название, цену, описание и добавь фото.
+          После отправки объявление уйдёт на модерацию. После проверки оно будет
+          либо опубликовано, либо отклонено.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <div className="help-card-title">Как написать продавцу</div>
+        <p>
+          Если у продавца указан username Telegram, кнопка «Написать» откроет
+          его профиль в Telegram. Для пользователей без username в будущем может
+          использоваться связь через бота-посредника.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <div className="help-card-title">Что есть в профиле</div>
+        <p>
+          В профиле можно посмотреть свои объявления по категориям: активные,
+          архивные, на модерации и отклонённые. Также можно изменить имя в
+          профиле, загрузить аватарку и управлять своими объявлениями.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <div className="help-card-title">Что такое просмотры</div>
+        <p>
+          У каждого объявления отображается количество просмотров. Просмотр
+          засчитывается при открытии объявления пользователем и используется
+          только для внутренней статистики сервиса.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <div className="help-card-title">Почему объявление не опубликовано сразу</div>
+        <p>
+          Все объявления проходят предварительную модерацию. Это нужно для защиты
+          пользователей от спама, мошенничества, запрещённых товаров и
+          недостоверной информации.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <div className="help-card-title">Что делать, если что-то не работает</div>
+        <p>
+          Попробуй закрыть и заново открыть мини-приложение через Telegram.
+          Если проблема сохраняется, проверь подключение к интернету и повтори
+          попытку позже.
+        </p>
+      </div>
     </div>
   );
 }
