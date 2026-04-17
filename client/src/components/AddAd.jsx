@@ -1,5 +1,9 @@
-import { useState, useEffect } from "react";
-import { uploadImage } from "../firebase";
+import { useEffect, useState } from "react";
+import {
+  uploadImage,
+  getUserProfile,
+  saveUserProfile,
+} from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -43,6 +47,26 @@ export default function AddAd({ user }) {
     const id = Date.now().toString();
 
     try {
+      setMessage("Подготавливаем профиль...");
+
+      let profile = await getUserProfile(realUser.id);
+
+      if (!profile) {
+        await saveUserProfile({
+          userId: realUser.id,
+          firstName: realUser.first_name || "",
+          username: realUser.username || "",
+          displayName: realUser.first_name || "Пользователь",
+          avatarUrl: "",
+          telegramAvatarUrl: "",
+          bio: "",
+          theme: "dark",
+          createdAt: Date.now(),
+        });
+
+        profile = await getUserProfile(realUser.id);
+      }
+
       setMessage("Загрузка фото...");
 
       const imageUrls = [];
@@ -50,6 +74,17 @@ export default function AddAd({ user }) {
         const uploaded = await uploadImage(file);
         imageUrls.push(uploaded);
       }
+
+      const sellerDisplayName =
+        profile?.displayName ||
+        realUser.first_name ||
+        realUser.username ||
+        "Пользователь";
+
+      const sellerAvatarUrl =
+        profile?.avatarUrl ||
+        profile?.telegramAvatarUrl ||
+        "";
 
       await setDoc(doc(db, "ads", id), {
         id,
@@ -60,9 +95,14 @@ export default function AddAd({ user }) {
         imageUrl: imageUrls[0],
         status: "pending",
         createdAt: Date.now(),
+        views: 0,
+
         userId: realUser.id,
         username: realUser.username || null,
         firstName: realUser.first_name || "Гость",
+
+        sellerDisplayName,
+        sellerAvatarUrl,
       });
 
       const response = await fetch("https://miniapp-1wzi.onrender.com/new-ad", {

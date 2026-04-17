@@ -1,15 +1,54 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  incrementAdViews,
+  getSellerActiveAdsCount,
+  getUserProfile,
+} from "../firebase";
 
-export default function AdPage({ ad, onBack }) {
+export default function AdPage({ ad, onBack, onOpenSeller }) {
   const [modalImage, setModalImage] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
+  const [sellerProfile, setSellerProfile] = useState(null);
+  const [sellerAdsCount, setSellerAdsCount] = useState(0);
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
     setCurrentImage(0);
+
+    if (ad?.id) {
+      const viewedKey = `viewed_ad_${ad.id}`;
+
+      if (!sessionStorage.getItem(viewedKey)) {
+        incrementAdViews(ad.id).catch(console.error);
+        sessionStorage.setItem(viewedKey, "1");
+      }
+    }
+
+    loadSellerInfo();
   }, [ad]);
+
+  const loadSellerInfo = async () => {
+    if (!ad?.userId) {
+      setSellerProfile(null);
+      setSellerAdsCount(0);
+      return;
+    }
+
+    try {
+      const [profile, count] = await Promise.all([
+        getUserProfile(ad.userId),
+        getSellerActiveAdsCount(ad.userId),
+      ]);
+
+      setSellerProfile(profile);
+      setSellerAdsCount(count);
+    } catch (error) {
+      console.error("Ошибка загрузки продавца:", error);
+    }
+  };
 
   if (!ad) return null;
 
@@ -57,6 +96,18 @@ export default function AdPage({ ad, onBack }) {
       prevImage();
     }
   };
+
+  const sellerName =
+    sellerProfile?.displayName ||
+    ad.sellerDisplayName ||
+    ad.firstName ||
+    "Продавец";
+
+  const sellerAvatar =
+    sellerProfile?.avatarUrl ||
+    sellerProfile?.telegramAvatarUrl ||
+    ad.sellerAvatarUrl ||
+    "";
 
   return (
     <div className="page-enter ad-page-wrap">
@@ -116,6 +167,80 @@ export default function AdPage({ ad, onBack }) {
             <p className="ad-description">{ad.description}</p>
           </div>
 
+          <div className="ad-info-card">
+            <div className="ad-info-label">Просмотры</div>
+            <p className="ad-description">{ad.views || 0}</p>
+          </div>
+
+          <div
+            className="ad-info-card"
+            onClick={() => {
+              if (ad.userId && onOpenSeller) {
+                onOpenSeller(ad.userId);
+              }
+            }}
+            style={{
+              cursor: ad.userId ? "pointer" : "default",
+            }}
+          >
+            <div className="ad-info-label">Продавец</div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  flexShrink: 0,
+                }}
+              >
+                {sellerAvatar ? (
+                  <img
+                    src={sellerAvatar}
+                    alt="seller"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : null}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {sellerName}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    color: "var(--muted)",
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  Активных объявлений: {sellerAdsCount}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {(ad.username || ad.userId) && (
             <button
               className="contact-btn"
@@ -132,9 +257,10 @@ export default function AdPage({ ad, onBack }) {
                   return;
                 }
 
-                // временный fallback для пользователей без username
                 if (ad.userId) {
-                  alert("У этого пользователя нет username. Ниже дам, как сделать надёжную связь через бота.");
+                  alert(
+                    "У этого пользователя нет username. Следующим шагом мы сделаем связь через бота-посредника."
+                  );
                 }
               }}
             >
