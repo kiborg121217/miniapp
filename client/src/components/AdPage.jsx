@@ -70,12 +70,16 @@ export default function AdPage({ ad, onBack }) {
 
       <div className="ad-page-shell">
         {gallery.length > 0 && (
-          <div className="ad-hero-wrap">
+          <div className="ad-hero-wrap" onClick={() => openModal(currentImage)}>
+            <div
+              className="ad-hero-blur"
+              style={{ backgroundImage: `url(${gallery[currentImage]})` }}
+            />
+
             <img
               className="ad-hero-image"
               src={gallery[currentImage]}
               alt={ad.title}
-              onClick={() => openModal(currentImage)}
             />
 
             {gallery.length > 1 && (
