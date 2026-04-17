@@ -7,6 +7,7 @@ import ProfileAdsPage from "./components/ProfileAdsPage";
 import SettingsPage from "./components/SettingsPage";
 import SellerPage from "./components/SellerPage";
 import LegalPage from "./components/LegalPage";
+import PageBackButton from "./components/PageBackButton";
 import "./App.css";
 import { initTelegram } from "./telegram";
 
@@ -17,6 +18,8 @@ function HelpPage({ onBack }) {
 
   return (
     <div className="page-enter help-page">
+      <PageBackButton onClick={onBack} />
+
       <div className="help-hero">
         <div className="help-badge">Помощь</div>
         <h2>Как пользоваться барахолкой</h2>
@@ -35,10 +38,6 @@ function HelpPage({ onBack }) {
         <div className="help-card-title">Как разместить</div>
         <p>Нажми «Создать», заполни форму и отправь объявление на модерацию.</p>
       </div>
-
-      <button className="help-primary" onClick={onBack}>
-        Назад
-      </button>
     </div>
   );
 }
@@ -61,6 +60,7 @@ export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
   const [selectedSellerId, setSelectedSellerId] = useState(null);
+  const [sellerBackTarget, setSellerBackTarget] = useState("list");
   const [profileStatusPage, setProfileStatusPage] = useState(null);
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
@@ -102,6 +102,7 @@ export default function App() {
         <AdList
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+          onOpenSettings={() => goToPage("settings")}
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
@@ -118,6 +119,7 @@ export default function App() {
           onOpenSection={(status) => {
             setProfileStatusPage(status);
             setPage("profileAds");
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
       )}
@@ -126,6 +128,7 @@ export default function App() {
         <ProfileAdsPage
           user={tgUser}
           status={profileStatusPage}
+          onBack={() => goToPage("profile")}
           onOpenAd={(ad) => {
             setSelectedAd(ad);
             setPage("view");
@@ -137,22 +140,33 @@ export default function App() {
       {page === "settings" && (
         <SettingsPage
           theme={theme}
+          onBack={() => goToPage("list")}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpenHelp={() => goToPage("help")}
           onOpenLegal={(type) => {
             setLegalType(type);
             setPage("legal");
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
         />
       )}
 
       {page === "help" && <HelpPage onBack={() => goToPage("settings")} />}
 
-      {page === "legal" && <LegalPage type={legalType} />}
+      {page === "legal" && (
+        <LegalPage
+          type={legalType}
+          onBack={() => goToPage("settings")}
+        />
+      )}
 
       {page === "seller" && (
         <SellerPage
           sellerId={selectedSellerId}
+          onBack={() => {
+            setPage(sellerBackTarget === "view" ? "view" : "list");
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }}
           onOpenAd={(ad) => {
             setSelectedAd(ad);
             setPage("view");
@@ -171,6 +185,7 @@ export default function App() {
           }}
           onOpenSeller={(sellerId) => {
             setSelectedSellerId(sellerId);
+            setSellerBackTarget("view");
             setPage("seller");
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
@@ -221,25 +236,6 @@ export default function App() {
             <span className="nav-label">Профиль</span>
           </button>
         </div>
-      )}
-
-      {page === "list" && (
-        <button
-          className="theme-toggle floating-theme-toggle"
-          onClick={() => goToPage("settings")}
-        >
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3.2" />
-            <path d="M12 2.5V5" />
-            <path d="M12 19V21.5" />
-            <path d="M4.93 4.93L6.7 6.7" />
-            <path d="M17.3 17.3L19.07 19.07" />
-            <path d="M2.5 12H5" />
-            <path d="M19 12H21.5" />
-            <path d="M4.93 19.07L6.7 17.3" />
-            <path d="M17.3 6.7L19.07 4.93" />
-          </svg>
-        </button>
       )}
     </div>
   );

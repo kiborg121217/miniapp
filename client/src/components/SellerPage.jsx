@@ -4,8 +4,9 @@ import {
   getSellerActiveAdsCount,
   getUserProfile,
 } from "../firebase";
+import PageBackButton from "./PageBackButton";
 
-export default function SellerPage({ sellerId, onOpenAd }) {
+export default function SellerPage({ sellerId, onOpenAd, onBack }) {
   const [profile, setProfile] = useState(null);
   const [ads, setAds] = useState([]);
   const [count, setCount] = useState(0);
@@ -32,6 +33,7 @@ export default function SellerPage({ sellerId, onOpenAd }) {
   if (!sellerId) {
     return (
       <div className="help-page page-enter">
+        <PageBackButton onClick={onBack} />
         <div className="help-hero">
           <h2>Продавец недоступен</h2>
           <p>У этого объявления пока нет привязанного профиля продавца.</p>
@@ -42,6 +44,8 @@ export default function SellerPage({ sellerId, onOpenAd }) {
 
   return (
     <div className="help-page page-enter">
+      <PageBackButton onClick={onBack} />
+
       <div className="help-hero">
         <div
           style={{

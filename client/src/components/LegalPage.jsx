@@ -1,3 +1,5 @@
+import PageBackButton from "./PageBackButton";
+
 const LEGAL_TEXT = {
   agreement: {
     title: "Пользовательское соглашение",
@@ -31,11 +33,13 @@ const LEGAL_TEXT = {
   },
 };
 
-export default function LegalPage({ type }) {
+export default function LegalPage({ type, onBack }) {
   const data = LEGAL_TEXT[type] || LEGAL_TEXT.agreement;
 
   return (
     <div className="help-page page-enter">
+      <PageBackButton onClick={onBack} />
+
       <div className="help-hero">
         <div className="help-badge">Документ</div>
         <h2>{data.title}</h2>

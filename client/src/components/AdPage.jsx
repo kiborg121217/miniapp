@@ -251,7 +251,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
 
                 if (ad.userId) {
                   alert(
-                    "У этого пользователя нет username. Следующим шагом мы сделаем связь через бота-посредника."
+                    "У этого пользователя нет username. Следующим шагом сделаем связь через бота."
                   );
                 }
               }}

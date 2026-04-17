@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getUserAds, archiveAd, restoreAd } from "../firebase";
+import PageBackButton from "./PageBackButton";
 
 const TITLES = {
   approved: "Активные объявления",
@@ -8,7 +9,7 @@ const TITLES = {
   rejected: "Отклонённые",
 };
 
-export default function ProfileAdsPage({ user, status, onOpenAd }) {
+export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
   const [ads, setAds] = useState([]);
 
   useEffect(() => {
@@ -34,6 +35,8 @@ export default function ProfileAdsPage({ user, status, onOpenAd }) {
 
   return (
     <div className="help-page page-enter">
+      <PageBackButton onClick={onBack} />
+
       <div className="help-hero">
         <div className="help-badge">Профиль</div>
         <h2>{TITLES[status] || "Объявления"}</h2>

@@ -1,11 +1,16 @@
+import PageBackButton from "./PageBackButton";
+
 export default function SettingsPage({
   theme,
   onToggleTheme,
   onOpenHelp,
   onOpenLegal,
+  onBack,
 }) {
   return (
     <div className="help-page page-enter">
+      <PageBackButton onClick={onBack} />
+
       <div className="help-hero">
         <div className="help-badge">Настройки</div>
         <h2>Настройки приложения</h2>
