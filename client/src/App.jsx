@@ -95,6 +95,20 @@ function HelpPage({ onBack }) {
   );
 }
 
+function LoadingScreen() {
+  return (
+    <div className="loading-screen">
+      <div className="loading-orb loading-orb-1" />
+      <div className="loading-orb loading-orb-2" />
+      <div className="loading-card">
+        <div className="loading-title">Барахолка</div>
+        <div className="loading-subtitle">Подготавливаем витрину…</div>
+        <div className="loading-shimmer" />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
