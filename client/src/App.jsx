@@ -139,9 +139,7 @@ export default function App() {
 
       {page === "settings" && (
         <SettingsPage
-          theme={theme}
           onBack={() => goToPage("list")}
-          onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpenHelp={() => goToPage("help")}
           onOpenLegal={(type) => {
             setLegalType(type);

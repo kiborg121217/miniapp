@@ -39,8 +39,8 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
       <div className={`top-bar ${headerHidden ? "header-hidden" : ""}`}>
         <button className="top-icon-btn" onClick={onOpenSettings}>
           <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 8.8a3.2 3.2 0 1 0 0 6.4a3.2 3.2 0 0 0 0-6.4Z" />
-            <path d="M19.4 13.5a1 1 0 0 0 .2 1.1l.1.1a1 1 0 0 1-1.4 1.4l-.1-.1a1 1 0 0 0-1.1-.2a1 1 0 0 0-.6.9V17a1 1 0 1 1-2 0v-.2a1 1 0 0 0-.7-.9a1 1 0 0 0-1.1.2l-.1.1a1 1 0 1 1-1.4-1.4l.1-.1a1 1 0 0 0 .2-1.1a1 1 0 0 0-.9-.6H7a1 1 0 1 1 0-2h.2a1 1 0 0 0 .9-.7a1 1 0 0 0-.2-1.1l-.1-.1a1 1 0 1 1 1.4-1.4l.1.1a1 1 0 0 0 1.1.2a1 1 0 0 0 .6-.9V7a1 1 0 1 1 2 0v.2a1 1 0 0 0 .7.9a1 1 0 0 0 1.1-.2l.1-.1a1 1 0 1 1 1.4 1.4l-.1.1a1 1 0 0 0-.2 1.1a1 1 0 0 0 .9.6H17a1 1 0 1 1 0 2h-.2a1 1 0 0 0-.9.7Z" />
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M12 3.2L13 5.1L15.2 5.4L15.8 7.5L17.8 8.6L17.2 10.7L18.4 12L17.2 13.3L17.8 15.4L15.8 16.5L15.2 18.6L13 18.9L12 20.8L11 18.9L8.8 18.6L8.2 16.5L6.2 15.4L6.8 13.3L5.6 12L6.8 10.7L6.2 8.6L8.2 7.5L8.8 5.4L11 5.1L12 3.2Z" />
           </svg>
         </button>
 
@@ -101,12 +101,8 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
               onClick={() => onOpen(ad)}
             >
               {ad.imageUrl && (
-                <div className="card-image-wrap">
-                  <div
-                    className="card-image-blur"
-                    style={{ backgroundImage: `url(${ad.imageUrl})` }}
-                  />
-                  <img src={ad.imageUrl} alt={ad.title} className="card-image-main" />
+                <div className="card-image-wrap clean-card-image-wrap">
+                  <img src={ad.imageUrl} alt={ad.title} className="clean-card-image-main" />
                 </div>
               )}
 

@@ -1,8 +1,6 @@
 import PageBackButton from "./PageBackButton";
 
 export default function SettingsPage({
-  theme,
-  onToggleTheme,
   onOpenHelp,
   onOpenLegal,
   onBack,
@@ -15,18 +13,11 @@ export default function SettingsPage({
         <div className="help-badge">Настройки</div>
         <h2>Настройки приложения</h2>
         <p>
-          Здесь можно поменять оформление, открыть помощь и посмотреть документы.
+          Здесь можно открыть помощь и посмотреть документы сервиса.
         </p>
       </div>
 
       <div className="settings-list">
-        <button className="settings-tile" onClick={onToggleTheme}>
-          <div className="settings-tile-title">Тема</div>
-          <div className="settings-tile-sub">
-            Сейчас: {theme === "dark" ? "тёмная" : "светлая"}
-          </div>
-        </button>
-
         <button className="settings-tile" onClick={onOpenHelp}>
           <div className="settings-tile-title">Помощь</div>
           <div className="settings-tile-sub">Как пользоваться приложением</div>
