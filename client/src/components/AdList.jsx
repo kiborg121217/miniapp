@@ -38,9 +38,16 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
     <div style={{ padding: "92px 10px 120px" }}>
       <div className={`top-bar ${headerHidden ? "header-hidden" : ""}`}>
         <button className="top-icon-btn" onClick={onOpenSettings}>
-          <svg viewBox="0 0 24 24" fill="none">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.25" />
-            <path d="M12 2.75L13.15 5.05L15.7 5.4L16.4 7.9L18.65 9.15L17.95 11.65L19.5 12L17.95 12.35L18.65 14.85L16.4 16.1L15.7 18.6L13.15 18.95L12 21.25L10.85 18.95L8.3 18.6L7.6 16.1L5.35 14.85L6.05 12.35L4.5 12L6.05 11.65L5.35 9.15L7.6 7.9L8.3 5.4L10.85 5.05L12 2.75Z" />
+            <path d="M12 2.75V5.1" />
+            <path d="M12 18.9V21.25" />
+            <path d="M4.75 12H7.1" />
+            <path d="M16.9 12H19.25" />
+            <path d="M6.88 6.88L8.54 8.54" />
+            <path d="M15.46 15.46L17.12 17.12" />
+            <path d="M17.12 6.88L15.46 8.54" />
+            <path d="M8.54 15.46L6.88 17.12" />
           </svg>
         </button>
 
