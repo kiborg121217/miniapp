@@ -4,12 +4,10 @@ import {
   getUserProfile,
   saveUserProfile,
   updateUserProfile,
-  archiveAd,
-  restoreAd,
   uploadImage,
 } from "../firebase";
 
-export default function ProfilePage({ user, onOpenAd }) {
+export default function ProfilePage({ user, onOpenSection }) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [activeAds, setActiveAds] = useState([]);
@@ -83,16 +81,6 @@ export default function ProfilePage({ user, onOpenAd }) {
     await loadProfile();
   };
 
-  const handleArchive = async (adId) => {
-    await archiveAd(adId);
-    await loadProfile();
-  };
-
-  const handleRestore = async (adId) => {
-    await restoreAd(adId);
-    await loadProfile();
-  };
-
   if (!user) {
     return (
       <div className="help-page page-enter">
@@ -107,139 +95,63 @@ export default function ProfilePage({ user, onOpenAd }) {
   return (
     <div className="help-page page-enter">
       <div className="help-hero">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 16,
-          }}
-        >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              flexShrink: 0,
-            }}
-          >
+        <div className="profile-top">
+          <div className="profile-avatar">
             {(profile?.avatarUrl || profile?.telegramAvatarUrl) ? (
               <img
                 src={profile.avatarUrl || profile.telegramAvatarUrl}
                 alt="avatar"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                className="profile-avatar-img"
               />
             ) : null}
           </div>
 
-          <div>
-            <h2 style={{ margin: 0 }}>
-              {profile?.displayName || user.first_name || "Пользователь"}
-            </h2>
-            <p style={{ marginTop: 8 }}>
-              @{profile?.username || user.username || "no_username"}
-            </p>
+          <div className="profile-top-text">
+            <h2>{profile?.displayName || user.first_name || "Пользователь"}</h2>
+            <p>@{profile?.username || user.username || "no_username"}</p>
           </div>
         </div>
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div className="profile-edit-grid">
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Имя в профиле"
           />
-
           <button onClick={saveName}>Сохранить имя</button>
-
           <input
             type="file"
             onChange={(e) => handleUploadAvatar(e.target.files?.[0] || null)}
           />
-
           {!!message && <p>{message}</p>}
         </div>
       </div>
 
       <div className="help-card">
         <div className="help-card-title">Статистика</div>
-        <p>Активных объявлений: {activeAds.length}</p>
-        <p>На модерации: {pendingAds.length}</p>
-        <p>Снятых с публикации: {archivedAds.length}</p>
-        <p>Отклонённых: {rejectedAds.length}</p>
         <p>Всего просмотров: {totalViews}</p>
       </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Активные объявления</div>
-        {activeAds.length === 0 ? (
-          <p>У тебя пока нет активных объявлений.</p>
-        ) : (
-          activeAds.map((ad) => (
-            <div key={ad.id} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700 }}>{ad.title}</div>
-              <p style={{ margin: "6px 0" }}>
-                {ad.price} ₽ · просмотров: {ad.views || 0}
-              </p>
+      <div className="profile-section-grid">
+        <button className="settings-tile" onClick={() => onOpenSection("approved")}>
+          <div className="settings-tile-title">Активные</div>
+          <div className="settings-tile-sub">{activeAds.length} объявлений</div>
+        </button>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button onClick={() => onOpenAd(ad)}>Открыть</button>
-                <button onClick={() => handleArchive(ad.id)}>Снять с публикации</button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+        <button className="settings-tile" onClick={() => onOpenSection("pending")}>
+          <div className="settings-tile-title">На модерации</div>
+          <div className="settings-tile-sub">{pendingAds.length} объявлений</div>
+        </button>
 
-      <div className="help-card">
-        <div className="help-card-title">Снятые объявления</div>
-        {archivedAds.length === 0 ? (
-          <p>Нет снятых объявлений.</p>
-        ) : (
-          archivedAds.map((ad) => (
-            <div key={ad.id} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700 }}>{ad.title}</div>
-              <p style={{ margin: "6px 0" }}>
-                {ad.price} ₽ · просмотров: {ad.views || 0}
-              </p>
+        <button className="settings-tile" onClick={() => onOpenSection("archived")}>
+          <div className="settings-tile-title">Архив</div>
+          <div className="settings-tile-sub">{archivedAds.length} объявлений</div>
+        </button>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button onClick={() => onOpenAd(ad)}>Открыть</button>
-                <button onClick={() => handleRestore(ad.id)}>Вернуть в публикацию</button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="help-card">
-        <div className="help-card-title">На модерации</div>
-        {pendingAds.length === 0 ? (
-          <p>Нет объявлений на модерации.</p>
-        ) : (
-          pendingAds.map((ad) => (
-            <div key={ad.id} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700 }}>{ad.title}</div>
-              <p style={{ margin: "6px 0" }}>{ad.price} ₽</p>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="help-card">
-        <div className="help-card-title">Отклонённые</div>
-        {rejectedAds.length === 0 ? (
-          <p>Нет отклонённых объявлений.</p>
-        ) : (
-          rejectedAds.map((ad) => (
-            <div key={ad.id} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700 }}>{ad.title}</div>
-              <p style={{ margin: "6px 0" }}>{ad.price} ₽</p>
-            </div>
-          ))
-        )}
+        <button className="settings-tile" onClick={() => onOpenSection("rejected")}>
+          <div className="settings-tile-title">Отклонённые</div>
+          <div className="settings-tile-sub">{rejectedAds.length} объявлений</div>
+        </button>
       </div>
     </div>
   );

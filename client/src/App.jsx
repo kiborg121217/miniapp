@@ -3,8 +3,10 @@ import AddAd from "./components/AddAd";
 import AdList from "./components/AdList";
 import AdPage from "./components/AdPage";
 import ProfilePage from "./components/ProfilePage";
+import ProfileAdsPage from "./components/ProfileAdsPage";
 import SettingsPage from "./components/SettingsPage";
 import SellerPage from "./components/SellerPage";
+import LegalPage from "./components/LegalPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 
@@ -59,6 +61,8 @@ export default function App() {
   const [page, setPage] = useState("list");
   const [selectedAd, setSelectedAd] = useState(null);
   const [selectedSellerId, setSelectedSellerId] = useState(null);
+  const [profileStatusPage, setProfileStatusPage] = useState(null);
+  const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
@@ -111,6 +115,17 @@ export default function App() {
       {page === "profile" && (
         <ProfilePage
           user={tgUser}
+          onOpenSection={(status) => {
+            setProfileStatusPage(status);
+            setPage("profileAds");
+          }}
+        />
+      )}
+
+      {page === "profileAds" && (
+        <ProfileAdsPage
+          user={tgUser}
+          status={profileStatusPage}
           onOpenAd={(ad) => {
             setSelectedAd(ad);
             setPage("view");
@@ -124,10 +139,16 @@ export default function App() {
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpenHelp={() => goToPage("help")}
+          onOpenLegal={(type) => {
+            setLegalType(type);
+            setPage("legal");
+          }}
         />
       )}
 
       {page === "help" && <HelpPage onBack={() => goToPage("settings")} />}
+
+      {page === "legal" && <LegalPage type={legalType} />}
 
       {page === "seller" && (
         <SellerPage
@@ -143,6 +164,7 @@ export default function App() {
       {page === "view" && (
         <AdPage
           ad={selectedAd}
+          currentUser={tgUser}
           onBack={() => {
             setPage("list");
             window.scrollTo({ top: 0, behavior: "auto" });
@@ -187,7 +209,7 @@ export default function App() {
           </button>
 
           <button
-            className={`nav-item ${page === "profile" ? "active" : ""}`}
+            className={`nav-item ${page === "profile" || page === "profileAds" ? "active" : ""}`}
             onClick={() => goToPage("profile")}
           >
             <span className="nav-icon" aria-hidden="true">
@@ -207,8 +229,15 @@ export default function App() {
           onClick={() => goToPage("settings")}
         >
           <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 8.2a3.8 3.8 0 1 0 0 7.6a3.8 3.8 0 0 0 0-7.6Z" />
-            <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a1.2 1.2 0 1 1-1.7 1.7l-.1-.1a1 1 0 0 0-1.1-.2a1 1 0 0 0-.6.9V19a1.2 1.2 0 1 1-2.4 0v-.2a1 1 0 0 0-.7-.9a1 1 0 0 0-1.1.2l-.1.1a1.2 1.2 0 1 1-1.7-1.7l.1-.1a1 1 0 0 0 .2-1.1a1 1 0 0 0-.9-.6H5a1.2 1.2 0 1 1 0-2.4h.2a1 1 0 0 0 .9-.7a1 1 0 0 0-.2-1.1l-.1-.1a1.2 1.2 0 1 1 1.7-1.7l.1.1a1 1 0 0 0 1.1.2a1 1 0 0 0 .6-.9V5a1.2 1.2 0 1 1 2.4 0v.2a1 1 0 0 0 .7.9a1 1 0 0 0 1.1-.2l.1-.1a1.2 1.2 0 1 1 1.7 1.7l-.1.1a1 1 0 0 0-.2 1.1a1 1 0 0 0 .9.6H19a1.2 1.2 0 1 1 0 2.4h-.2a1 1 0 0 0-.9.7Z" />
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M12 2.5V5" />
+            <path d="M12 19V21.5" />
+            <path d="M4.93 4.93L6.7 6.7" />
+            <path d="M17.3 17.3L19.07 19.07" />
+            <path d="M2.5 12H5" />
+            <path d="M19 12H21.5" />
+            <path d="M4.93 19.07L6.7 17.3" />
+            <path d="M17.3 6.7L19.07 4.93" />
           </svg>
         </button>
       )}

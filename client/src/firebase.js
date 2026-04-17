@@ -11,7 +11,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   increment,
 } from "firebase/firestore";
 
@@ -73,23 +72,12 @@ export async function getUserAds(userId, status = null) {
 
 export async function archiveAd(adId) {
   const ref = doc(db, "ads", adId);
-  await updateDoc(ref, {
-    status: "archived",
-  });
+  await updateDoc(ref, { status: "archived" });
 }
 
 export async function restoreAd(adId) {
   const ref = doc(db, "ads", adId);
-  await updateDoc(ref, {
-    status: "approved",
-  });
-}
-
-export async function incrementAdViews(adId) {
-  const ref = doc(db, "ads", adId);
-  await updateDoc(ref, {
-    views: increment(1),
-  });
+  await updateDoc(ref, { status: "approved" });
 }
 
 export async function getSellerActiveAdsCount(userId) {
@@ -157,9 +145,35 @@ export async function saveUserProfile(profile) {
 
 export async function updateUserProfile(userId, data) {
   if (!userId) return;
-
   const ref = doc(db, "users", String(userId));
   await setDoc(ref, data, { merge: true });
+}
+
+/* -------------------- VIEWS -------------------- */
+
+export async function incrementAdViewsForUser(adId, userId) {
+  if (!adId || !userId) return false;
+
+  const viewDocId = `${adId}_${userId}`;
+  const viewRef = doc(db, "ad_views", viewDocId);
+  const existing = await getDoc(viewRef);
+
+  if (existing.exists()) {
+    return false;
+  }
+
+  await setDoc(viewRef, {
+    adId,
+    userId,
+    createdAt: Date.now(),
+  });
+
+  const adRef = doc(db, "ads", adId);
+  await updateDoc(adRef, {
+    views: increment(1),
+  });
+
+  return true;
 }
 
 /* -------------------- UPLOAD IMAGE -------------------- */

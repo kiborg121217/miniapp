@@ -2,6 +2,7 @@ export default function SettingsPage({
   theme,
   onToggleTheme,
   onOpenHelp,
+  onOpenLegal,
 }) {
   return (
     <div className="help-page page-enter">
@@ -9,39 +10,40 @@ export default function SettingsPage({
         <div className="help-badge">Настройки</div>
         <h2>Настройки приложения</h2>
         <p>
-          Здесь можно открыть помощь, изменить тему и посмотреть важные документы.
+          Здесь можно поменять оформление, открыть помощь и посмотреть документы.
         </p>
       </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Оформление</div>
-        <button onClick={onToggleTheme}>
-          Тема: {theme === "dark" ? "Тёмная" : "Светлая"}
+      <div className="settings-list">
+        <button className="settings-tile" onClick={onToggleTheme}>
+          <div className="settings-tile-title">Тема</div>
+          <div className="settings-tile-sub">
+            Сейчас: {theme === "dark" ? "тёмная" : "светлая"}
+          </div>
+        </button>
+
+        <button className="settings-tile" onClick={onOpenHelp}>
+          <div className="settings-tile-title">Помощь</div>
+          <div className="settings-tile-sub">Как пользоваться приложением</div>
+        </button>
+
+        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("agreement")}>
+          <div className="settings-tile-title">Пользовательское соглашение</div>
+          <div className="settings-tile-sub">Открыть документ</div>
+        </button>
+
+        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("privacy")}>
+          <div className="settings-tile-title">Политика конфиденциальности</div>
+          <div className="settings-tile-sub">Открыть документ</div>
+        </button>
+
+        <button className="settings-tile legal-tile" onClick={() => onOpenLegal("terms")}>
+          <div className="settings-tile-title">Условия использования</div>
+          <div className="settings-tile-sub">Открыть документ</div>
         </button>
       </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Справка</div>
-        <button onClick={onOpenHelp}>Помощь</button>
-      </div>
-
-      <div className="help-card">
-        <div className="help-card-title">Документы</div>
-        <p>Пользовательское соглашение</p>
-        <p>Политика конфиденциальности</p>
-        <p>Условия использования</p>
-      </div>
-
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: 24,
-          color: "var(--muted)",
-          fontSize: 13,
-        }}
-      >
-        Версия приложения 1.0.0
-      </div>
+      <div className="settings-version">Версия приложения 1.0.0</div>
     </div>
   );
 }

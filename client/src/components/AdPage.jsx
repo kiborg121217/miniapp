@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  incrementAdViews,
+  incrementAdViewsForUser,
   getSellerActiveAdsCount,
   getUserProfile,
 } from "../firebase";
 
-export default function AdPage({ ad, onBack, onOpenSeller }) {
+export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
   const [modalImage, setModalImage] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
   const [sellerProfile, setSellerProfile] = useState(null);
@@ -18,17 +18,12 @@ export default function AdPage({ ad, onBack, onOpenSeller }) {
     window.scrollTo({ top: 0, behavior: "auto" });
     setCurrentImage(0);
 
-    if (ad?.id) {
-      const viewedKey = `viewed_ad_${ad.id}`;
-
-      if (!sessionStorage.getItem(viewedKey)) {
-        incrementAdViews(ad.id).catch(console.error);
-        sessionStorage.setItem(viewedKey, "1");
-      }
+    if (ad?.id && currentUser?.id) {
+      incrementAdViewsForUser(ad.id, currentUser.id).catch(console.error);
     }
 
     loadSellerInfo();
-  }, [ad]);
+  }, [ad, currentUser?.id]);
 
   const loadSellerInfo = async () => {
     if (!ad?.userId) {
@@ -156,7 +151,9 @@ export default function AdPage({ ad, onBack, onOpenSeller }) {
         )}
 
         <div className="ad-content">
-          <div className="ad-meta-top">Объявление</div>
+          <div className="ad-meta-top">
+            Объявление | Просмотры: {ad.views || 0}
+          </div>
 
           <h1 className="ad-title">{ad.title}</h1>
 
@@ -165,11 +162,6 @@ export default function AdPage({ ad, onBack, onOpenSeller }) {
           <div className="ad-info-card">
             <div className="ad-info-label">Описание</div>
             <p className="ad-description">{ad.description}</p>
-          </div>
-
-          <div className="ad-info-card">
-            <div className="ad-info-label">Просмотры</div>
-            <p className="ad-description">{ad.views || 0}</p>
           </div>
 
           <div
