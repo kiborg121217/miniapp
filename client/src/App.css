@@ -2596,30 +2596,6 @@ a {
   fill: none;
 }
 
-.ios-sheet-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.ios-sheet-cancel,
-.ios-sheet-apply {
-  width: 100%;
-  min-height: 56px;
-  border-radius: 18px;
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.ios-sheet-cancel {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)),
-    rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  color: var(--text);
-  box-shadow: none;
-}
-
 @keyframes sheetUp {
   from {
     transform: translateY(18px);
@@ -2821,25 +2797,28 @@ a {
 .ios-sheet-actions {
   display: grid;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 14px;
+  justify-items: center;
 }
 
 .ios-sheet-cancel,
 .ios-sheet-apply {
-  width: 100%;
   min-height: 56px;
   border-radius: 18px;
   font-size: 17px;
   font-weight: 700;
 }
 
+.ios-sheet-apply {
+  width: 100%;
+}
+
 .ios-sheet-cancel {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)),
-    rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  color: var(--text);
-  box-shadow: none;
+  width: auto;
+  min-width: 120px;
+  padding: 0 22px;
+  margin: 4px auto 0;
+  border-radius: 999px;
 }
 
 .promo-badges,
