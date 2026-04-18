@@ -29,12 +29,12 @@ function HelpPage({ onBack }) {
         </p>
       </div>
 
-        <div className="help-card">
+      <div className="help-card">
         <div className="help-card-title">Что делать, если что-то не работает</div>
         <p>
           Попробуй обновить страницу или закрыть и заново открыть мини-приложение через Telegram.
           Если проблема сохраняется, проверь подключение к интернету и повтори
-          попытку позже. Если ничего не помогает - обратись в тех. поддержку.
+          попытку позже. Если ничего не помогает — обратись в тех. поддержку.
         </p>
       </div>
 
@@ -124,6 +124,11 @@ export default function App() {
   const [profileStatusPage, setProfileStatusPage] = useState(
     () => sessionStorage.getItem("profile_status_page") || null
   );
+
+  const [sellerBackTarget, setSellerBackTarget] = useState(
+    () => sessionStorage.getItem("seller_back_target") || "list"
+  );
+
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
@@ -158,6 +163,14 @@ export default function App() {
   }, [selectedAd]);
 
   useEffect(() => {
+    if (sellerBackTarget) {
+      sessionStorage.setItem("seller_back_target", sellerBackTarget);
+    } else {
+      sessionStorage.removeItem("seller_back_target");
+    }
+  }, [sellerBackTarget]);
+
+  useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
@@ -177,21 +190,23 @@ export default function App() {
     return () => clearTimeout(t);
   }, []);
 
-    const goToPage = (nextPage) => {
-      setPage(nextPage);
+  const goToPage = (nextPage) => {
+    setPage(nextPage);
 
-      if (nextPage === "list") {
-        setSelectedSellerId(null);
-        setProfileStatusPage(null);
-        setSelectedAd(null);
+    if (nextPage === "list") {
+      setSelectedSellerId(null);
+      setProfileStatusPage(null);
+      setSelectedAd(null);
+      setSellerBackTarget("list");
 
-        localStorage.removeItem("selected_seller_id");
-        localStorage.removeItem("profile_status_page");
-        localStorage.removeItem("selected_ad");
-      }
+      sessionStorage.removeItem("selected_seller_id");
+      sessionStorage.removeItem("profile_status_page");
+      sessionStorage.removeItem("selected_ad");
+      sessionStorage.removeItem("seller_back_target");
+    }
 
-      window.scrollTo({ top: 0, behavior: "auto" });
-    };
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
 
   if (bootLoading) {
     return <LoadingScreen />;
@@ -268,6 +283,7 @@ export default function App() {
           }}
           onOpenAd={(ad) => {
             setSelectedAd(ad);
+            setSellerBackTarget("seller");
             setPage("view");
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
@@ -283,7 +299,7 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
           onOpenSeller={(sellerId) => {
-            setSelectedSellerId(sellerId);
+            setSelectedSellerId(String(sellerId));
             setSellerBackTarget("view");
             setPage("seller");
             window.scrollTo({ top: 0, behavior: "auto" });

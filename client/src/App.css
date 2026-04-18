@@ -2795,18 +2795,11 @@ a {
 }
 
 .ios-sheet-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-  justify-items: center;
-}
-
-.ios-sheet-cancel,
-.ios-sheet-apply {
-  min-height: 56px;
-  border-radius: 18px;
-  font-size: 17px;
-  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .ios-sheet-apply {
@@ -2819,6 +2812,16 @@ a {
   padding: 0 22px;
   margin: 4px auto 0;
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ios-sheet-cancel,
+.ios-sheet-apply {
+  min-height: 56px;
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .promo-badges,
