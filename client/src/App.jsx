@@ -110,17 +110,19 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const [page, setPage] = useState(() => localStorage.getItem("app_page") || "list");
+  const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
+
   const [selectedAd, setSelectedAd] = useState(() => {
-  const saved = localStorage.getItem("selected_ad");
+    const saved = sessionStorage.getItem("selected_ad");
     return saved ? JSON.parse(saved) : null;
   });
+
   const [selectedSellerId, setSelectedSellerId] = useState(
-    () => localStorage.getItem("selected_seller_id") || null
+    () => sessionStorage.getItem("selected_seller_id") || null
   );
-  const [sellerBackTarget, setSellerBackTarget] = useState("list");
+
   const [profileStatusPage, setProfileStatusPage] = useState(
-    () => localStorage.getItem("profile_status_page") || null
+    () => sessionStorage.getItem("profile_status_page") || null
   );
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
@@ -128,26 +130,30 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
-    localStorage.setItem("app_page", page);
+    sessionStorage.setItem("app_page", page);
   }, [page]);
 
   useEffect(() => {
     if (selectedSellerId) {
-      localStorage.setItem("selected_seller_id", String(selectedSellerId));
+      sessionStorage.setItem("selected_seller_id", String(selectedSellerId));
+    } else {
+      sessionStorage.removeItem("selected_seller_id");
     }
   }, [selectedSellerId]);
 
   useEffect(() => {
     if (profileStatusPage) {
-      localStorage.setItem("profile_status_page", profileStatusPage);
+      sessionStorage.setItem("profile_status_page", profileStatusPage);
+    } else {
+      sessionStorage.removeItem("profile_status_page");
     }
   }, [profileStatusPage]);
 
   useEffect(() => {
     if (selectedAd) {
-      localStorage.setItem("selected_ad", JSON.stringify(selectedAd));
+      sessionStorage.setItem("selected_ad", JSON.stringify(selectedAd));
     } else {
-      localStorage.removeItem("selected_ad");
+      sessionStorage.removeItem("selected_ad");
     }
   }, [selectedAd]);
 
