@@ -149,7 +149,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
 
         <div className="ad-content">
           <div className="ad-meta-top">
-            Объявление | Просмотры: {ad.views || 0}
+            Объявление | {ad.category || "Без категории"} | Просмотры: {ad.views || 0}
           </div>
 
           <h1 className="ad-title">{ad.title}</h1>

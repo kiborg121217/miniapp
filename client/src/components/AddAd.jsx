@@ -6,13 +6,16 @@ import {
 } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { CATEGORIES } from "../categories";
 
 export default function AddAd({ user }) {
   const [images, setImages] = useState([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -37,6 +40,7 @@ export default function AddAd({ user }) {
     if (!title) missing.push("Название");
     if (!price) missing.push("Цена");
     if (!description) missing.push("Описание");
+    if (!category) missing.push("Категория");
     if (!images.length) missing.push("Изображение");
 
     if (missing.length > 0) {
@@ -91,16 +95,15 @@ export default function AddAd({ user }) {
         title,
         price,
         description,
+        category,
         imageUrls,
         imageUrl: imageUrls[0],
         status: "pending",
         createdAt: Date.now(),
         views: 0,
-
         userId: realUser.id,
         username: realUser.username || null,
         firstName: realUser.first_name || "Гость",
-
         sellerDisplayName,
         sellerAvatarUrl,
       });
@@ -113,6 +116,7 @@ export default function AddAd({ user }) {
           title,
           price,
           description,
+          category,
           imageUrls,
           imageUrl: imageUrls[0],
           userId: realUser.id,
@@ -135,6 +139,7 @@ export default function AddAd({ user }) {
       setTitle("");
       setPrice("");
       setDescription("");
+      setCategory("");
       setImages([]);
       setMessage("✅ Отправлено на модерацию");
     } catch (err) {
@@ -149,7 +154,7 @@ export default function AddAd({ user }) {
         <div className="form-kicker">Новое объявление</div>
         <h2>Разместить товар</h2>
         <p className="form-subtitle">
-          Добавь понятное название, честное описание, цену и фото — так объявление
+          Добавь название, честное описание, цену, категорию и фото — так объявление
           будет смотреться аккуратно и быстрее пройдёт модерацию.
         </p>
       </div>
@@ -174,6 +179,17 @@ export default function AddAd({ user }) {
         </div>
 
         <div className="field-block">
+          <label className="field-label">Категория</label>
+          <button
+            type="button"
+            className="picker-trigger"
+            onClick={() => setShowCategoryPicker(true)}
+          >
+            {category || "Выберите категорию"}
+          </button>
+        </div>
+
+        <div className="field-block">
           <label className="field-label">Описание</label>
           <textarea
             placeholder="Опиши состояние, комплектацию, дефекты, торг и всё важное для покупателя"
@@ -190,9 +206,7 @@ export default function AddAd({ user }) {
             onChange={(e) => setImages(Array.from(e.target.files || []))}
           />
           {!!images.length && (
-            <div className="upload-note">
-              Выбрано файлов: {images.length}
-            </div>
+            <div className="upload-note">Выбрано файлов: {images.length}</div>
           )}
         </div>
 
@@ -202,6 +216,29 @@ export default function AddAd({ user }) {
 
         {!!message && <p className="form-message">{message}</p>}
       </div>
+
+      {showCategoryPicker && (
+        <div className="sheet-backdrop" onClick={() => setShowCategoryPicker(false)}>
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-title">Выберите категорию</div>
+            <div className="category-list">
+              {CATEGORIES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`category-option ${category === item ? "active" : ""}`}
+                  onClick={() => {
+                    setCategory(item);
+                    setShowCategoryPicker(false);
+                  }}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

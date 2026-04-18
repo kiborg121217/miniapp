@@ -1,10 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAds } from "../firebase";
+import { CATEGORIES } from "../categories";
 
 export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings }) {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => localStorage.getItem("ads_filter_category") || ""
+  );
+  const [draftCategory, setDraftCategory] = useState(
+    () => localStorage.getItem("ads_filter_category") || ""
+  );
+
   const lastY = useRef(0);
 
   useEffect(() => {
@@ -32,6 +41,24 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
     const approved = data.filter((ad) => ad.status === "approved");
     setAds(approved.sort((a, b) => b.createdAt - a.createdAt));
     setLoading(false);
+  };
+
+  const filteredAds = useMemo(() => {
+    if (!selectedCategory) return ads;
+    return ads.filter((ad) => ad.category === selectedCategory);
+  }, [ads, selectedCategory]);
+
+  const applyFilter = () => {
+    setSelectedCategory(draftCategory);
+    localStorage.setItem("ads_filter_category", draftCategory);
+    setShowFilter(false);
+  };
+
+  const resetFilter = () => {
+    setDraftCategory("");
+    setSelectedCategory("");
+    localStorage.removeItem("ads_filter_category");
+    setShowFilter(false);
   };
 
   return (
@@ -76,13 +103,32 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
         </button>
       </div>
 
+      <div className="filter-bar">
+        <button className="filter-trigger" onClick={() => setShowFilter(true)}>
+          <span className="filter-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4.5 7H19.5" />
+              <path d="M7.5 12H16.5" />
+              <path d="M10 17H14" />
+            </svg>
+          </span>
+          <span>Фильтр</span>
+        </button>
+
+        {selectedCategory && (
+          <div className="filter-chip-active">
+            {selectedCategory}
+          </div>
+        )}
+      </div>
+
       {loading ? (
         <div className="grid">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="skeleton-card"></div>
           ))}
         </div>
-      ) : ads.length === 0 ? (
+      ) : filteredAds.length === 0 ? (
         <div className="empty-state page-enter">
           <div className="empty-icon">
             <svg viewBox="0 0 24 24" fill="none">
@@ -92,12 +138,16 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
               <path d="M10 7.25H14" />
             </svg>
           </div>
-          <h3>Пока объявлений нет</h3>
-          <p>Нажми «Создать» внизу и размести первое объявление.</p>
+          <h3>{selectedCategory ? "В этой категории пока пусто" : "Пока объявлений нет"}</h3>
+          <p>
+            {selectedCategory
+              ? "Попробуй выбрать другую категорию или сбросить фильтр."
+              : "Нажми «Создать» внизу и размести первое объявление."}
+          </p>
         </div>
       ) : (
         <div className="grid">
-          {ads.map((ad, index) => (
+          {filteredAds.map((ad, index) => (
             <div
               className="card card-appear card-press"
               style={{ animationDelay: `${index * 45}ms` }}
@@ -105,7 +155,7 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
               onClick={() => onOpen(ad)}
             >
               {ad.imageUrl && (
-                <div className="card-image-wrap clean-card-image-wrap">
+                <div className="clean-card-image-wrap">
                   <img src={ad.imageUrl} alt={ad.title} className="clean-card-image-main" />
                 </div>
               )}
@@ -114,6 +164,45 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
               <p>{ad.price} ₽</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {showFilter && (
+        <div className="sheet-backdrop" onClick={() => setShowFilter(false)}>
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-title">Фильтр объявлений</div>
+
+            <div className="filter-group-label">Категория</div>
+            <button
+              type="button"
+              className="picker-trigger"
+              onClick={() => {}}
+            >
+              {draftCategory || "Выберите категорию"}
+            </button>
+
+            <div className="category-list filter-category-list">
+              {CATEGORIES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`category-option ${draftCategory === item ? "active" : ""}`}
+                  onClick={() => setDraftCategory(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-actions">
+              <button type="button" className="filter-apply-btn" onClick={applyFilter}>
+                Применить
+              </button>
+              <button type="button" className="filter-reset-btn" onClick={resetFilter}>
+                Сбросить
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

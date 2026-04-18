@@ -26,18 +26,35 @@ const ADMIN_ID = Number(process.env.ADMIN_ID || 8393018883);
 const WEB_APP_URL =
   process.env.WEB_APP_URL || "https://miniapp-9vf5.vercel.app";
 
-// ВАЖНО: polling выключен на старте, запускаем его вручную после app.listen
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 app.get("/", (req, res) => {
   res.send("Server is working 🚀");
 });
 
+async function downloadImageToBuffer(url) {
+  const imageResponse = await fetch(url);
+
+  if (!imageResponse.ok) {
+    throw new Error(`Не удалось скачать изображение: ${url}`);
+  }
+
+  const arrayBuffer = await imageResponse.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 app.post("/new-ad", async (req, res) => {
   try {
     const ad = req.body;
 
-    if (!ad?.id || !ad?.title || !ad?.price || !ad?.description || !ad?.imageUrl) {
+    const imageUrls =
+      Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0
+        ? ad.imageUrls
+        : ad?.imageUrl
+        ? [ad.imageUrl]
+        : [];
+
+    if (!ad?.id || !ad?.title || !ad?.price || !ad?.description || imageUrls.length === 0) {
       return res.status(400).json({
         ok: false,
         error: "Не хватает данных объявления",
@@ -47,23 +64,29 @@ app.post("/new-ad", async (req, res) => {
     const text = `📦 Новое объявление
 
 📌 ${ad.title}
+🗂 Категория: ${ad.category || "Без категории"}
 💰 ${ad.price} ₽
 📝 ${ad.description}`;
 
-    const imageResponse = await fetch(ad.imageUrl);
+    // Если фотографий несколько — отправляем альбом
+    if (imageUrls.length > 1) {
+      const media = [];
 
-    if (!imageResponse.ok) {
-      throw new Error("Не удалось скачать изображение с ImgBB");
-    }
+      for (let i = 0; i < imageUrls.length; i++) {
+        const buffer = await downloadImageToBuffer(imageUrls[i]);
 
-    const arrayBuffer = await imageResponse.arrayBuffer();
-    const photoBuffer = Buffer.from(arrayBuffer);
+        media.push({
+          type: "photo",
+          media: buffer,
+          filename: `ad_${ad.id}_${i + 1}.jpg`,
+          contentType: "image/jpeg",
+          ...(i === 0 ? { caption: text } : {}),
+        });
+      }
 
-    await bot.sendPhoto(
-      ADMIN_ID,
-      photoBuffer,
-      {
-        caption: text,
+      await bot.sendMediaGroup(ADMIN_ID, media);
+
+      await bot.sendMessage(ADMIN_ID, "Выберите действие:", {
         reply_markup: {
           inline_keyboard: [
             [
@@ -72,12 +95,31 @@ app.post("/new-ad", async (req, res) => {
             ],
           ],
         },
-      },
-      {
-        filename: `ad_${ad.id}.jpg`,
-        contentType: "image/jpeg",
-      }
-    );
+      });
+    } else {
+      // Если фото одно — отправляем как раньше
+      const photoBuffer = await downloadImageToBuffer(imageUrls[0]);
+
+      await bot.sendPhoto(
+        ADMIN_ID,
+        photoBuffer,
+        {
+          caption: text,
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "✅ Принять", callback_data: `approve_${ad.id}` },
+                { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
+              ],
+            ],
+          },
+        },
+        {
+          filename: `ad_${ad.id}.jpg`,
+          contentType: "image/jpeg",
+        }
+      );
+    }
 
     return res.status(200).json({ ok: true });
   } catch (error) {

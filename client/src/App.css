@@ -2306,3 +2306,192 @@ a {
 [data-theme="light"] .avatar-placeholder svg {
   stroke: rgba(15,23,42,0.52);
 }
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 4px;
+  margin-bottom: 8px;
+}
+
+.filter-trigger {
+  width: auto;
+  min-width: 130px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    rgba(18, 18, 24, 0.68);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+}
+
+.filter-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.filter-chip-active {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(91,140,255,0.14), rgba(124,92,255,0.10)),
+    rgba(91,140,255,0.08);
+  border: 1px solid rgba(91,140,255,0.18);
+  color: #cfe0ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.picker-trigger {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 18px;
+  text-align: left;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025)),
+    rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(4, 6, 12, 0.48);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sheet-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow: auto;
+  border-radius: 28px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025)),
+    rgba(16, 18, 26, 0.92);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 24px 54px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.sheet-title {
+  font-size: 20px;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+
+.filter-group-label {
+  margin: 6px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.category-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.filter-category-list {
+  margin-top: 14px;
+}
+
+.category-option {
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: 18px;
+  text-align: left;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+    rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.category-option.active {
+  background:
+    linear-gradient(135deg, rgba(91,140,255,0.18), rgba(124,92,255,0.14)),
+    rgba(91,140,255,0.08);
+  border: 1px solid rgba(91,140,255,0.18);
+  color: #dbe7ff;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.filter-apply-btn,
+.filter-reset-btn {
+  flex: 1;
+  min-height: 52px;
+  border-radius: 18px;
+}
+
+.filter-reset-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)),
+    rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text);
+  box-shadow: none;
+}
+
+[data-theme="light"] .filter-trigger,
+[data-theme="light"] .picker-trigger,
+[data-theme="light"] .sheet-panel,
+[data-theme="light"] .category-option,
+[data-theme="light"] .filter-reset-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.82)),
+    rgba(255,255,255,0.82);
+  border: 1px solid rgba(15,23,42,0.08);
+  color: #0f172a;
+}
+
+[data-theme="light"] .filter-chip-active,
+[data-theme="light"] .category-option.active {
+  background:
+    linear-gradient(135deg, rgba(79,124,255,0.14), rgba(108,99,255,0.10)),
+    rgba(79,124,255,0.08);
+  border: 1px solid rgba(79,124,255,0.16);
+  color: #2458e6;
+}
