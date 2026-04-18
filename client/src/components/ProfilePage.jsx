@@ -15,6 +15,7 @@ export default function ProfilePage({ user, onOpenSection }) {
   const [pendingAds, setPendingAds] = useState([]);
   const [rejectedAds, setRejectedAds] = useState([]);
   const [message, setMessage] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -27,6 +28,14 @@ export default function ProfilePage({ user, onOpenSection }) {
       0
     );
   }, [activeAds, archivedAds, pendingAds, rejectedAds]);
+
+  const normalizedCurrentName = (profile?.displayName || user?.first_name || "").trim();
+  const normalizedInputName = displayName.trim();
+
+  const hasNameChanges =
+    nameTouched &&
+    normalizedInputName.length > 0 &&
+    normalizedInputName !== normalizedCurrentName;
 
   const loadProfile = async () => {
     if (!user?.id) return;
@@ -54,6 +63,7 @@ export default function ProfilePage({ user, onOpenSection }) {
 
     setProfile(existing);
     setDisplayName(existing?.displayName || user.first_name || "");
+    setNameTouched(false);
 
     const [active, archived, pending, rejected] = await Promise.all([
       getUserAds(user.id, "approved"),
@@ -69,10 +79,11 @@ export default function ProfilePage({ user, onOpenSection }) {
   };
 
   const saveName = async () => {
-    if (!user?.id) return;
-    await updateUserProfile(user.id, { displayName });
+    if (!user?.id || !hasNameChanges) return;
+    await updateUserProfile(user.id, { displayName: normalizedInputName });
     setMessage("✅ Имя сохранено");
     await loadProfile();
+    setNameTouched(false);
   };
 
   const handleUploadAvatar = async (file) => {
@@ -138,20 +149,31 @@ export default function ProfilePage({ user, onOpenSection }) {
                 alt="avatar"
                 className="profile-avatar-img"
               />
-            ) : null}
+            ) : (
+              <div className="avatar-placeholder" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8.2" r="3.2" />
+                  <path d="M5.5 18.2C6.8 15.5 9.1 14.2 12 14.2C14.9 14.2 17.2 15.5 18.5 18.2" />
+                </svg>
+              </div>
+            )}
           </div>
 
           <div className="profile-top-text">
             <h2>{profile?.displayName || user.first_name || "Пользователь"}</h2>
             <p>@{profile?.username || user.username || "no_username"}</p>
 
-            {profile?.isVerified && (
+            {profile?.isVerified ? (
               <div className="verified-badge">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M8 12.5L10.8 15.2L16.5 9.5" />
                 </svg>
                 <span>Проверенный профиль</span>
+              </div>
+            ) : (
+              <div className="unverified-badge">
+                <span>Профиль не подтвержден</span>
               </div>
             )}
           </div>
@@ -160,15 +182,26 @@ export default function ProfilePage({ user, onOpenSection }) {
         <div className="profile-edit-grid">
           <input
             value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              setNameTouched(true);
+            }}
             placeholder="Имя в профиле"
           />
 
-          <button onClick={saveName}>Сохранить имя</button>
+          <div className="profile-actions-row">
+            {hasNameChanges && (
+              <button className="profile-action-btn save-name-btn" onClick={saveName}>
+                Сохранить имя
+              </button>
+            )}
 
-          {!profile?.isVerified && (
-            <button onClick={handleVerifyPhone}>Подтвердить номер</button>
-          )}
+            {!profile?.isVerified && (
+              <button className="profile-action-btn verify-phone-btn" onClick={handleVerifyPhone}>
+                Подтвердить номер
+              </button>
+            )}
+          </div>
 
           <input
             type="file"

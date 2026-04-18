@@ -68,7 +68,14 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
                 alt="avatar"
                 className="seller-profile-avatar-img"
               />
-            ) : null}
+            ) : (
+              <div className="avatar-placeholder" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8.2" r="3.2" />
+                  <path d="M5.5 18.2C6.8 15.5 9.1 14.2 12 14.2C14.9 14.2 17.2 15.5 18.5 18.2" />
+                </svg>
+              </div>
+            )}
           </div>
 
           <div className="seller-profile-info">
