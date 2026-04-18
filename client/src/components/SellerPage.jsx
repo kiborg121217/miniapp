@@ -34,6 +34,7 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
     return (
       <div className="help-page page-enter">
         <PageBackButton onClick={onBack} />
+
         <div className="help-hero">
           <h2>Продавец недоступен</h2>
           <p>У этого объявления пока нет привязанного профиля продавца.</p>
@@ -86,22 +87,42 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
         </div>
       </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Объявления продавца</div>
-        {ads.length === 0 ? (
+      {ads.length === 0 ? (
+        <div className="help-card">
+          <div className="help-card-title">Объявления продавца</div>
           <p>У продавца пока нет активных объявлений.</p>
-        ) : (
-          ads.map((ad) => (
-            <div key={ad.id} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700 }}>{ad.title}</div>
-              <p style={{ margin: "6px 0" }}>
-                {ad.price} ₽ · просмотров: {ad.views || 0}
-              </p>
-              <button onClick={() => onOpenAd(ad)}>Открыть</button>
-            </div>
-          ))
-        )}
-      </div>
+        </div>
+      ) : (
+        <div style={{ marginTop: 14 }}>
+          <div className="help-card-title" style={{ margin: "0 10px 10px" }}>
+            Объявления продавца
+          </div>
+
+          <div className="grid" style={{ paddingBottom: 0 }}>
+            {ads.map((ad, index) => (
+              <div
+                className="card card-appear card-press"
+                style={{ animationDelay: `${index * 45}ms` }}
+                key={ad.id}
+                onClick={() => onOpenAd(ad)}
+              >
+                {ad.imageUrl && (
+                  <div className="clean-card-image-wrap">
+                    <img
+                      src={ad.imageUrl}
+                      alt={ad.title}
+                      className="clean-card-image-main"
+                    />
+                  </div>
+                )}
+
+                <h3>{ad.title}</h3>
+                <p>{ad.price} ₽</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
