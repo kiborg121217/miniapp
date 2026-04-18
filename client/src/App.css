@@ -2043,3 +2043,38 @@ a {
     border-radius: 24px;
   }
 }
+
+.verified-badge {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(91,140,255,0.16), rgba(91,140,255,0.08)),
+    rgba(91,140,255,0.08);
+  border: 1px solid rgba(91,140,255,0.2);
+  color: #aecdff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.verified-badge svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+[data-theme="light"] .verified-badge {
+  background:
+    linear-gradient(180deg, rgba(79,124,255,0.14), rgba(79,124,255,0.08)),
+    rgba(79,124,255,0.08);
+  border: 1px solid rgba(79,124,255,0.18);
+  color: #2458e6;
+}

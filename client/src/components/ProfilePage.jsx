@@ -44,6 +44,9 @@ export default function ProfilePage({ user, onOpenSection }) {
         bio: "",
         theme: "dark",
         createdAt: Date.now(),
+        isVerified: false,
+        verifiedAt: null,
+        phoneNumber: "",
       });
 
       existing = await getUserProfile(user.id);
@@ -81,6 +84,38 @@ export default function ProfilePage({ user, onOpenSection }) {
     await loadProfile();
   };
 
+  const handleVerifyPhone = async () => {
+    if (!user?.id) return;
+
+    try {
+      setMessage("Отправляем запрос в Telegram...");
+
+      const response = await fetch(
+        "https://miniapp-1wzi.onrender.com/request-phone-verification",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.ok) {
+        setMessage("✅ Бот отправил сообщение для подтверждения номера");
+      } else {
+        setMessage("❌ Не удалось начать подтверждение");
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage("❌ Ошибка запроса подтверждения");
+    }
+  };
+
   if (!user) {
     return (
       <div className="help-page page-enter">
@@ -109,6 +144,16 @@ export default function ProfilePage({ user, onOpenSection }) {
           <div className="profile-top-text">
             <h2>{profile?.displayName || user.first_name || "Пользователь"}</h2>
             <p>@{profile?.username || user.username || "no_username"}</p>
+
+            {profile?.isVerified && (
+              <div className="verified-badge">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8 12.5L10.8 15.2L16.5 9.5" />
+                </svg>
+                <span>Проверенный профиль</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -118,11 +163,18 @@ export default function ProfilePage({ user, onOpenSection }) {
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Имя в профиле"
           />
+
           <button onClick={saveName}>Сохранить имя</button>
+
+          {!profile?.isVerified && (
+            <button onClick={handleVerifyPhone}>Подтвердить номер</button>
+          )}
+
           <input
             type="file"
             onChange={(e) => handleUploadAvatar(e.target.files?.[0] || null)}
           />
+
           {!!message && <p>{message}</p>}
         </div>
       </div>

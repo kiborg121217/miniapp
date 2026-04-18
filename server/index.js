@@ -50,18 +50,15 @@ app.post("/new-ad", async (req, res) => {
 💰 ${ad.price} ₽
 📝 ${ad.description}`;
 
-    // 1. Скачиваем картинку
     const imageResponse = await fetch(ad.imageUrl);
 
     if (!imageResponse.ok) {
       throw new Error("Не удалось скачать изображение с ImgBB");
     }
 
-    // 2. Превращаем в Buffer
     const arrayBuffer = await imageResponse.arrayBuffer();
     const photoBuffer = Buffer.from(arrayBuffer);
 
-    // 3. Отправляем как файл в Telegram
     await bot.sendPhoto(
       ADMIN_ID,
       photoBuffer,
@@ -88,6 +85,39 @@ app.post("/new-ad", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: error.message || "Не удалось отправить объявление в Telegram",
+    });
+  }
+});
+
+app.post("/request-phone-verification", async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        ok: false,
+        error: "Нет userId",
+      });
+    }
+
+    await bot.sendMessage(
+      userId,
+      "Для подтверждения профиля нажми кнопку ниже и отправь свой номер телефона.",
+      {
+        reply_markup: {
+          keyboard: [[{ text: "📱 Подтвердить номер", request_contact: true }]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      }
+    );
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("request-phone-verification error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || "Не удалось отправить запрос на подтверждение",
     });
   }
 });
@@ -147,6 +177,49 @@ bot.on("callback_query", async (query) => {
   }
 });
 
+bot.on("contact", async (msg) => {
+  try {
+    const contact = msg.contact;
+    const telegramUserId = msg.from.id;
+
+    if (!contact) return;
+
+    if (contact.user_id !== telegramUserId) {
+      await bot.sendMessage(
+        msg.chat.id,
+        "❌ Можно подтвердить только свой собственный номер.",
+        {
+          reply_markup: {
+            remove_keyboard: true,
+          },
+        }
+      );
+      return;
+    }
+
+    await db.collection("users").doc(String(telegramUserId)).set(
+      {
+        isVerified: true,
+        verifiedAt: Date.now(),
+        phoneNumber: contact.phone_number || "",
+      },
+      { merge: true }
+    );
+
+    await bot.sendMessage(
+      msg.chat.id,
+      "✅ Профиль успешно подтверждён.",
+      {
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      }
+    );
+  } catch (error) {
+    console.error("contact handler error:", error);
+  }
+});
+
 bot.onText(/\/start/, async (msg) => {
   try {
     await bot.sendMessage(
@@ -176,10 +249,8 @@ app.listen(PORT, async () => {
   console.log("Server started on " + PORT);
 
   try {
-    // Сбрасываем webhook и pending updates перед polling
     await bot.deleteWebHook({ drop_pending_updates: true });
 
-    // Небольшая пауза, чтобы Telegram успел освободить getUpdates
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     await bot.startPolling({
@@ -193,7 +264,6 @@ app.listen(PORT, async () => {
   }
 });
 
-// Логируем ошибки polling, чтобы было видно причину в Render
 bot.on("polling_error", (error) => {
   console.error("polling_error:", error);
 });
