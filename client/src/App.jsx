@@ -110,15 +110,46 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const [page, setPage] = useState("list");
-  const [selectedAd, setSelectedAd] = useState(null);
-  const [selectedSellerId, setSelectedSellerId] = useState(null);
+  const [page, setPage] = useState(() => localStorage.getItem("app_page") || "list");
+  const [selectedAd, setSelectedAd] = useState(() => {
+  const saved = localStorage.getItem("selected_ad");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedSellerId, setSelectedSellerId] = useState(
+    () => localStorage.getItem("selected_seller_id") || null
+  );
   const [sellerBackTarget, setSellerBackTarget] = useState("list");
-  const [profileStatusPage, setProfileStatusPage] = useState(null);
+  const [profileStatusPage, setProfileStatusPage] = useState(
+    () => localStorage.getItem("profile_status_page") || null
+  );
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+
+  useEffect(() => {
+    localStorage.setItem("app_page", page);
+  }, [page]);
+
+  useEffect(() => {
+    if (selectedSellerId) {
+      localStorage.setItem("selected_seller_id", String(selectedSellerId));
+    }
+  }, [selectedSellerId]);
+
+  useEffect(() => {
+    if (profileStatusPage) {
+      localStorage.setItem("profile_status_page", profileStatusPage);
+    }
+  }, [profileStatusPage]);
+
+  useEffect(() => {
+    if (selectedAd) {
+      localStorage.setItem("selected_ad", JSON.stringify(selectedAd));
+    } else {
+      localStorage.removeItem("selected_ad");
+    }
+  }, [selectedAd]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -140,10 +171,21 @@ export default function App() {
     return () => clearTimeout(t);
   }, []);
 
-  const goToPage = (nextPage) => {
-    setPage(nextPage);
-    window.scrollTo({ top: 0, behavior: "auto" });
-  };
+    const goToPage = (nextPage) => {
+      setPage(nextPage);
+
+      if (nextPage === "list") {
+        setSelectedSellerId(null);
+        setProfileStatusPage(null);
+        setSelectedAd(null);
+
+        localStorage.removeItem("selected_seller_id");
+        localStorage.removeItem("profile_status_page");
+        localStorage.removeItem("selected_ad");
+      }
+
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
 
   if (bootLoading) {
     return <LoadingScreen />;
