@@ -17,17 +17,29 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
   }, [sellerId]);
 
   const loadSeller = async () => {
-    if (!sellerId) return;
+    if (!sellerId) {
+      setProfile(null);
+      setAds([]);
+      setCount(0);
+      return;
+    }
 
-    const [p, sellerAds, sellerCount] = await Promise.all([
-      getUserProfile(sellerId),
-      getSellerApprovedAds(sellerId),
-      getSellerActiveAdsCount(sellerId),
-    ]);
+    try {
+      const [p, sellerAds, sellerCount] = await Promise.all([
+        getUserProfile(sellerId),
+        getSellerApprovedAds(sellerId),
+        getSellerActiveAdsCount(sellerId),
+      ]);
 
-    setProfile(p);
-    setAds(sellerAds);
-    setCount(sellerCount);
+      setProfile(p);
+      setAds(sellerAds || []);
+      setCount(sellerCount || 0);
+    } catch (error) {
+      console.error("Ошибка загрузки продавца:", error);
+      setProfile(null);
+      setAds([]);
+      setCount(0);
+    }
   };
 
   if (!sellerId) {
