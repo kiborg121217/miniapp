@@ -24,16 +24,20 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
       return;
     }
 
+    const sellerIdString = String(sellerId);
+    const sellerIdNumber = Number(sellerId);
+    const sellerIdForAds = Number.isNaN(sellerIdNumber) ? sellerIdString : sellerIdNumber;
+
     try {
       const [p, sellerAds, sellerCount] = await Promise.all([
-        getUserProfile(sellerId),
-        getSellerApprovedAds(sellerId),
-        getSellerActiveAdsCount(sellerId),
+        getUserProfile(sellerIdString),
+        getSellerApprovedAds(sellerIdForAds),
+        getSellerActiveAdsCount(sellerIdForAds),
       ]);
 
       setProfile(p);
-      setAds(sellerAds || []);
-      setCount(sellerCount || 0);
+      setAds(Array.isArray(sellerAds) ? sellerAds : []);
+      setCount(typeof sellerCount === "number" ? sellerCount : 0);
     } catch (error) {
       console.error("Ошибка загрузки продавца:", error);
       setProfile(null);

@@ -2824,6 +2824,54 @@ a {
   font-weight: 700;
 }
 
+.ios-sheet-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 16px !important;
+  margin-top: 22px !important;
+}
+
+.ios-sheet-apply {
+  width: 100% !important;
+}
+
+.ios-sheet-cancel {
+  width: fit-content !important;
+  min-width: 128px !important;
+  max-width: none !important;
+  padding: 0 22px !important;
+  margin: 0 auto !important;
+  align-self: center !important;
+  justify-self: center !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05)),
+    rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: var(--text) !important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+[data-theme="light"] .ios-sheet-cancel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,250,255,0.84)),
+    rgba(255,255,255,0.80) !important;
+  border: 1px solid rgba(15,23,42,0.08) !important;
+  color: #0f172a !important;
+  box-shadow:
+    0 10px 24px rgba(31,41,55,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.92) !important;
+}
+
 .promo-badges,
 .profile-promo-badges {
   display: flex;
