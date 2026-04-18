@@ -294,10 +294,18 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
               key={ad.id}
               onClick={() => onOpen(ad)}
             >
-              <CardBadges ad={ad} />
-              {ad.imageUrl && <img src={ad.imageUrl} alt={ad.title} />}
-              <h3>{ad.title}</h3>
-              <p>{ad.price} ₽</p>
+            <CardBadges ad={ad} />
+            {ad.imageUrl && (
+              <div className="clean-card-image-wrap">
+                <img
+                  src={ad.imageUrl}
+                  alt={ad.title}
+                  className="clean-card-image-main"
+                />
+              </div>
+            )}
+            <h3>{ad.title}</h3>
+            <p>{ad.price} ₽</p>
             </div>
           ))}
         </div>
