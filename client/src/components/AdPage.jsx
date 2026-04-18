@@ -104,6 +104,8 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
     ad.sellerAvatarUrl ||
     "";
 
+  const isSellerVerified = !!sellerProfile?.isVerified;
+
   return (
     <div className="page-enter ad-page-wrap">
       <button className="back-btn premium-back-btn" onClick={onBack}>
@@ -203,7 +205,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
                 ) : null}
               </div>
 
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     fontWeight: 700,
@@ -223,6 +225,14 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
                   }}
                 >
                   Активных объявлений: {sellerAdsCount}
+                </div>
+
+                <div style={{ marginTop: 8 }}>
+                  {isSellerVerified ? (
+                    <span className="mini-verified-pill">Подтвержден</span>
+                  ) : (
+                    <span className="mini-unverified-pill">Не подтвержден</span>
+                  )}
                 </div>
               </div>
             </div>

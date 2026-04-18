@@ -48,41 +48,29 @@ export default function SellerPage({ sellerId, onOpenAd, onBack }) {
       <PageBackButton onClick={onBack} />
 
       <div className="help-hero">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 16,
-          }}
-        >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              flexShrink: 0,
-            }}
-          >
+        <div className="seller-profile-top">
+          <div className="seller-profile-avatar">
             {(profile?.avatarUrl || profile?.telegramAvatarUrl) ? (
               <img
                 src={profile.avatarUrl || profile.telegramAvatarUrl}
                 alt="avatar"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                className="seller-profile-avatar-img"
               />
             ) : null}
           </div>
 
-          <div>
-            <h2 style={{ margin: 0 }}>
-              {profile?.displayName || profile?.firstName || "Продавец"}
-            </h2>
-            <p style={{ marginTop: 8 }}>
-              Активных объявлений: {count}
-            </p>
+          <div className="seller-profile-info">
+            <h2>{profile?.displayName || profile?.firstName || "Продавец"}</h2>
+
+            <div className="seller-meta-row">
+              <span>Активных объявлений: {count}</span>
+
+              {profile?.isVerified ? (
+                <span className="seller-verified-pill">Профиль подтвержден</span>
+              ) : (
+                <span className="seller-unverified-pill">Профиль не подтвержден</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
