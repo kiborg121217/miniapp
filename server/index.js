@@ -68,7 +68,6 @@ app.post("/new-ad", async (req, res) => {
 💰 ${ad.price} ₽
 📝 ${ad.description}`;
 
-    // Если фотографий несколько — отправляем альбом
     if (imageUrls.length > 1) {
       const media = [];
 
@@ -97,7 +96,6 @@ app.post("/new-ad", async (req, res) => {
         },
       });
     } else {
-      // Если фото одно — отправляем как раньше
       const photoBuffer = await downloadImageToBuffer(imageUrls[0]);
 
       await bot.sendPhoto(
@@ -127,6 +125,88 @@ app.post("/new-ad", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: error.message || "Не удалось отправить объявление в Telegram",
+    });
+  }
+});
+
+app.post("/promote-ad", async (req, res) => {
+  try {
+    const { adId, userId, type } = req.body;
+
+    if (!adId || !userId || !type) {
+      return res.status(400).json({
+        ok: false,
+        error: "Не хватает данных для продвижения",
+      });
+    }
+
+    const adRef = db.collection("ads").doc(String(adId));
+    const adSnap = await adRef.get();
+
+    if (!adSnap.exists) {
+      return res.status(404).json({
+        ok: false,
+        error: "Объявление не найдено",
+      });
+    }
+
+    const ad = adSnap.data();
+
+    if (String(ad.userId) !== String(userId)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Нельзя продвигать чужое объявление",
+      });
+    }
+
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+
+    const patch = {};
+
+    if (type === "boost") {
+      patch.boostUntil = now + day;
+      patch.boostedAt = now;
+      patch.promotePack = "boost";
+    }
+
+    if (type === "vip") {
+      patch.isVip = true;
+      patch.vipUntil = now + 3 * day;
+      patch.promotePack = "vip";
+    }
+
+    if (type === "pin") {
+      patch.isPinned = true;
+      patch.pinnedUntil = now + 3 * day;
+      patch.promotePack = "pin";
+    }
+
+    if (type === "turbo") {
+      patch.isVip = true;
+      patch.vipUntil = now + 3 * day;
+      patch.isPinned = true;
+      patch.pinnedUntil = now + 3 * day;
+      patch.boostUntil = now + 3 * day;
+      patch.boostedAt = now;
+      patch.promotePack = "turbo";
+    }
+
+    if (!Object.keys(patch).length) {
+      return res.status(400).json({
+        ok: false,
+        error: "Неизвестный тип продвижения",
+      });
+    }
+
+    await adRef.update(patch);
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Ошибка /promote-ad:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || "Не удалось применить продвижение",
     });
   }
 });
@@ -292,7 +372,6 @@ app.listen(PORT, async () => {
 
   try {
     await bot.deleteWebHook({ drop_pending_updates: true });
-
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     await bot.startPolling({
