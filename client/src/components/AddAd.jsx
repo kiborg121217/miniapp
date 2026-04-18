@@ -218,24 +218,48 @@ export default function AddAd({ user }) {
       </div>
 
       {showCategoryPicker && (
-        <div className="sheet-backdrop" onClick={() => setShowCategoryPicker(false)}>
-          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">Выберите категорию</div>
-            <div className="category-list">
-              {CATEGORIES.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`category-option ${category === item ? "active" : ""}`}
-                  onClick={() => {
-                    setCategory(item);
-                    setShowCategoryPicker(false);
-                  }}
-                >
-                  {item}
-                </button>
-              ))}
+        <div className="ios-sheet-backdrop" onClick={() => setShowCategoryPicker(false)}>
+          <div className="ios-sheet-wrap" onClick={(e) => e.stopPropagation()}>
+            <div className="ios-sheet-card">
+              <div className="ios-sheet-header">
+                <div className="ios-sheet-title">Выберите категорию</div>
+                <div className="ios-sheet-subtitle">
+                  Категория будет показана в объявлении и фильтрах
+                </div>
+              </div>
+
+              <div className="ios-sheet-list">
+                {CATEGORIES.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`ios-sheet-option ${category === item ? "active" : ""}`}
+                    onClick={() => {
+                      setCategory(item);
+                      setShowCategoryPicker(false);
+                    }}
+                  >
+                    <span>{item}</span>
+
+                    {category === item && (
+                      <span className="ios-sheet-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M7 12.5L10.2 15.5L17 8.5" />
+                        </svg>
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <button
+              type="button"
+              className="ios-sheet-cancel"
+              onClick={() => setShowCategoryPicker(false)}
+            >
+              Отмена
+            </button>
           </div>
         </div>
       )}

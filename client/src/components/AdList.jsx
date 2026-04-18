@@ -116,9 +116,7 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
         </button>
 
         {selectedCategory && (
-          <div className="filter-chip-active">
-            {selectedCategory}
-          </div>
+          <div className="filter-chip-active">{selectedCategory}</div>
         )}
       </div>
 
@@ -168,37 +166,44 @@ export default function AdList({ onOpen, theme, onToggleTheme, onOpenSettings })
       )}
 
       {showFilter && (
-        <div className="sheet-backdrop" onClick={() => setShowFilter(false)}>
-          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">Фильтр объявлений</div>
+        <div className="ios-sheet-backdrop" onClick={() => setShowFilter(false)}>
+          <div className="ios-sheet-wrap" onClick={(e) => e.stopPropagation()}>
+            <div className="ios-sheet-card">
+              <div className="ios-sheet-header">
+                <div className="ios-sheet-title">Фильтр объявлений</div>
+                <div className="ios-sheet-subtitle">
+                  Выбери категорию для показа объявлений
+                </div>
+              </div>
 
-            <div className="filter-group-label">Категория</div>
-            <button
-              type="button"
-              className="picker-trigger"
-              onClick={() => {}}
-            >
-              {draftCategory || "Выберите категорию"}
-            </button>
+              <div className="ios-sheet-list">
+                {CATEGORIES.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`ios-sheet-option ${draftCategory === item ? "active" : ""}`}
+                    onClick={() => setDraftCategory(item)}
+                  >
+                    <span>{item}</span>
 
-            <div className="category-list filter-category-list">
-              {CATEGORIES.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`category-option ${draftCategory === item ? "active" : ""}`}
-                  onClick={() => setDraftCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
+                    {draftCategory === item && (
+                      <span className="ios-sheet-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M7 12.5L10.2 15.5L17 8.5" />
+                        </svg>
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="filter-actions">
-              <button type="button" className="filter-apply-btn" onClick={applyFilter}>
+            <div className="ios-sheet-actions">
+              <button type="button" className="ios-sheet-apply" onClick={applyFilter}>
                 Применить
               </button>
-              <button type="button" className="filter-reset-btn" onClick={resetFilter}>
+
+              <button type="button" className="ios-sheet-cancel" onClick={resetFilter}>
                 Сбросить
               </button>
             </div>
