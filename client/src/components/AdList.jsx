@@ -46,16 +46,47 @@ function CardBadges({ ad }) {
 
   if (!pinned && !vip && !boosted) return null;
 
-  return (
-    <div className="promo-badges">
-      {pinned && <span className="promo-badge promo-badge-pin">Закреплено</span>}
-      {vip && <span className="promo-badge promo-badge-vip">VIP</span>}
-      {!vip && boosted && <span className="promo-badge promo-badge-boost">Поднято</span>}
-      {pinned && vip && boosted && (
+  if (pinned && vip && boosted) {
+    return (
+      <div className="promo-badges">
         <span className="promo-badge promo-badge-turbo">TURBO</span>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  if (pinned && vip) {
+    return (
+      <div className="promo-badges">
+        <span className="promo-badge promo-badge-vip">Продвигается</span>
+      </div>
+    );
+  }
+
+  if (pinned) {
+    return (
+      <div className="promo-badges">
+        <span className="promo-badge promo-badge-pin">Закреплено</span>
+      </div>
+    );
+  }
+
+  if (vip) {
+    return (
+      <div className="promo-badges">
+        <span className="promo-badge promo-badge-vip">VIP</span>
+      </div>
+    );
+  }
+
+  if (boosted) {
+    return (
+      <div className="promo-badges">
+        <span className="promo-badge promo-badge-boost">Поднято</span>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default function AdList({ onOpen, theme, onToggleTheme }) {
@@ -294,18 +325,21 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
               key={ad.id}
               onClick={() => onOpen(ad)}
             >
-            <CardBadges ad={ad} />
-            {ad.imageUrl && (
-              <div className="clean-card-image-wrap">
-                <img
-                  src={ad.imageUrl}
-                  alt={ad.title}
-                  className="clean-card-image-main"
-                />
-              </div>
-            )}
-            <h3>{ad.title}</h3>
-            <p>{ad.price} ₽</p>
+
+              {ad.imageUrl && (
+                <div className="clean-card-image-wrap">
+                  <img
+                    src={ad.imageUrl}
+                    alt={ad.title}
+                    className="clean-card-image-main"
+                  />
+                </div>
+              )}
+
+              <CardBadges ad={ad} />
+
+              <h3>{ad.title}</h3>
+              <p>{ad.price} ₽</p>
             </div>
           ))}
         </div>
