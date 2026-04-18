@@ -89,7 +89,56 @@ function CardBadges({ ad }) {
   return null;
 }
 
-export default function AdList({ onOpen, theme, onToggleTheme }) {
+function HeaderBar({ headerHidden, theme, onToggleTheme, onOpenSettings }) {
+  return (
+    <div className={`top-bar ${headerHidden ? "header-hidden" : ""}`}>
+      <button className="top-icon-btn" onClick={onOpenSettings}>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 7H18" />
+          <path d="M6 12H18" />
+          <path d="M6 17H18" />
+          <circle cx="9" cy="7" r="1.75" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="12" r="1.75" fill="currentColor" stroke="none" />
+          <circle cx="11" cy="17" r="1.75" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+
+      <div
+        className="header compact-header"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        <h2>Объявления</h2>
+      </div>
+
+      <button className="top-icon-btn" onClick={onToggleTheme}>
+        {theme === "dark" ? (
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2.5V5" />
+            <path d="M12 19V21.5" />
+            <path d="M4.93 4.93L6.7 6.7" />
+            <path d="M17.3 17.3L19.07 19.07" />
+            <path d="M2.5 12H5" />
+            <path d="M19 12H21.5" />
+            <path d="M4.93 19.07L6.7 17.3" />
+            <path d="M17.3 6.7L19.07 4.93" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
+export default function AdList({
+  onOpen,
+  theme,
+  onToggleTheme,
+  onOpenSettings,
+}) {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -154,34 +203,12 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
   if (loading) {
     return (
       <div style={{ padding: "92px 10px 120px" }}>
-        <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
-          <div
-            className="header compact-header"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          >
-            <h2>Объявления</h2>
-          </div>
-
-          <button className="theme-toggle" onClick={onToggleTheme}>
-            {theme === "dark" ? (
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2.5V5" />
-                <path d="M12 19V21.5" />
-                <path d="M4.93 4.93L6.7 6.7" />
-                <path d="M17.3 17.3L19.07 19.07" />
-                <path d="M2.5 12H5" />
-                <path d="M19 12H21.5" />
-                <path d="M4.93 19.07L6.7 17.3" />
-                <path d="M17.3 6.7L19.07 4.93" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
-              </svg>
-            )}
-          </button>
-        </div>
+        <HeaderBar
+          headerHidden={headerHidden}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onOpenSettings={onOpenSettings}
+        />
 
         <div className="filter-bar">
           <button className="filter-trigger" onClick={() => setShowFilter(true)}>
@@ -201,84 +228,18 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
             <div key={i} className="skeleton-card"></div>
           ))}
         </div>
-
-        {showFilter && (
-          <div className="ios-sheet-backdrop" onClick={() => setShowFilter(false)}>
-            <div className="ios-sheet-wrap" onClick={(e) => e.stopPropagation()}>
-              <div className="ios-sheet-card">
-                <div className="ios-sheet-header">
-                  <div className="ios-sheet-title">Фильтр объявлений</div>
-                  <div className="ios-sheet-subtitle">
-                    Выбери категорию для показа объявлений
-                  </div>
-                </div>
-
-                <div className="ios-sheet-list">
-                  {CATEGORIES.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`ios-sheet-option ${draftCategory === item ? "active" : ""}`}
-                      onClick={() => setDraftCategory(item)}
-                    >
-                      <span>{item}</span>
-                      {draftCategory === item && (
-                        <span className="ios-sheet-check" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M7 12.5L10.2 15.5L17 8.5" />
-                          </svg>
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="ios-sheet-actions">
-                <button type="button" className="ios-sheet-apply" onClick={applyFilter}>
-                  Применить
-                </button>
-                <button type="button" className="ios-sheet-cancel" onClick={resetFilter}>
-                  Сбросить
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
     <div style={{ padding: "92px 10px 120px" }}>
-      <div className={`header-shell ${headerHidden ? "header-hidden" : ""}`}>
-        <div
-          className="header compact-header"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        >
-          <h2>Объявления</h2>
-        </div>
-
-        <button className="theme-toggle" onClick={onToggleTheme}>
-          {theme === "dark" ? (
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2.5V5" />
-              <path d="M12 19V21.5" />
-              <path d="M4.93 4.93L6.7 6.7" />
-              <path d="M17.3 17.3L19.07 19.07" />
-              <path d="M2.5 12H5" />
-              <path d="M19 12H21.5" />
-              <path d="M4.93 19.07L6.7 17.3" />
-              <path d="M17.3 6.7L19.07 4.93" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
-            </svg>
-          )}
-        </button>
-      </div>
+      <HeaderBar
+        headerHidden={headerHidden}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+        onOpenSettings={onOpenSettings}
+      />
 
       <div className="filter-bar">
         <button className="filter-trigger" onClick={() => setShowFilter(true)}>
@@ -292,7 +253,9 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
           <span>Фильтр</span>
         </button>
 
-        {selectedCategory && <div className="filter-chip-active">{selectedCategory}</div>}
+        {selectedCategory && (
+          <div className="filter-chip-active">{selectedCategory}</div>
+        )}
       </div>
 
       {filteredAds.length === 0 ? (
@@ -325,7 +288,6 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
               key={ad.id}
               onClick={() => onOpen(ad)}
             >
-
               {ad.imageUrl && (
                 <div className="clean-card-image-wrap">
                   <img
@@ -365,6 +327,7 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
                     onClick={() => setDraftCategory(item)}
                   >
                     <span>{item}</span>
+
                     {draftCategory === item && (
                       <span className="ios-sheet-check" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
@@ -381,6 +344,7 @@ export default function AdList({ onOpen, theme, onToggleTheme }) {
               <button type="button" className="ios-sheet-apply" onClick={applyFilter}>
                 Применить
               </button>
+
               <button type="button" className="ios-sheet-cancel" onClick={resetFilter}>
                 Сбросить
               </button>
