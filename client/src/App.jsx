@@ -10,6 +10,7 @@ import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import "./App.css";
 import { initTelegram } from "./telegram";
+import { getAdById } from "./firebase";
 
 function HelpPage({ onBack }) {
   useEffect(() => {
@@ -109,6 +110,23 @@ function LoadingScreen() {
   );
 }
 
+function getStartAdIdFromLaunch() {
+  const tg = window.Telegram?.WebApp;
+
+  const startParam =
+    tg?.initDataUnsafe?.start_param ||
+    new URLSearchParams(window.location.search).get("tgWebAppStartParam");
+
+  if (startParam && startParam.startsWith("ad_")) {
+    return startParam.replace("ad_", "");
+  }
+
+  const queryAd = new URLSearchParams(window.location.search).get("ad");
+  if (queryAd) return queryAd;
+
+  return null;
+}
+
 export default function App() {
   const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
 
@@ -176,18 +194,50 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    initTelegram();
+    let cancelled = false;
+    let timeoutId;
 
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      const user = tg.initDataUnsafe?.user || null;
-      setTgUser(user);
-    }
+    const boot = async () => {
+      initTelegram();
 
-    const t = setTimeout(() => setBootLoading(false), 950);
-    return () => clearTimeout(t);
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        const user = tg.initDataUnsafe?.user || null;
+        if (!cancelled) {
+          setTgUser(user);
+        }
+      }
+
+      const startAdId = getStartAdIdFromLaunch();
+
+      if (startAdId) {
+        try {
+          const ad = await getAdById(startAdId);
+
+          if (!cancelled && ad) {
+            setSelectedAd(ad);
+            setPage("view");
+          }
+        } catch (error) {
+          console.error("Ошибка открытия объявления по startapp:", error);
+        }
+      }
+
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setBootLoading(false);
+        }
+      }, 950);
+    };
+
+    boot();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const goToPage = (nextPage) => {

@@ -43,10 +43,20 @@ export async function getAds() {
 }
 
 export async function getAdById(adId) {
-  const ref = doc(db, "ads", adId);
+  if (!adId) return null;
+
+  const ref = doc(db, "ads", String(adId));
   const snap = await getDoc(ref);
+
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() };
+
+  const data = snap.data();
+
+  if (data.status !== "approved") {
+    return null;
+  }
+
+  return { id: snap.id, ...data };
 }
 
 export async function getUserAds(userId, status = null) {
