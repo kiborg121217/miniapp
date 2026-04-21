@@ -8,7 +8,7 @@ import {
 const BOT_USERNAME = "baraholka_miniapp_bot";
 
 function buildAdShareLink(adId) {
-  if (BOT_USERNAME && BOT_USERNAME !== "baraholka_miniapp_bot") {
+  if (BOT_USERNAME) {
     return `https://t.me/${BOT_USERNAME}?startapp=ad_${adId}`;
   }
 
@@ -102,9 +102,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
     }
   };
 
-  const handleShare = async (e) => {
-    e.stopPropagation();
-
+  const handleShare = async () => {
     if (!ad?.id) return;
 
     const shareUrl = buildAdShareLink(ad.id);
@@ -167,24 +165,26 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
         </span>
       </button>
 
+      <button
+        className="share-top-btn premium-share-btn"
+        onClick={handleShare}
+        aria-label="Поделиться объявлением"
+        title="Поделиться"
+      >
+        <span className="back-btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M14 5L19 10L14 15" />
+            <path d="M19 10H10.5C7.5 10 5 12.5 5 15.5V19" />
+          </svg>
+        </span>
+      </button>
+
       <div className="ad-page-shell">
         {gallery.length > 0 && (
           <div
             className="ad-hero-wrap clean-ad-hero-wrap"
             onClick={() => openModal(currentImage)}
           >
-            <button
-              className="share-ad-btn"
-              onClick={handleShare}
-              aria-label="Поделиться объявлением"
-              title="Поделиться"
-            >
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M14 5L19 10L14 15" />
-                <path d="M19 10H10.5C7.5 10 5 12.5 5 15.5V19" />
-              </svg>
-            </button>
-
             <img
               className="clean-ad-hero-image"
               src={gallery[currentImage]}
