@@ -276,7 +276,7 @@ export default function App() {
         />
       )}
 
-      {page === "add" && <AddAd user={tgUser} />}
+      {page === "add" && <AddAd user={tgUser} onBack={() => goToPage("list")} />}
 
       {page === "profile" && (
         <ProfilePage
@@ -358,7 +358,7 @@ export default function App() {
         />
       )}
 
-      {page !== "view" && (
+      {page !== "view" && page !== "add" && (
         <div className="bottom-nav">
           <button
             className={`nav-item ${page === "list" ? "active" : ""}`}
