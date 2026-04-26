@@ -269,6 +269,7 @@ export default function App() {
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpenSettings={() => goToPage("settings")}
+          onCreate={() => goToPage("add")}
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");

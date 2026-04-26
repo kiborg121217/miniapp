@@ -5342,3 +5342,73 @@ body,
     font-size: 13px !important;
   }
 }
+
+/* FINAL QUICK FIXES: category rail spacing, real gear icon, CTA button */
+.market-category-rail {
+  width: 100% !important;
+  margin: 0 0 16px 0 !important;
+  padding: 0 0 9px 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-padding-left: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.market-category-chip:first-child {
+  margin-left: 0 !important;
+}
+
+.market-category-chip:last-child {
+  margin-right: 16px !important;
+}
+
+.market-icon-btn[aria-label="Настройки"] svg.settings-gear-svg {
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  transform: translateY(0) !important;
+  transform-origin: 50% 50% !important;
+}
+
+.market-icon-btn[aria-label="Настройки"] svg.settings-gear-svg path {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.market-icon-btn[aria-label="Настройки"]:active svg.settings-gear-svg {
+  animation: settingsGearTap 0.45s ease both;
+}
+
+@keyframes settingsGearTap {
+  0% { transform: rotate(0deg) scale(1); }
+  55% { transform: rotate(42deg) scale(0.94); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.sell-faster-banner {
+  width: 100% !important;
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  text-align: left !important;
+}
+
+.sell-faster-banner:active {
+  transform: translateY(1px) scale(0.992) !important;
+}
+
+@media (max-width: 380px) {
+  .market-category-rail {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .market-icon-btn[aria-label="Настройки"] svg.settings-gear-svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+}
