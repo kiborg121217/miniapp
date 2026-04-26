@@ -103,6 +103,20 @@ export async function getSellerActiveAdsCount(userId) {
   return snap.size;
 }
 
+
+export async function getSellerArchivedAdsCount(userId) {
+  if (!userId) return 0;
+
+  const q = query(
+    collection(db, "ads"),
+    where("userId", "==", userId),
+    where("status", "==", "archived")
+  );
+
+  const snap = await getDocs(q);
+  return snap.size;
+}
+
 export async function getSellerApprovedAds(userId) {
   if (!userId) return [];
 
