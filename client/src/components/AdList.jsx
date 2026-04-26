@@ -202,7 +202,7 @@ export default function AdList({
 
   if (loading) {
     return (
-      <div style={{ padding: "92px 10px 120px" }}>
+      <div className="ad-list-screen">
         <HeaderBar
           headerHidden={headerHidden}
           theme={theme}
@@ -233,7 +233,7 @@ export default function AdList({
   }
 
   return (
-    <div style={{ padding: "92px 10px 120px" }}>
+    <div className="ad-list-screen">
       <HeaderBar
         headerHidden={headerHidden}
         theme={theme}
