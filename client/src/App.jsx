@@ -266,8 +266,6 @@ export default function App() {
     <div className="app theme-animate">
       {page === "list" && (
         <AdList
-          theme={theme}
-          onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onOpenSettings={() => goToPage("settings")}
           onCreate={() => goToPage("add")}
           onOpen={(ad) => {
@@ -306,6 +304,8 @@ export default function App() {
 
       {page === "settings" && (
         <SettingsPage
+          theme={theme}
+          onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onBack={() => goToPage("list")}
           onOpenHelp={() => goToPage("help")}
           onOpenLegal={(type) => {

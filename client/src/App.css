@@ -5412,3 +5412,452 @@ body,
     height: 23px !important;
   }
 }
+
+/* SETTINGS IOS REDESIGN FINAL */
+.market-header-no-theme {
+  grid-template-columns: minmax(74px, 1fr) auto minmax(52px, 1fr) !important;
+}
+
+.market-header-no-theme .market-header-actions {
+  gap: 0 !important;
+}
+
+.settings-ios-page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px 116px;
+  color: var(--market-text, #f6fbff);
+}
+
+.settings-ios-topbar {
+  min-height: 64px;
+  margin: -2px -16px 18px;
+  padding: 10px 16px 12px;
+  display: grid;
+  grid-template-columns: 82px 1fr 54px;
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.028)),
+    rgba(8, 14, 25, 0.74);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.22);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.settings-top-close {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--market-accent, #45f0ee);
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  text-align: left;
+}
+
+.settings-top-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+}
+
+.settings-top-title strong {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.052em;
+  color: #f7fbff;
+}
+
+.settings-top-title span {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: rgba(244,248,255,0.62);
+  letter-spacing: -0.025em;
+}
+
+.settings-top-menu {
+  justify-self: end;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.78);
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.16em;
+  background: rgba(255,255,255,0.035);
+}
+
+.settings-ios-hero {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 22px;
+  padding: 8px 0 8px;
+}
+
+.settings-ios-hero-icon {
+  width: 78px;
+  height: 78px;
+  border-radius: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #07141d;
+  background:
+    radial-gradient(circle at 30% 22%, #a8ffff, #4fe7e3 58%, #178f91 100%);
+  border: 1px solid rgba(116,255,242,0.30);
+  box-shadow:
+    0 0 0 1px rgba(116,255,242,0.12),
+    0 18px 40px rgba(69,240,238,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.settings-real-gear {
+  width: 45px;
+  height: 45px;
+  display: block;
+  fill: currentColor;
+  stroke: none;
+  transform-origin: 50% 50%;
+}
+
+.settings-ios-hero h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 780;
+  letter-spacing: -0.062em;
+  color: #f8fbff;
+}
+
+.settings-ios-hero p {
+  margin: 8px 0 0;
+  font-size: 17px;
+  line-height: 1.1;
+  font-weight: 550;
+  color: rgba(245,248,255,0.56);
+  letter-spacing: -0.04em;
+}
+
+.settings-ios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 0 0 22px;
+}
+
+.settings-ios-row {
+  width: 100%;
+  min-height: 74px;
+  border: 1px solid rgba(255,255,255,0.085);
+  border-radius: 21px;
+  padding: 12px 12px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: #f7fbff;
+  text-align: left;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255,255,255,0.075), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.074), rgba(255,255,255,0.032)),
+    rgba(16, 22, 34, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.065),
+    0 14px 28px rgba(0,0,0,0.23);
+  backdrop-filter: blur(22px) saturate(142%);
+  -webkit-backdrop-filter: blur(22px) saturate(142%);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.settings-ios-row:active {
+  transform: scale(0.985);
+}
+
+.settings-ios-row-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 22px rgba(0,0,0,0.18);
+}
+
+.settings-ios-row-icon svg,
+.settings-ios-arrow svg,
+.settings-soon-icon svg {
+  width: 25px;
+  height: 25px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.settings-ios-row.accent-cyan .settings-ios-row-icon,
+.settings-soon-icon {
+  color: #bffffb;
+  background: radial-gradient(circle at 35% 20%, rgba(116,255,242,0.36), rgba(21,118,123,0.42) 72%);
+}
+
+.settings-ios-row.accent-gold .settings-ios-row-icon {
+  color: #ffe7a8;
+  background: radial-gradient(circle at 35% 20%, rgba(255,220,133,0.42), rgba(135,96,27,0.48) 72%);
+}
+
+.settings-ios-row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-ios-row-title {
+  font-size: 18px;
+  line-height: 1.05;
+  font-weight: 760;
+  letter-spacing: -0.052em;
+  color: #f8fbff;
+}
+
+.settings-ios-row-sub {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 520;
+  letter-spacing: -0.035em;
+  color: rgba(244,248,255,0.54);
+}
+
+.settings-ios-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: rgba(244,248,255,0.66);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-ios-section-title {
+  margin: 4px 0 10px 14px;
+  font-size: 14px;
+  font-weight: 720;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: rgba(244,248,255,0.44);
+}
+
+.settings-theme-segment {
+  min-width: 142px;
+  height: 36px;
+  padding: 4px;
+  border-radius: 999px;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.065);
+}
+
+.settings-theme-segment button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0 8px;
+  color: rgba(244,248,255,0.62);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+}
+
+.settings-theme-segment button.active {
+  color: #07141d;
+  background: linear-gradient(135deg, #70fff2, #ffd67a);
+  box-shadow: 0 6px 16px rgba(69,240,238,0.18);
+}
+
+.settings-ios-doc-list {
+  margin-top: 2px;
+}
+
+.settings-detail-page {
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top, 0px) + 86px) 16px 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-soon-card,
+.settings-about-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 30px;
+  padding: 26px 18px 20px;
+  text-align: center;
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(69,240,238,0.20), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.092), rgba(255,255,255,0.038)),
+    rgba(15, 22, 34, 0.76);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 24px 56px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.settings-soon-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(116,255,242,0.18);
+}
+
+.settings-soon-card h2,
+.settings-about-card h2 {
+  margin: 0 0 10px;
+  font-size: 31px;
+  line-height: 1;
+  font-weight: 840;
+  letter-spacing: -0.062em;
+}
+
+.settings-soon-card p,
+.settings-about-card p {
+  margin: 0 auto 14px;
+  max-width: 390px;
+  color: rgba(244,248,255,0.66);
+  font-size: 15px;
+  line-height: 1.48;
+  letter-spacing: -0.03em;
+}
+
+.settings-soon-card span,
+.settings-channel-caption {
+  display: block;
+  margin: 0 0 13px;
+  color: rgba(255,216,112,0.82);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.settings-soon-card button,
+.settings-about-card button {
+  width: 100%;
+  min-height: 54px;
+  border: 0;
+  border-radius: 18px;
+  color: #07141d;
+  background: linear-gradient(135deg, #6bfff2, #ffd87d);
+  box-shadow: 0 14px 32px rgba(69,240,238,0.15);
+  font-size: 16px;
+  font-weight: 820;
+  letter-spacing: -0.045em;
+}
+
+.settings-about-version {
+  color: var(--market-accent, #45f0ee) !important;
+  font-weight: 760;
+}
+
+.settings-update-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 16px 0 16px;
+  text-align: left;
+}
+
+.settings-update-list div {
+  padding: 13px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.settings-update-list strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #f8fbff;
+  font-size: 15px;
+  font-weight: 780;
+  letter-spacing: -0.04em;
+}
+
+.settings-update-list span {
+  display: block;
+  color: rgba(244,248,255,0.58);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+[data-theme="light"] .settings-ios-topbar,
+[data-theme="light"] .settings-ios-row,
+[data-theme="light"] .settings-soon-card,
+[data-theme="light"] .settings-about-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.90), rgba(245,250,251,0.78)) !important;
+  border-color: rgba(16,33,42,0.10) !important;
+  box-shadow: 0 16px 34px rgba(20,54,70,0.11), inset 0 1px 0 rgba(255,255,255,0.80) !important;
+}
+
+[data-theme="light"] .settings-top-title strong,
+[data-theme="light"] .settings-ios-hero h1,
+[data-theme="light"] .settings-ios-row-title,
+[data-theme="light"] .settings-soon-card h2,
+[data-theme="light"] .settings-about-card h2,
+[data-theme="light"] .settings-update-list strong {
+  color: #10212a !important;
+}
+
+[data-theme="light"] .settings-top-title span,
+[data-theme="light"] .settings-ios-hero p,
+[data-theme="light"] .settings-ios-row-sub,
+[data-theme="light"] .settings-ios-section-title,
+[data-theme="light"] .settings-soon-card p,
+[data-theme="light"] .settings-about-card p,
+[data-theme="light"] .settings-update-list span {
+  color: rgba(16,33,42,0.62) !important;
+}
+
+[data-theme="light"] .settings-top-menu,
+[data-theme="light"] .settings-ios-arrow,
+[data-theme="light"] .settings-theme-segment {
+  color: rgba(16,33,42,0.62) !important;
+  border-color: rgba(16,33,42,0.10) !important;
+  background: rgba(16,33,42,0.045) !important;
+}
+
+@media (max-width: 380px) {
+  .settings-ios-page { padding-left: 13px; padding-right: 13px; }
+  .settings-ios-topbar { margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px; grid-template-columns: 74px 1fr 42px; }
+  .settings-top-title strong { font-size: 16px; }
+  .settings-top-close { font-size: 16px; }
+  .settings-ios-hero { grid-template-columns: 74px 1fr; gap: 14px; }
+  .settings-ios-hero-icon { width: 68px; height: 68px; border-radius: 23px; }
+  .settings-real-gear { width: 39px; height: 39px; }
+  .settings-ios-hero h1 { font-size: 31px; }
+  .settings-ios-row { min-height: 70px; grid-template-columns: 48px minmax(0, 1fr) auto; padding: 11px; }
+  .settings-ios-row-icon { width: 44px; height: 44px; }
+  .settings-ios-row-title { font-size: 17px; }
+  .settings-theme-segment { min-width: 126px; }
+  .settings-theme-segment button { font-size: 11.5px; padding: 0 6px; }
+}

@@ -290,9 +290,9 @@ function SettingsIcon() {
   );
 }
 
-function MainHeader({ theme, onToggleTheme, onOpenSettings }) {
+function MainHeader({ onOpenSettings }) {
   return (
-    <header className="market-header">
+    <header className="market-header market-header-no-theme">
       <div className="market-city">Вологда</div>
 
       <div className="market-title-wrap">
@@ -301,10 +301,6 @@ function MainHeader({ theme, onToggleTheme, onOpenSettings }) {
       </div>
 
       <div className="market-header-actions">
-        <button className="market-icon-btn" onClick={onToggleTheme} aria-label="Сменить тему">
-          <ThemeIcon theme={theme} />
-        </button>
-
         <button className="market-icon-btn" onClick={onOpenSettings} aria-label="Настройки">
           <SettingsIcon />
         </button>
@@ -427,8 +423,6 @@ function SellFasterBanner({ onClick }) {
 
 export default function AdList({
   onOpen,
-  theme,
-  onToggleTheme,
   onOpenSettings,
   onCreate,
 }) {
@@ -500,11 +494,7 @@ export default function AdList({
   if (loading) {
     return (
       <main className="market-home page-enter">
-        <MainHeader
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          onOpenSettings={onOpenSettings}
-        />
+        <MainHeader onOpenSettings={onOpenSettings} />
 
         <CategoryRail
           selectedCategory={selectedCategory}
@@ -528,11 +518,7 @@ export default function AdList({
 
   return (
     <main className="market-home page-enter">
-      <MainHeader
-        theme={theme}
-        onToggleTheme={onToggleTheme}
-        onOpenSettings={onOpenSettings}
-      />
+      <MainHeader onOpenSettings={onOpenSettings} />
 
       <CategoryRail
         selectedCategory={selectedCategory}
