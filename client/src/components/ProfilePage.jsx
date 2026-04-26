@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getUserAds,
   getUserProfile,
@@ -6,6 +6,64 @@ import {
   updateUserProfile,
   uploadImage,
 } from "../firebase";
+
+function UserPlaceholderIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8.2" r="3.2" />
+      <path d="M5.5 18.2C6.8 15.5 9.1 14.2 12 14.2C14.9 14.2 17.2 15.5 18.5 18.2" />
+    </svg>
+  );
+}
+
+function VerifiedIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3.4L18.6 6.2V11.2C18.6 15.4 16.05 19.1 12 20.6C7.95 19.1 5.4 15.4 5.4 11.2V6.2L12 3.4Z" />
+      <path d="M8.7 12.1L10.9 14.2L15.6 9.5" />
+    </svg>
+  );
+}
+
+function ProfileTileIcon({ type }) {
+  if (type === "active") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="5" y="4.5" width="14" height="15" rx="3.5" />
+        <path d="M8.5 9.3H15.5" />
+        <path d="M8.5 13H13.5" />
+      </svg>
+    );
+  }
+
+  if (type === "pending") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="7" />
+        <path d="M12 8V12.5L15 14" />
+      </svg>
+    );
+  }
+
+  if (type === "archive") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 8H19" />
+        <path d="M7 8V18.2C7 19.2 7.8 20 8.8 20H15.2C16.2 20 17 19.2 17 18.2V8" />
+        <path d="M8 5H16L17 8H7L8 5Z" />
+        <path d="M10 12H14" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="7" />
+      <path d="M9 9L15 15" />
+      <path d="M15 9L9 15" />
+    </svg>
+  );
+}
 
 export default function ProfilePage({ user, onOpenSection }) {
   const [profile, setProfile] = useState(null);
@@ -16,6 +74,7 @@ export default function ProfilePage({ user, onOpenSection }) {
   const [rejectedAds, setRejectedAds] = useState([]);
   const [message, setMessage] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -81,18 +140,24 @@ export default function ProfilePage({ user, onOpenSection }) {
   const saveName = async () => {
     if (!user?.id || !hasNameChanges) return;
     await updateUserProfile(user.id, { displayName: normalizedInputName });
-    setMessage("✅ Имя сохранено");
+    setMessage("Имя профиля сохранено");
     await loadProfile();
     setNameTouched(false);
   };
 
   const handleUploadAvatar = async (file) => {
     if (!file || !user?.id) return;
-    setMessage("Загрузка аватарки...");
-    const avatarUrl = await uploadImage(file);
-    await updateUserProfile(user.id, { avatarUrl });
-    setMessage("✅ Аватарка обновлена");
-    await loadProfile();
+
+    try {
+      setMessage("Загружаем новую аватарку...");
+      const avatarUrl = await uploadImage(file);
+      await updateUserProfile(user.id, { avatarUrl });
+      setMessage("Аватарка обновлена");
+      await loadProfile();
+    } catch (error) {
+      console.error(error);
+      setMessage("Не удалось обновить аватарку");
+    }
   };
 
   const handleVerifyPhone = async () => {
@@ -117,20 +182,23 @@ export default function ProfilePage({ user, onOpenSection }) {
       const result = await response.json();
 
       if (result.ok) {
-        setMessage("✅ Бот отправил сообщение для подтверждения номера");
+        setMessage("Бот отправил сообщение для подтверждения номера");
       } else {
-        setMessage("❌ Не удалось начать подтверждение");
+        setMessage("Не удалось начать подтверждение");
       }
     } catch (error) {
       console.error(error);
-      setMessage("❌ Ошибка запроса подтверждения");
+      setMessage("Ошибка запроса подтверждения");
     }
   };
 
   if (!user) {
     return (
-      <div className="help-page page-enter">
-        <div className="help-hero">
+      <div className="profile-premium-page page-enter">
+        <div className="profile-empty-card">
+          <div className="profile-empty-icon">
+            <UserPlaceholderIcon />
+          </div>
           <h2>Профиль недоступен</h2>
           <p>Открой приложение через Telegram, чтобы увидеть свой профиль.</p>
         </div>
@@ -138,49 +206,89 @@ export default function ProfilePage({ user, onOpenSection }) {
     );
   }
 
+  const avatarUrl = profile?.avatarUrl || profile?.telegramAvatarUrl || "";
+  const profileName = profile?.displayName || user.first_name || "Пользователь";
+  const username = profile?.username || user.username || "no_username";
+  const isVerified = !!profile?.isVerified;
+
   return (
-    <div className="help-page page-enter">
-      <div className="help-hero">
-        <div className="profile-top">
-          <div className="profile-avatar">
-            {(profile?.avatarUrl || profile?.telegramAvatarUrl) ? (
-              <img
-                src={profile.avatarUrl || profile.telegramAvatarUrl}
-                alt="avatar"
-                className="profile-avatar-img"
-              />
+    <div className="profile-premium-page page-enter">
+      <section className="profile-owner-card">
+        <div className="profile-owner-main">
+          <button
+            type="button"
+            className="profile-owner-avatar"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Изменить аватарку"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" className="profile-owner-avatar-img" />
             ) : (
-              <div className="avatar-placeholder" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8.2" r="3.2" />
-                  <path d="M5.5 18.2C6.8 15.5 9.1 14.2 12 14.2C14.9 14.2 17.2 15.5 18.5 18.2" />
-                </svg>
+              <div className="profile-owner-avatar-placeholder">
+                <UserPlaceholderIcon />
               </div>
             )}
-          </div>
+            <span className="profile-avatar-edit-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 7V17" />
+                <path d="M7 12H17" />
+              </svg>
+            </span>
+          </button>
 
-          <div className="profile-top-text">
-            <h2>{profile?.displayName || user.first_name || "Пользователь"}</h2>
-            <p>@{profile?.username || user.username || "no_username"}</p>
+          <input
+            ref={fileInputRef}
+            className="profile-hidden-file"
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUploadAvatar(e.target.files?.[0] || null)}
+          />
 
-            {profile?.isVerified ? (
-              <div className="verified-badge">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M8 12.5L10.8 15.2L16.5 9.5" />
-                </svg>
-                <span>Проверенный профиль</span>
-              </div>
-            ) : (
-              <div className="unverified-badge">
-                <span>Профиль не подтвержден</span>
-              </div>
-            )}
+          <div className="profile-owner-info">
+            <h1>{profileName}</h1>
+            <div className="profile-rating-row">
+              <span className="profile-star" aria-hidden="true">★</span>
+              <span>5.0</span>
+              <span className="profile-dot">•</span>
+              <span>0 отзывов</span>
+            </div>
+
+            <div className={isVerified ? "profile-status-pill verified" : "profile-status-pill unverified"}>
+              {isVerified && <VerifiedIcon />}
+              {!isVerified && <span className="profile-status-dot" />}
+              <span>{isVerified ? "Профиль подтвержден" : "Профиль не подтвержден"}</span>
+            </div>
           </div>
         </div>
 
-        <div className="profile-edit-grid">
+        <div className="profile-owner-stats">
+          <button type="button" onClick={() => onOpenSection("approved")}>
+            <strong>{activeAds.length}</strong>
+            <span>Активных</span>
+          </button>
+          <div className="profile-stat-divider" />
+          <button type="button" onClick={() => onOpenSection("archived")}>
+            <strong>{archivedAds.length}</strong>
+            <span>Продано</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="profile-edit-card">
+        <div className="profile-section-heading">
+          <div>
+            <h2>Мой профиль</h2>
+            <p>@{username}</p>
+          </div>
+          <div className="profile-views-pill">{totalViews} просмотров</div>
+        </div>
+
+        <label className="profile-field-label" htmlFor="profile-display-name">
+          Имя в профиле
+        </label>
+        <div className="profile-name-control">
           <input
+            id="profile-display-name"
             value={displayName}
             onChange={(e) => {
               setDisplayName(e.target.value);
@@ -188,56 +296,77 @@ export default function ProfilePage({ user, onOpenSection }) {
             }}
             placeholder="Имя в профиле"
           />
-
-          <div className="profile-actions-row">
-            {hasNameChanges && (
-              <button className="profile-action-btn save-name-btn" onClick={saveName}>
-                Сохранить имя
-              </button>
-            )}
-
-            {!profile?.isVerified && (
-              <button className="profile-action-btn verify-phone-btn" onClick={handleVerifyPhone}>
-                Подтвердить номер
-              </button>
-            )}
-          </div>
-
-          <input
-            type="file"
-            onChange={(e) => handleUploadAvatar(e.target.files?.[0] || null)}
-          />
-
-          {!!message && <p>{message}</p>}
+          {hasNameChanges && (
+            <button type="button" onClick={saveName}>
+              Сохранить
+            </button>
+          )}
         </div>
-      </div>
 
-      <div className="help-card">
-        <div className="help-card-title">Статистика</div>
-        <p>Всего просмотров: {totalViews}</p>
-      </div>
+        <div className="profile-action-row-premium">
+          <button type="button" onClick={() => fileInputRef.current?.click()}>
+            <span className="profile-action-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M8 8.5L10 5.5H14L16 8.5" />
+                <rect x="4.5" y="8.5" width="15" height="10" rx="3" />
+                <circle cx="12" cy="13.5" r="2.7" />
+              </svg>
+            </span>
+            Обновить фото
+          </button>
 
-      <div className="profile-section-grid">
-        <button className="settings-tile" onClick={() => onOpenSection("approved")}>
-          <div className="settings-tile-title">Активные</div>
-          <div className="settings-tile-sub">{activeAds.length} объявлений</div>
+          {!isVerified && (
+            <button type="button" className="profile-verify-action" onClick={handleVerifyPhone}>
+              <span className="profile-action-icon">
+                <VerifiedIcon />
+              </span>
+              Подтвердить номер
+            </button>
+          )}
+        </div>
+
+        {!!message && <div className="profile-message">{message}</div>}
+      </section>
+
+      <section className="profile-menu-section">
+        <div className="profile-menu-label">МОИ ОБЪЯВЛЕНИЯ</div>
+
+        <button className="profile-menu-tile accent-cyan" onClick={() => onOpenSection("approved")}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="active" /></span>
+          <span className="profile-menu-copy">
+            <strong>Активные</strong>
+            <span>{activeAds.length} объявлений опубликовано</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
         </button>
 
-        <button className="settings-tile" onClick={() => onOpenSection("pending")}>
-          <div className="settings-tile-title">На модерации</div>
-          <div className="settings-tile-sub">{pendingAds.length} объявлений</div>
+        <button className="profile-menu-tile accent-gold" onClick={() => onOpenSection("pending")}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="pending" /></span>
+          <span className="profile-menu-copy">
+            <strong>На модерации</strong>
+            <span>{pendingAds.length} ожидают проверки</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
         </button>
 
-        <button className="settings-tile" onClick={() => onOpenSection("archived")}>
-          <div className="settings-tile-title">Архив</div>
-          <div className="settings-tile-sub">{archivedAds.length} объявлений</div>
+        <button className="profile-menu-tile accent-mint" onClick={() => onOpenSection("archived")}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="archive" /></span>
+          <span className="profile-menu-copy">
+            <strong>Архив</strong>
+            <span>{archivedAds.length} объявлений в архиве</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
         </button>
 
-        <button className="settings-tile" onClick={() => onOpenSection("rejected")}>
-          <div className="settings-tile-title">Отклонённые</div>
-          <div className="settings-tile-sub">{rejectedAds.length} объявлений</div>
+        <button className="profile-menu-tile accent-pink" onClick={() => onOpenSection("rejected")}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="rejected" /></span>
+          <span className="profile-menu-copy">
+            <strong>Отклонённые</strong>
+            <span>{rejectedAds.length} нужно исправить</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
         </button>
-      </div>
+      </section>
     </div>
   );
 }
