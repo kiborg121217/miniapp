@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAds } from "../firebase";
 import { CATEGORIES } from "../categories";
 
@@ -39,96 +39,235 @@ function sortAds(list) {
   });
 }
 
-function CardBadges({ ad }) {
-  const pinned = !!ad.isPinned && isActiveUntil(ad.pinnedUntil);
-  const vip = !!ad.isVip && isActiveUntil(ad.vipUntil);
-  const boosted = isActiveUntil(ad.boostUntil);
+function formatPrice(value) {
+  const numeric = Number(String(value || "").replace(/\D/g, ""));
 
-  if (!pinned && !vip && !boosted) return null;
-
-  if (pinned && vip && boosted) {
-    return (
-      <div className="promo-badges">
-        <span className="promo-badge promo-badge-turbo">TURBO</span>
-      </div>
-    );
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return value ? `${value} ₽` : "Цена не указана";
   }
 
-  if (pinned && vip) {
-    return (
-      <div className="promo-badges">
-        <span className="promo-badge promo-badge-vip">Продвигается</span>
-      </div>
-    );
-  }
-
-  if (pinned) {
-    return (
-      <div className="promo-badges">
-        <span className="promo-badge promo-badge-pin">Закреплено</span>
-      </div>
-    );
-  }
-
-  if (vip) {
-    return (
-      <div className="promo-badges">
-        <span className="promo-badge promo-badge-vip">VIP</span>
-      </div>
-    );
-  }
-
-  if (boosted) {
-    return (
-      <div className="promo-badges">
-        <span className="promo-badge promo-badge-boost">Поднято</span>
-      </div>
-    );
-  }
-
-  return null;
+  return `${new Intl.NumberFormat("ru-RU").format(numeric)} ₽`;
 }
 
-function HeaderBar({ headerHidden, theme, onToggleTheme, onOpenSettings }) {
-  return (
-    <div className={`top-bar ${headerHidden ? "header-hidden" : ""}`}>
-      <button className="top-icon-btn settings-main-btn" onClick={onOpenSettings} aria-label="Настройки">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M5.25 7.25H18.75" />
-          <path d="M5.25 12H18.75" />
-          <path d="M5.25 16.75H18.75" />
-          <circle cx="9" cy="7.25" r="2" />
-          <circle cx="15" cy="12" r="2" />
-          <circle cx="10.5" cy="16.75" r="2" />
-        </svg>
-      </button>
+function getAdImage(ad) {
+  if (Array.isArray(ad.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
+  return ad.imageUrl || "";
+}
 
-      <div
-        className="header compact-header"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      >
-        <h2>Объявления</h2>
+function CategoryIcon({ type }) {
+  if (type === "Все") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="4" width="6" height="6" rx="1.6" />
+        <rect x="14" y="4" width="6" height="6" rx="1.6" />
+        <rect x="4" y="14" width="6" height="6" rx="1.6" />
+        <rect x="14" y="14" width="6" height="6" rx="1.6" />
+      </svg>
+    );
+  }
+
+  if (["Транспорт", "Автотовары", "Мототовары"].includes(type)) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M6.5 15.5H17.5" />
+        <path d="M7.8 9.2H16.2L18.4 13.3V17.2H5.6V13.3L7.8 9.2Z" />
+        <path d="M8 17.2V18.3" />
+        <path d="M16 17.2V18.3" />
+        <circle cx="8.3" cy="14.5" r="1" />
+        <circle cx="15.7" cy="14.5" r="1" />
+      </svg>
+    );
+  }
+
+  if (["Для дома", "Мебель", "Бытовая техника"].includes(type)) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M8.5 7.5V16.5" />
+        <path d="M8.5 10.5H15.5C17 10.5 18 11.5 18 13V16.5" />
+        <path d="M6.5 16.5H19" />
+        <path d="M8 16.5V19" />
+        <path d="M17.5 16.5V19" />
+      </svg>
+    );
+  }
+
+  if (["Одежда", "Обувь", "Аксессуары"].includes(type)) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M9 4.8L12 6.2L15 4.8L19 8.2L16.7 11V19.2H7.3V11L5 8.2L9 4.8Z" />
+        <path d="M10.2 5.4C10.5 6.4 11.1 7 12 7C12.9 7 13.5 6.4 13.8 5.4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="5" width="14" height="10" rx="2" />
+      <path d="M9 19H15" />
+      <path d="M12 15V19" />
+    </svg>
+  );
+}
+
+function ThemeIcon({ theme }) {
+  if (theme === "dark") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2.5V5" />
+        <path d="M12 19V21.5" />
+        <path d="M4.93 4.93L6.7 6.7" />
+        <path d="M17.3 17.3L19.07 19.07" />
+        <path d="M2.5 12H5" />
+        <path d="M19 12H21.5" />
+        <path d="M4.93 19.07L6.7 17.3" />
+        <path d="M17.3 6.7L19.07 4.93" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4A6.5 6.5 0 0 0 20 15.2Z" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 8.2A3.8 3.8 0 1 0 12 15.8A3.8 3.8 0 0 0 12 8.2Z" />
+      <path d="M18.1 13.2C18.15 12.82 18.15 12.38 18.1 12L20.05 10.5L18.1 7.12L15.78 8.05C15.44 7.8 15.05 7.58 14.65 7.42L14.3 5H10.4L10.05 7.42C9.62 7.58 9.24 7.8 8.9 8.05L6.58 7.12L4.62 10.5L6.58 12C6.53 12.4 6.53 12.82 6.58 13.2L4.62 14.72L6.58 18.1L8.9 17.15C9.24 17.42 9.62 17.64 10.05 17.8L10.4 20.2H14.3L14.65 17.8C15.05 17.64 15.44 17.42 15.78 17.15L18.1 18.1L20.05 14.72L18.1 13.2Z" />
+    </svg>
+  );
+}
+
+function MainHeader({ theme, onToggleTheme, onOpenSettings }) {
+  return (
+    <header className="market-header">
+      <div className="market-city">Вологда</div>
+
+      <div className="market-title-wrap">
+        <h1>Барахолка</h1>
+        <p>мини-приложение</p>
       </div>
 
-      <button className="top-icon-btn" onClick={onToggleTheme}>
-        {theme === "dark" ? (
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2.5V5" />
-            <path d="M12 19V21.5" />
-            <path d="M4.93 4.93L6.7 6.7" />
-            <path d="M17.3 17.3L19.07 19.07" />
-            <path d="M2.5 12H5" />
-            <path d="M19 12H21.5" />
-            <path d="M4.93 19.07L6.7 17.3" />
-            <path d="M17.3 6.7L19.07 4.93" />
-          </svg>
+      <div className="market-header-actions">
+        <button className="market-icon-btn" onClick={onToggleTheme} aria-label="Сменить тему">
+          <ThemeIcon theme={theme} />
+        </button>
+
+        <button className="market-icon-btn" onClick={onOpenSettings} aria-label="Настройки">
+          <SettingsIcon />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function CategoryRail({ selectedCategory, onSelectCategory }) {
+  const categories = ["Все", ...CATEGORIES];
+
+  return (
+    <div className="market-category-rail" aria-label="Категории">
+      {categories.map((category) => {
+        const isActive = category === "Все" ? !selectedCategory : selectedCategory === category;
+
+        return (
+          <button
+            key={category}
+            type="button"
+            className={`market-category-chip ${isActive ? "active" : ""}`}
+            onClick={() => onSelectCategory(category === "Все" ? "" : category)}
+          >
+            <span className="market-category-icon" aria-hidden="true">
+              <CategoryIcon type={category} />
+            </span>
+            <span>{category}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function VerifiedSellersBanner() {
+  return (
+    <div className="verified-sellers-banner" role="button" tabIndex={0}>
+      <div className="verified-sellers-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 3.8L18.5 6.6V11.7C18.5 15.7 15.8 18.8 12 20.3C8.2 18.8 5.5 15.7 5.5 11.7V6.6L12 3.8Z" />
+          <path d="M8.8 12.1L10.8 14.1L15.4 9.4" />
+        </svg>
+      </div>
+
+      <div className="verified-sellers-text">
+        <h2>Проверенные продавцы</h2>
+        <p>Только надежные сделки</p>
+      </div>
+
+      <span className="verified-sellers-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M9 5L16 12L9 19" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
+function MarketAdCard({ ad, index, onOpen }) {
+  const image = getAdImage(ad);
+
+  return (
+    <button
+      type="button"
+      className={`market-card ${getPromotionRank(ad) > 0 ? "market-card-promoted" : ""}`}
+      style={{ animationDelay: `${index * 45}ms` }}
+      onClick={() => onOpen(ad)}
+    >
+      <div className="market-card-image-wrap">
+        {image ? (
+          <img src={image} alt={ad.title} className="market-card-image" />
         ) : (
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z" />
-          </svg>
+          <div className="market-card-placeholder" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="4.5" y="5" width="15" height="14" rx="3" />
+              <path d="M8 14L10.4 11.6L13 14.2L14.6 12.6L17 15" />
+              <circle cx="9" cy="9" r="1" />
+            </svg>
+          </div>
         )}
-      </button>
+      </div>
+
+      <div className="market-card-body">
+        <div className="market-card-title">{ad.title}</div>
+        <div className="market-card-price">{formatPrice(ad.price)}</div>
+        <div className="market-card-location">{ad.city || "Вологда"}</div>
+      </div>
+    </button>
+  );
+}
+
+function SellFasterBanner() {
+  return (
+    <div className="sell-faster-banner">
+      <div className="sell-faster-plus" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 5V19" />
+          <path d="M5 12H19" />
+        </svg>
+      </div>
+
+      <div className="sell-faster-text">
+        <h2>Продайте быстрее</h2>
+        <p>Разместите объявление прямо сейчас</p>
+      </div>
+
+      <span className="sell-faster-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M9 5L16 12L9 19" />
+        </svg>
+      </span>
     </div>
   );
 }
@@ -141,41 +280,25 @@ export default function AdList({
 }) {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [headerHidden, setHeaderHidden] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(
     () => localStorage.getItem("ads_filter_category") || ""
   );
-  const [draftCategory, setDraftCategory] = useState(
-    () => localStorage.getItem("ads_filter_category") || ""
-  );
-
-  const lastY = useRef(0);
 
   useEffect(() => {
     loadAds();
-
-    const onScroll = () => {
-      const currentY = window.scrollY;
-
-      if (currentY > lastY.current && currentY > 40) {
-        setHeaderHidden(true);
-      } else {
-        setHeaderHidden(false);
-      }
-
-      lastY.current = currentY;
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const loadAds = async () => {
-    const data = await getAds();
-    const approved = data.filter((ad) => ad.status === "approved");
-    setAds(sortAds(approved));
-    setLoading(false);
+    try {
+      const data = await getAds();
+      const approved = data.filter((ad) => ad.status === "approved");
+      setAds(sortAds(approved));
+    } catch (error) {
+      console.error("Ошибка загрузки объявлений:", error);
+      setAds([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredAds = useMemo(() => {
@@ -183,175 +306,94 @@ export default function AdList({
     return ads.filter((ad) => ad.category === selectedCategory);
   }, [ads, selectedCategory]);
 
-  const applyFilter = () => {
-    setSelectedCategory(draftCategory);
-    if (draftCategory) {
-      localStorage.setItem("ads_filter_category", draftCategory);
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
+
+    if (category) {
+      localStorage.setItem("ads_filter_category", category);
     } else {
       localStorage.removeItem("ads_filter_category");
     }
-    setShowFilter(false);
-  };
-
-  const resetFilter = () => {
-    setDraftCategory("");
-    setSelectedCategory("");
-    localStorage.removeItem("ads_filter_category");
-    setShowFilter(false);
   };
 
   if (loading) {
     return (
-      <div className="list-page-shell">
-        <HeaderBar
-          headerHidden={headerHidden}
+      <main className="market-home page-enter">
+        <MainHeader
           theme={theme}
           onToggleTheme={onToggleTheme}
           onOpenSettings={onOpenSettings}
         />
 
-        <div className="filter-bar">
-          <button className="filter-trigger" onClick={() => setShowFilter(true)}>
-            <span className="filter-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4.5 7H19.5" />
-                <path d="M7.5 12H16.5" />
-                <path d="M10 17H14" />
-              </svg>
-            </span>
-            <span>Фильтр</span>
-          </button>
+        <CategoryRail
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectCategory}
+        />
+
+        <VerifiedSellersBanner />
+
+        <div className="market-section-head">
+          <h2>Популярные объявления</h2>
+          <span>Смотреть все</span>
         </div>
 
-        <div className="grid">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="skeleton-card"></div>
+        <div className="market-grid">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="market-card market-card-skeleton" />
           ))}
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="list-page-shell">
-      <HeaderBar
-        headerHidden={headerHidden}
+    <main className="market-home page-enter">
+      <MainHeader
         theme={theme}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
       />
 
-      <div className="filter-bar">
-        <button className="filter-trigger" onClick={() => setShowFilter(true)}>
-          <span className="filter-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M4.5 7H19.5" />
-              <path d="M7.5 12H16.5" />
-              <path d="M10 17H14" />
-            </svg>
-          </span>
-          <span>Фильтр</span>
-        </button>
+      <CategoryRail
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+      />
 
-        {selectedCategory && (
-          <div className="filter-chip-active">{selectedCategory}</div>
+      <VerifiedSellersBanner />
+
+      <div className="market-section-head">
+        <h2>{selectedCategory ? selectedCategory : "Популярные объявления"}</h2>
+        {selectedCategory ? (
+          <button type="button" onClick={() => handleSelectCategory("")}>Сбросить</button>
+        ) : (
+          <span>Смотреть все</span>
         )}
       </div>
 
       {filteredAds.length === 0 ? (
-        <div className="empty-state page-enter">
-          <div className="empty-icon">
+        <div className="market-empty-state">
+          <div className="market-empty-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
-              <rect x="5" y="4.5" width="14" height="15" rx="3.5" />
-              <path d="M8.5 9.5H15.5" />
-              <path d="M8.5 13H15.5" />
-              <path d="M10 7.25H14" />
+              <rect x="4.5" y="5" width="15" height="14" rx="3" />
+              <path d="M8 14L10.4 11.6L13 14.2L14.6 12.6L17 15" />
             </svg>
           </div>
           <h3>{selectedCategory ? "В этой категории пока пусто" : "Пока объявлений нет"}</h3>
           <p>
             {selectedCategory
-              ? "Попробуй выбрать другую категорию или сбросить фильтр."
+              ? "Выбери другую категорию или сбрось фильтр."
               : "Нажми «Создать» внизу и размести первое объявление."}
           </p>
         </div>
       ) : (
-        <div className="grid">
+        <div className="market-grid">
           {filteredAds.map((ad, index) => (
-            <div
-              className={`card card-appear card-press ${
-                getPromotionRank(ad) > 0 ? "card-promoted" : ""
-              } ${ad.isVip && isActiveUntil(ad.vipUntil) ? "card-vip" : ""} ${
-                ad.isPinned && isActiveUntil(ad.pinnedUntil) ? "card-pinned" : ""
-              }`}
-              style={{ animationDelay: `${index * 45}ms` }}
-              key={ad.id}
-              onClick={() => onOpen(ad)}
-            >
-              {ad.imageUrl && (
-                <div className="clean-card-image-wrap">
-                  <img
-                    src={ad.imageUrl}
-                    alt={ad.title}
-                    className="clean-card-image-main"
-                  />
-                </div>
-              )}
-
-              <CardBadges ad={ad} />
-
-              <h3>{ad.title}</h3>
-              <p>{ad.price} ₽</p>
-            </div>
+            <MarketAdCard key={ad.id} ad={ad} index={index} onOpen={onOpen} />
           ))}
         </div>
       )}
 
-      {showFilter && (
-        <div className="ios-sheet-backdrop" onClick={() => setShowFilter(false)}>
-          <div className="ios-sheet-wrap" onClick={(e) => e.stopPropagation()}>
-            <div className="ios-sheet-card">
-              <div className="ios-sheet-header">
-                <div className="ios-sheet-title">Фильтр объявлений</div>
-                <div className="ios-sheet-subtitle">
-                  Выбери категорию для показа объявлений
-                </div>
-              </div>
-
-              <div className="ios-sheet-list">
-                {CATEGORIES.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className={`ios-sheet-option ${draftCategory === item ? "active" : ""}`}
-                    onClick={() => setDraftCategory(item)}
-                  >
-                    <span>{item}</span>
-
-                    {draftCategory === item && (
-                      <span className="ios-sheet-check" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M7 12.5L10.2 15.5L17 8.5" />
-                        </svg>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="ios-sheet-actions">
-              <button type="button" className="ios-sheet-apply" onClick={applyFilter}>
-                Применить
-              </button>
-
-              <button type="button" className="ios-sheet-cancel" onClick={resetFilter}>
-                Сбросить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <SellFasterBanner />
+    </main>
   );
 }
