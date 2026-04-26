@@ -5865,7 +5865,8 @@ body,
 /* Seller page — premium profile/card layout */
 .seller-premium-page {
   min-height: 100vh;
-  padding: calc(10px + var(--tg-safe-top, 0px)) 15px 126px;
+  /* The back button is fixed, so the content must start lower and never sit under it. */
+  padding: calc(78px + env(safe-area-inset-top, 0px)) 15px 126px;
   color: var(--market-text, #f4fbff);
   box-sizing: border-box;
 }
@@ -6292,10 +6293,29 @@ body,
     #edf5fa;
 }
 
+[data-theme="light"] .seller-premium-verified {
+  color: #04745f;
+  background:
+    linear-gradient(180deg, rgba(21, 214, 179, 0.18), rgba(21, 151, 131, 0.10)),
+    rgba(255,255,255,0.72);
+  border-color: rgba(0, 154, 128, 0.30);
+  box-shadow: 0 8px 20px rgba(0, 154, 128, 0.10);
+}
+
+[data-theme="light"] .seller-premium-unverified {
+  color: #6b7280;
+  background:
+    linear-gradient(180deg, rgba(105, 113, 128, 0.12), rgba(105, 113, 128, 0.06)),
+    rgba(255,255,255,0.78);
+  border-color: rgba(105, 113, 128, 0.22);
+  box-shadow: 0 8px 20px rgba(17,24,39,0.06);
+}
+
 @media (max-width: 390px) {
   .seller-premium-page {
     padding-left: 12px;
     padding-right: 12px;
+    padding-top: calc(76px + env(safe-area-inset-top, 0px));
   }
 
   .seller-premium-main {
