@@ -92,14 +92,14 @@ function CardBadges({ ad }) {
 function HeaderBar({ headerHidden, theme, onToggleTheme, onOpenSettings }) {
   return (
     <div className={`top-bar ${headerHidden ? "header-hidden" : ""}`}>
-      <button className="top-icon-btn" onClick={onOpenSettings}>
+      <button className="top-icon-btn settings-main-btn" onClick={onOpenSettings} aria-label="Настройки">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 7H18" />
-          <path d="M6 12H18" />
-          <path d="M6 17H18" />
-          <circle cx="9" cy="7" r="1.75" fill="currentColor" stroke="none" />
-          <circle cx="15" cy="12" r="1.75" fill="currentColor" stroke="none" />
-          <circle cx="11" cy="17" r="1.75" fill="currentColor" stroke="none" />
+          <path d="M5.25 7.25H18.75" />
+          <path d="M5.25 12H18.75" />
+          <path d="M5.25 16.75H18.75" />
+          <circle cx="9" cy="7.25" r="2" />
+          <circle cx="15" cy="12" r="2" />
+          <circle cx="10.5" cy="16.75" r="2" />
         </svg>
       </button>
 
@@ -202,7 +202,7 @@ export default function AdList({
 
   if (loading) {
     return (
-      <div className="ad-list-screen">
+      <div className="list-page-shell">
         <HeaderBar
           headerHidden={headerHidden}
           theme={theme}
@@ -233,7 +233,7 @@ export default function AdList({
   }
 
   return (
-    <div className="ad-list-screen">
+    <div className="list-page-shell">
       <HeaderBar
         headerHidden={headerHidden}
         theme={theme}
