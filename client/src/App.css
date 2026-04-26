@@ -4947,3 +4947,398 @@ body {
     font-size: 14px;
   }
 }
+
+/* ======================================================================
+   Main screen hotfix v2: readable light theme, compact chips/buttons,
+   verified sellers filter, corrected typography and nav contrast
+   ====================================================================== */
+:root {
+  --market-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  --market-accent: #43e6e3;
+  --market-accent-2: #27c7c5;
+  --market-gold: #d6ad63;
+}
+
+body,
+#root,
+.app,
+.market-home,
+.market-home * {
+  font-family: var(--market-font) !important;
+}
+
+.market-home {
+  max-width: 430px;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px)) !important;
+}
+
+.market-header {
+  grid-template-columns: 84px minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  margin-bottom: 18px !important;
+}
+
+.market-city {
+  font-size: 18px !important;
+  font-weight: 760 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.market-title-wrap h1 {
+  font-size: 26px !important;
+  font-weight: 780 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.market-title-wrap p {
+  font-size: 14px !important;
+  font-weight: 560 !important;
+  letter-spacing: -0.025em !important;
+  margin-top: 4px !important;
+}
+
+.market-header-actions {
+  gap: 8px !important;
+}
+
+.market-icon-btn {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  border-radius: 15px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 0 0 46px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 10px 22px rgba(0,0,0,0.24) !important;
+}
+
+.market-icon-btn svg,
+.market-icon-btn:first-child svg {
+  width: 25px !important;
+  height: 25px !important;
+  stroke-width: 1.9 !important;
+}
+
+.market-icon-btn[aria-label="Настройки"] svg {
+  width: 26px !important;
+  height: 26px !important;
+  transform: translateY(0) !important;
+}
+
+.market-category-rail {
+  margin: 0 -16px 16px !important;
+  padding: 0 16px 8px !important;
+  gap: 8px !important;
+}
+
+.market-category-chip {
+  width: auto !important;
+  min-width: max-content !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  border-radius: 15px !important;
+  padding: 0 13px !important;
+  gap: 8px !important;
+  font-size: 14px !important;
+  font-weight: 680 !important;
+  letter-spacing: -0.032em !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.055),
+    0 8px 18px rgba(0,0,0,0.20) !important;
+}
+
+.market-category-chip:first-child {
+  margin-left: 0 !important;
+}
+
+.market-category-icon,
+.market-category-icon svg {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.market-category-icon svg {
+  stroke-width: 1.75 !important;
+}
+
+.verified-sellers-banner {
+  width: 100% !important;
+  min-height: 72px !important;
+  margin: 4px 0 22px !important;
+  padding: 13px 15px !important;
+  border-radius: 19px !important;
+  text-align: left !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    0 14px 30px rgba(0,0,0,0.28) !important;
+}
+
+.verified-sellers-banner.active {
+  border-color: rgba(67, 230, 227, 0.62) !important;
+  background:
+    radial-gradient(circle at 12% 48%, rgba(67,230,227,0.24), transparent 34%),
+    linear-gradient(90deg, rgba(67,230,227,0.16), rgba(255,255,255,0.035)) !important;
+}
+
+.verified-sellers-icon {
+  width: 49px !important;
+  height: 49px !important;
+  border-radius: 17px !important;
+}
+
+.verified-sellers-icon svg {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.verified-sellers-text h2,
+.sell-faster-text h2 {
+  font-size: 19px !important;
+  font-weight: 780 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.verified-sellers-text p,
+.sell-faster-text p {
+  font-size: 14px !important;
+  font-weight: 560 !important;
+  letter-spacing: -0.032em !important;
+}
+
+.market-section-head {
+  justify-content: flex-start !important;
+  margin: 0 2px 14px !important;
+}
+
+.market-section-head h2 {
+  font-size: 21px !important;
+  font-weight: 780 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.market-section-head span {
+  display: none !important;
+}
+
+.market-section-head button {
+  width: auto !important;
+  margin-left: auto !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.market-grid {
+  gap: 10px !important;
+}
+
+.market-card {
+  width: 100% !important;
+  border-radius: 17px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.052),
+    0 13px 26px rgba(0,0,0,0.27) !important;
+}
+
+.market-card-title {
+  font-size: 16px !important;
+  font-weight: 660 !important;
+  letter-spacing: -0.043em !important;
+}
+
+.market-card-price {
+  font-size: 17px !important;
+  font-weight: 760 !important;
+}
+
+.market-card-location {
+  font-size: 13px !important;
+  font-weight: 560 !important;
+}
+
+.sell-faster-banner {
+  min-height: 64px !important;
+  border-radius: 17px !important;
+}
+
+.bottom-nav {
+  height: 72px !important;
+  border-radius: 18px !important;
+}
+
+.nav-item,
+.nav-item.active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.nav-item.active {
+  color: var(--market-accent) !important;
+}
+
+.nav-label {
+  color: currentColor !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Light theme is intentionally not white-on-white anymore */
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 16% 6%, rgba(55, 183, 187, 0.18), transparent 28%),
+    radial-gradient(circle at 90% 92%, rgba(214, 173, 99, 0.12), transparent 28%),
+    linear-gradient(180deg, #eef6f7 0%, #f8fbfc 100%) !important;
+}
+
+[data-theme="light"] .app {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(67, 230, 227, 0.18), transparent 28%),
+    radial-gradient(circle at 90% 86%, rgba(214, 173, 99, 0.11), transparent 30%),
+    linear-gradient(180deg, #eef6f7 0%, #f9fbfc 100%) !important;
+  color: #10212a !important;
+}
+
+[data-theme="light"] .app::before {
+  opacity: 0.28 !important;
+  background:
+    linear-gradient(120deg, transparent 0 44%, rgba(39, 160, 165, 0.11) 45%, transparent 47% 100%),
+    radial-gradient(circle at 0 0, rgba(67, 230, 227, 0.16), transparent 30%) !important;
+}
+
+[data-theme="light"] .market-home,
+[data-theme="light"] .market-title-wrap h1,
+[data-theme="light"] .market-city,
+[data-theme="light"] .market-section-head h2,
+[data-theme="light"] .market-card-title,
+[data-theme="light"] .verified-sellers-text h2,
+[data-theme="light"] .sell-faster-text h2 {
+  color: #10212a !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .market-title-wrap p,
+[data-theme="light"] .market-card-location,
+[data-theme="light"] .sell-faster-text p {
+  color: rgba(16, 33, 42, 0.62) !important;
+}
+
+[data-theme="light"] .market-icon-btn,
+[data-theme="light"] .market-category-chip,
+[data-theme="light"] .market-card,
+[data-theme="light"] .verified-sellers-banner,
+[data-theme="light"] .sell-faster-banner,
+[data-theme="light"] .bottom-nav,
+[data-theme="light"] .market-empty-state {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.88), rgba(246,250,251,0.76)) !important;
+  border-color: rgba(16,33,42,0.12) !important;
+  color: #10212a !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 14px 28px rgba(20,54,70,0.11) !important;
+}
+
+[data-theme="light"] .market-category-chip.active {
+  color: #073235 !important;
+  background:
+    radial-gradient(circle at 22% 16%, rgba(67,230,227,0.42), transparent 44%),
+    linear-gradient(180deg, rgba(67,230,227,0.24), rgba(255,255,255,0.78)) !important;
+  border-color: rgba(22, 181, 184, 0.58) !important;
+}
+
+[data-theme="light"] .market-card-image-wrap {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(28, 174, 178, 0.1), transparent 45%),
+    #eaf1f4 !important;
+}
+
+[data-theme="light"] .market-card-image-wrap::after {
+  background: linear-gradient(180deg, transparent 50%, rgba(238, 246, 248, 0.72) 100%) !important;
+}
+
+[data-theme="light"] .market-card-price,
+[data-theme="light"] .market-section-head button,
+[data-theme="light"] .nav-item.active {
+  color: #069ea1 !important;
+}
+
+[data-theme="light"] .verified-sellers-text p {
+  color: #0d9699 !important;
+}
+
+[data-theme="light"] .verified-sellers-icon,
+[data-theme="light"] .sell-faster-plus {
+  color: #06292c !important;
+  background: radial-gradient(circle at 32% 24%, #9dffff, #2fd5d2 62%, #13979b 100%) !important;
+}
+
+[data-theme="light"] .verified-sellers-arrow,
+[data-theme="light"] .sell-faster-arrow {
+  background: rgba(16,33,42,0.045) !important;
+  color: rgba(16,33,42,0.66) !important;
+}
+
+[data-theme="light"] .nav-item {
+  color: rgba(16,33,42,0.62) !important;
+}
+
+[data-theme="light"] .nav-item + .nav-item::before {
+  background: rgba(16,33,42,0.10) !important;
+}
+
+@media (max-width: 380px) {
+  .market-home {
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+
+  .market-header {
+    grid-template-columns: 70px minmax(0, 1fr) auto !important;
+  }
+
+  .market-city {
+    font-size: 16px !important;
+  }
+
+  .market-title-wrap h1 {
+    font-size: 23px !important;
+  }
+
+  .market-title-wrap p {
+    font-size: 12.5px !important;
+  }
+
+  .market-icon-btn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 14px !important;
+  }
+
+  .market-icon-btn svg,
+  .market-icon-btn:first-child svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  .market-category-rail {
+    margin-left: -13px !important;
+    margin-right: -13px !important;
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+
+  .market-category-chip {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+  }
+}

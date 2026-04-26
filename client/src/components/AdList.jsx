@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAds } from "../firebase";
+import { getAds, getUserProfile } from "../firebase";
 import { CATEGORIES } from "../categories";
 
 function isActiveUntil(value) {
@@ -135,9 +135,17 @@ function ThemeIcon({ theme }) {
 
 function SettingsIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="M12 8.2A3.8 3.8 0 1 0 12 15.8A3.8 3.8 0 0 0 12 8.2Z" />
-      <path d="M18.1 13.2C18.15 12.82 18.15 12.38 18.1 12L20.05 10.5L18.1 7.12L15.78 8.05C15.44 7.8 15.05 7.58 14.65 7.42L14.3 5H10.4L10.05 7.42C9.62 7.58 9.24 7.8 8.9 8.05L6.58 7.12L4.62 10.5L6.58 12C6.53 12.4 6.53 12.82 6.58 13.2L4.62 14.72L6.58 18.1L8.9 17.15C9.24 17.42 9.62 17.64 10.05 17.8L10.4 20.2H14.3L14.65 17.8C15.05 17.64 15.44 17.42 15.78 17.15L18.1 18.1L20.05 14.72L18.1 13.2Z" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3.2V5.1" />
+      <path d="M12 18.9V20.8" />
+      <path d="M5.78 5.78L7.12 7.12" />
+      <path d="M16.88 16.88L18.22 18.22" />
+      <path d="M3.2 12H5.1" />
+      <path d="M18.9 12H20.8" />
+      <path d="M5.78 18.22L7.12 16.88" />
+      <path d="M16.88 7.12L18.22 5.78" />
+      <circle cx="12" cy="12" r="4.2" />
+      <circle cx="12" cy="12" r="1.45" />
     </svg>
   );
 }
@@ -191,9 +199,14 @@ function CategoryRail({ selectedCategory, onSelectCategory }) {
   );
 }
 
-function VerifiedSellersBanner() {
+function VerifiedSellersBanner({ active, onToggle }) {
   return (
-    <div className="verified-sellers-banner" role="button" tabIndex={0}>
+    <button
+      type="button"
+      className={`verified-sellers-banner ${active ? "active" : ""}`}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
       <div className="verified-sellers-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M12 3.8L18.5 6.6V11.7C18.5 15.7 15.8 18.8 12 20.3C8.2 18.8 5.5 15.7 5.5 11.7V6.6L12 3.8Z" />
@@ -202,16 +215,16 @@ function VerifiedSellersBanner() {
       </div>
 
       <div className="verified-sellers-text">
-        <h2>Проверенные продавцы</h2>
-        <p>Только надежные сделки</p>
+        <h2>{active ? "Проверенные включены" : "Проверенные продавцы"}</h2>
+        <p>{active ? "Показаны только подтвержденные" : "Только надежные сделки"}</p>
       </div>
 
       <span className="verified-sellers-arrow" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
-          <path d="M9 5L16 12L9 19" />
+          <path d={active ? "M15 6L9 12L15 18" : "M9 5L16 12L9 19"} />
         </svg>
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -283,6 +296,8 @@ export default function AdList({
   const [selectedCategory, setSelectedCategory] = useState(
     () => localStorage.getItem("ads_filter_category") || ""
   );
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [verifiedSellerIds, setVerifiedSellerIds] = useState(() => new Set());
 
   useEffect(() => {
     loadAds();
@@ -293,18 +308,43 @@ export default function AdList({
       const data = await getAds();
       const approved = data.filter((ad) => ad.status === "approved");
       setAds(sortAds(approved));
+
+      const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];
+      const profiles = await Promise.all(
+        sellerIds.map(async (sellerId) => {
+          try {
+            const profile = await getUserProfile(sellerId);
+            return profile?.isVerified ? sellerId : null;
+          } catch (error) {
+            console.warn("Не удалось проверить профиль продавца:", sellerId, error);
+            return null;
+          }
+        })
+      );
+
+      setVerifiedSellerIds(new Set(profiles.filter(Boolean)));
     } catch (error) {
       console.error("Ошибка загрузки объявлений:", error);
       setAds([]);
+      setVerifiedSellerIds(new Set());
     } finally {
       setLoading(false);
     }
   };
 
   const filteredAds = useMemo(() => {
-    if (!selectedCategory) return ads;
-    return ads.filter((ad) => ad.category === selectedCategory);
-  }, [ads, selectedCategory]);
+    let result = ads;
+
+    if (selectedCategory) {
+      result = result.filter((ad) => ad.category === selectedCategory);
+    }
+
+    if (verifiedOnly) {
+      result = result.filter((ad) => verifiedSellerIds.has(String(ad.userId || "")));
+    }
+
+    return result;
+  }, [ads, selectedCategory, verifiedOnly, verifiedSellerIds]);
 
   const handleSelectCategory = (category) => {
     setSelectedCategory(category);
@@ -330,11 +370,10 @@ export default function AdList({
           onSelectCategory={handleSelectCategory}
         />
 
-        <VerifiedSellersBanner />
+        <VerifiedSellersBanner active={verifiedOnly} onToggle={() => setVerifiedOnly((value) => !value)} />
 
         <div className="market-section-head">
           <h2>Популярные объявления</h2>
-          <span>Смотреть все</span>
         </div>
 
         <div className="market-grid">
@@ -359,14 +398,26 @@ export default function AdList({
         onSelectCategory={handleSelectCategory}
       />
 
-      <VerifiedSellersBanner />
+      <VerifiedSellersBanner active={verifiedOnly} onToggle={() => setVerifiedOnly((value) => !value)} />
 
       <div className="market-section-head">
-        <h2>{selectedCategory ? selectedCategory : "Популярные объявления"}</h2>
-        {selectedCategory ? (
-          <button type="button" onClick={() => handleSelectCategory("")}>Сбросить</button>
-        ) : (
-          <span>Смотреть все</span>
+        <h2>
+          {verifiedOnly
+            ? "Проверенные объявления"
+            : selectedCategory
+            ? selectedCategory
+            : "Популярные объявления"}
+        </h2>
+        {(selectedCategory || verifiedOnly) && (
+          <button
+            type="button"
+            onClick={() => {
+              handleSelectCategory("");
+              setVerifiedOnly(false);
+            }}
+          >
+            Сбросить
+          </button>
         )}
       </div>
 
@@ -378,10 +429,16 @@ export default function AdList({
               <path d="M8 14L10.4 11.6L13 14.2L14.6 12.6L17 15" />
             </svg>
           </div>
-          <h3>{selectedCategory ? "В этой категории пока пусто" : "Пока объявлений нет"}</h3>
+          <h3>
+            {verifiedOnly
+              ? "У проверенных продавцов пока пусто"
+              : selectedCategory
+              ? "В этой категории пока пусто"
+              : "Пока объявлений нет"}
+          </h3>
           <p>
-            {selectedCategory
-              ? "Выбери другую категорию или сбрось фильтр."
+            {verifiedOnly || selectedCategory
+              ? "Сбрось фильтр или выбери другую категорию."
               : "Нажми «Создать» внизу и размести первое объявление."}
           </p>
         </div>
