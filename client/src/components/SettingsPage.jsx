@@ -95,19 +95,6 @@ function TileIcon({ type }) {
   return null;
 }
 
-function SettingsTopBar({ onBack }) {
-  return (
-    <div className="settings-ios-topbar">
-      <button type="button" className="settings-top-close" onClick={onBack}>Закрыть</button>
-      <div className="settings-top-title">
-        <strong>Барахолка | Вологда</strong>
-        <span>мини-приложение</span>
-      </div>
-      <div className="settings-top-menu" aria-hidden="true">•••</div>
-    </div>
-  );
-}
-
 function ThemeSegment({ theme, onToggleTheme }) {
   return (
     <div className="settings-theme-segment" aria-label="Выбор темы">
@@ -201,8 +188,6 @@ export default function SettingsPage({ onOpenHelp, onOpenLegal, onBack, theme, o
 
   return (
     <div className="settings-ios-page page-enter">
-      <SettingsTopBar onBack={onBack} />
-
       <section className="settings-ios-hero">
         <div className="settings-ios-hero-icon"><GearIcon /></div>
         <div>
