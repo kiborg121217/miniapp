@@ -10,6 +10,7 @@ import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import "./App.css";
 import { initTelegram } from "./telegram";
+import useTelegramViewport from "./hooks/useTelegramViewport";
 import { getAdById, getAds, getUserProfile, getUserProfileBundle } from "./firebase";
 
 function HelpPage({ onBack }) {
@@ -207,6 +208,7 @@ async function preloadFirstAdImages(ads, onStep) {
 }
 
 export default function App() {
+  useTelegramViewport();
   const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
 
   const [selectedAd, setSelectedAd] = useState(() => {

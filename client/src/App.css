@@ -8125,3 +8125,107 @@ body,
     inset 0 1px 0 rgba(255,255,255,0.96),
     0 12px 28px rgba(15,23,42,0.08) !important;
 }
+
+/* === Telegram fullscreen safe-area адаптация === */
+:root {
+  --tg-safe-top: 0px;
+  --tg-safe-bottom: 0px;
+  --tg-content-safe-top: 0px;
+  --tg-content-safe-bottom: 0px;
+  --tg-viewport-height: 100dvh;
+  --tg-stable-viewport-height: 100dvh;
+  --app-safe-top: 0px;
+  --app-safe-bottom: 0px;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+  min-height: var(--tg-viewport-height, 100dvh);
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
+.app {
+  min-height: 100dvh;
+  min-height: var(--tg-viewport-height, 100dvh);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Главный экран: учитываем Dynamic Island / челку / Android статусбар */
+.market-home {
+  padding-top: calc(18px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+/* Страницы с фиксированной кнопкой назад */
+.ad-page-wrap {
+  padding-top: calc(84px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+.seller-premium-page {
+  padding-top: calc(82px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  padding-bottom: calc(126px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+.profile-premium-page,
+.settings-ios-page,
+.settings-detail-page,
+.help-page {
+  padding-top: calc(28px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+.create-premium-page {
+  padding-top: calc(18px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+/* Фиксированные верхние кнопки не должны попадать под системные зоны */
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn {
+  top: calc(16px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+}
+
+.share-ad-btn,
+.seller-share-btn {
+  top: calc(16px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+}
+
+/* Нижняя навигация всегда выше home indicator */
+.bottom-nav {
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px)) !important;
+}
+
+/* Fullscreen-клиенты Telegram часто дают дополнительную верхнюю системную зону */
+html[data-tg-fullscreen-safe="true"] .market-header {
+  margin-top: 2px;
+}
+
+html[data-tg-fullscreen-safe="true"] .create-premium-topbar {
+  margin-top: 2px;
+}
+
+html[data-tg-fullscreen-safe="true"] .ad-page-shell,
+html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
+  scroll-margin-top: calc(82px + var(--app-safe-top, 0px));
+}
+
+@media (max-width: 390px) {
+  .market-home {
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+
+  .bottom-nav {
+    left: 13px !important;
+    right: 13px !important;
+    width: calc(100% - 26px) !important;
+  }
+}
