@@ -303,27 +303,16 @@ export default function ProfilePage({ user, onOpenSection }) {
           )}
         </div>
 
-        <div className="profile-action-row-premium">
-          <button type="button" onClick={() => fileInputRef.current?.click()}>
-            <span className="profile-action-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M8 8.5L10 5.5H14L16 8.5" />
-                <rect x="4.5" y="8.5" width="15" height="10" rx="3" />
-                <circle cx="12" cy="13.5" r="2.7" />
-              </svg>
-            </span>
-            Обновить фото
-          </button>
-
-          {!isVerified && (
+        {!isVerified && (
+          <div className="profile-action-row-premium profile-action-row-single">
             <button type="button" className="profile-verify-action" onClick={handleVerifyPhone}>
               <span className="profile-action-icon">
                 <VerifiedIcon />
               </span>
               Подтвердить номер
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {!!message && <div className="profile-message">{message}</div>}
       </section>
