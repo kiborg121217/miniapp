@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  getUserAds,
-  getUserProfile,
-  saveUserProfile,
+  getUserProfileBundle,
   updateUserProfile,
   uploadImage,
 } from "../firebase";
@@ -65,7 +63,7 @@ function ProfileTileIcon({ type }) {
   );
 }
 
-export default function ProfilePage({ user, onOpenSection }) {
+export default function ProfilePage({ user, onOpenSection, initialProfileData, onProfileDataLoaded }) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [activeAds, setActiveAds] = useState([]);
@@ -73,11 +71,17 @@ export default function ProfilePage({ user, onOpenSection }) {
   const [pendingAds, setPendingAds] = useState([]);
   const [rejectedAds, setRejectedAds] = useState([]);
   const [message, setMessage] = useState("");
+  const [isProfileLoading, setIsProfileLoading] = useState(!initialProfileData);
   const [nameTouched, setNameTouched] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
+
+    if (initialProfileData?.profile) {
+      applyProfileData(initialProfileData);
+    }
+
     loadProfile();
   }, [user?.id]);
 
@@ -96,45 +100,33 @@ export default function ProfilePage({ user, onOpenSection }) {
     normalizedInputName.length > 0 &&
     normalizedInputName !== normalizedCurrentName;
 
+  const applyProfileData = (data) => {
+    if (!data) return;
+
+    setProfile(data.profile || null);
+    setDisplayName(data.profile?.displayName || user?.first_name || "");
+    setNameTouched(false);
+    setActiveAds(Array.isArray(data.activeAds) ? data.activeAds : []);
+    setArchivedAds(Array.isArray(data.archivedAds) ? data.archivedAds : []);
+    setPendingAds(Array.isArray(data.pendingAds) ? data.pendingAds : []);
+    setRejectedAds(Array.isArray(data.rejectedAds) ? data.rejectedAds : []);
+  };
+
   const loadProfile = async () => {
     if (!user?.id) return;
 
-    let existing = await getUserProfile(user.id);
+    setIsProfileLoading(!initialProfileData?.profile);
 
-    if (!existing) {
-      await saveUserProfile({
-        userId: user.id,
-        firstName: user.first_name || "",
-        username: user.username || "",
-        displayName: user.first_name || "Пользователь",
-        avatarUrl: "",
-        telegramAvatarUrl: "",
-        bio: "",
-        theme: "dark",
-        createdAt: Date.now(),
-        isVerified: false,
-        verifiedAt: null,
-        phoneNumber: "",
-      });
-
-      existing = await getUserProfile(user.id);
+    try {
+      const data = await getUserProfileBundle(user);
+      applyProfileData(data);
+      onProfileDataLoaded?.(data);
+    } catch (error) {
+      console.error("Ошибка загрузки профиля:", error);
+      setMessage("Не удалось обновить профиль. Попробуй открыть раздел ещё раз.");
+    } finally {
+      setIsProfileLoading(false);
     }
-
-    setProfile(existing);
-    setDisplayName(existing?.displayName || user.first_name || "");
-    setNameTouched(false);
-
-    const [active, archived, pending, rejected] = await Promise.all([
-      getUserAds(user.id, "approved"),
-      getUserAds(user.id, "archived"),
-      getUserAds(user.id, "pending"),
-      getUserAds(user.id, "rejected"),
-    ]);
-
-    setActiveAds(active);
-    setArchivedAds(archived);
-    setPendingAds(pending);
-    setRejectedAds(rejected);
   };
 
   const saveName = async () => {
@@ -202,6 +194,25 @@ export default function ProfilePage({ user, onOpenSection }) {
           <h2>Профиль недоступен</h2>
           <p>Открой приложение через Telegram, чтобы увидеть свой профиль.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isProfileLoading && !profile) {
+    return (
+      <div className="profile-premium-page page-enter">
+        <section className="profile-owner-card profile-owner-card-loading">
+          <div className="profile-loading-avatar" />
+          <div className="profile-loading-lines">
+            <span />
+            <span />
+            <span />
+          </div>
+        </section>
+        <section className="profile-edit-card profile-loading-card">
+          <div className="profile-loading-wide" />
+          <div className="profile-loading-wide short" />
+        </section>
       </div>
     );
   }

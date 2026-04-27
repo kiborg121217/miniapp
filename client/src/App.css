@@ -7914,3 +7914,117 @@ body,
   font-size: 11px !important;
   letter-spacing: -0.012em !important;
 }
+
+
+/* Real boot preload progress */
+.loading-progress-shell {
+  position: relative;
+  width: 100%;
+  height: 7px;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.loading-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 10%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #74ffd0, #fee08d, #60ecff);
+  box-shadow: 0 0 22px rgba(116,255,208,0.34);
+  transition: width 0.32s ease;
+}
+
+.loading-progress-text {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+[data-theme="light"] .loading-progress-shell {
+  background: rgba(15,23,42,0.06);
+  border-color: rgba(15,23,42,0.08);
+}
+
+[data-theme="light"] .loading-progress-text {
+  color: rgba(15,23,42,0.58);
+}
+
+.profile-owner-card-loading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 138px;
+}
+
+.profile-loading-avatar,
+.profile-loading-lines span,
+.profile-loading-wide {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+
+.profile-loading-avatar {
+  width: 74px;
+  height: 74px;
+  flex: 0 0 auto;
+}
+
+.profile-loading-lines {
+  flex: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.profile-loading-lines span {
+  display: block;
+  height: 14px;
+}
+
+.profile-loading-lines span:nth-child(1) { width: 76%; height: 18px; }
+.profile-loading-lines span:nth-child(2) { width: 54%; }
+.profile-loading-lines span:nth-child(3) { width: 68%; }
+
+.profile-loading-wide {
+  height: 16px;
+  width: 100%;
+}
+
+.profile-loading-wide.short {
+  margin-top: 12px;
+  width: 62%;
+}
+
+.profile-loading-avatar::after,
+.profile-loading-lines span::after,
+.profile-loading-wide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  animation: profileSkeletonSweep 1.25s ease-in-out infinite;
+}
+
+@keyframes profileSkeletonSweep {
+  100% { transform: translateX(100%); }
+}
+
+[data-theme="light"] .profile-loading-avatar,
+[data-theme="light"] .profile-loading-lines span,
+[data-theme="light"] .profile-loading-wide {
+  background: rgba(15,23,42,0.08);
+}
+
+[data-theme="light"] .profile-loading-avatar::after,
+[data-theme="light"] .profile-loading-lines span::after,
+[data-theme="light"] .profile-loading-wide::after {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.72), transparent);
+}

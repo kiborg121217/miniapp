@@ -423,16 +423,26 @@ export default function AdList({
   onOpen,
   onOpenSettings,
   onCreate,
+  initialAds = [],
+  initialVerifiedSellerIds = [],
 }) {
-  const [ads, setAds] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ads, setAds] = useState(() => Array.isArray(initialAds) ? initialAds : []);
+  const [loading, setLoading] = useState(() => !(Array.isArray(initialAds) && initialAds.length > 0));
   const [selectedCategory, setSelectedCategory] = useState(
     () => localStorage.getItem("ads_filter_category") || ""
   );
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [verifiedSellerIds, setVerifiedSellerIds] = useState(() => new Set());
+  const [verifiedSellerIds, setVerifiedSellerIds] = useState(
+    () => new Set(Array.isArray(initialVerifiedSellerIds) ? initialVerifiedSellerIds : [])
+  );
 
   useEffect(() => {
+    if (Array.isArray(initialAds) && initialAds.length > 0) {
+      setAds(sortAds(initialAds));
+      setLoading(false);
+      return;
+    }
+
     loadAds();
   }, []);
 

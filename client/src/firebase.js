@@ -167,6 +167,48 @@ export async function saveUserProfile(profile) {
   );
 }
 
+
+export async function getUserProfileBundle(user) {
+  if (!user?.id) return null;
+
+  let profile = await getUserProfile(user.id);
+
+  if (!profile) {
+    await saveUserProfile({
+      userId: user.id,
+      firstName: user.first_name || "",
+      username: user.username || "",
+      displayName: user.first_name || "Пользователь",
+      avatarUrl: "",
+      telegramAvatarUrl: "",
+      bio: "",
+      theme: "dark",
+      createdAt: Date.now(),
+      isVerified: false,
+      verifiedAt: null,
+      phoneNumber: "",
+    });
+
+    profile = await getUserProfile(user.id);
+  }
+
+  const [activeAds, archivedAds, pendingAds, rejectedAds] = await Promise.all([
+    getUserAds(user.id, "approved"),
+    getUserAds(user.id, "archived"),
+    getUserAds(user.id, "pending"),
+    getUserAds(user.id, "rejected"),
+  ]);
+
+  return {
+    profile,
+    activeAds,
+    archivedAds,
+    pendingAds,
+    rejectedAds,
+    loadedAt: Date.now(),
+  };
+}
+
 export async function updateUserProfile(userId, data) {
   if (!userId) return;
   const ref = doc(db, "users", String(userId));

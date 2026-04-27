@@ -10,7 +10,7 @@ import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import "./App.css";
 import { initTelegram } from "./telegram";
-import { getAdById } from "./firebase";
+import { getAdById, getAds, getUserProfile, getUserProfileBundle } from "./firebase";
 
 function HelpPage({ onBack }) {
   useEffect(() => {
@@ -96,15 +96,18 @@ function HelpPage({ onBack }) {
   );
 }
 
-function LoadingScreen() {
+function LoadingScreen({ progress = 12, subtitle = "Подготавливаем витрину…" }) {
   return (
     <div className="loading-screen">
       <div className="loading-orb loading-orb-1" />
       <div className="loading-orb loading-orb-2" />
       <div className="loading-card">
         <div className="loading-title">Барахолка</div>
-        <div className="loading-subtitle">Подготавливаем витрину…</div>
-        <div className="loading-shimmer" />
+        <div className="loading-subtitle">{subtitle}</div>
+        <div className="loading-progress-shell" aria-label="Загрузка приложения">
+          <div className="loading-progress-fill" style={{ width: `${Math.max(8, Math.min(100, progress))}%` }} />
+        </div>
+        <div className="loading-progress-text">{Math.round(progress)}%</div>
       </div>
     </div>
   );
@@ -125,6 +128,64 @@ function getStartAdIdFromLaunch() {
   if (queryAd) return queryAd;
 
   return null;
+}
+
+function getAdPreviewImage(ad) {
+  if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
+  return ad?.imageUrl || "";
+}
+
+function preloadImage(src, timeoutMs = 2800) {
+  if (!src) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    let done = false;
+
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      resolve(ok);
+    };
+
+    const timer = window.setTimeout(() => finish(false), timeoutMs);
+
+    img.onload = async () => {
+      window.clearTimeout(timer);
+      try {
+        if (img.decode) await img.decode();
+      } catch {
+        // decode не критичен, onload уже сработал
+      }
+      finish(true);
+    };
+
+    img.onerror = () => {
+      window.clearTimeout(timer);
+      finish(false);
+    };
+
+    img.src = src;
+  });
+}
+
+async function preloadFirstAdImages(ads, onStep) {
+  const firstAds = (Array.isArray(ads) ? ads : []).slice(0, 10);
+
+  if (firstAds.length === 0) {
+    onStep?.(100);
+    return;
+  }
+
+  let completed = 0;
+
+  await Promise.allSettled(
+    firstAds.map(async (ad) => {
+      await preloadImage(getAdPreviewImage(ad));
+      completed += 1;
+      onStep?.(completed / firstAds.length);
+    })
+  );
 }
 
 export default function App() {
@@ -150,6 +211,11 @@ export default function App() {
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
+  const [bootProgress, setBootProgress] = useState(10);
+  const [bootSubtitle, setBootSubtitle] = useState("Подготавливаем витрину…");
+  const [preloadedAds, setPreloadedAds] = useState([]);
+  const [preloadedVerifiedSellerIds, setPreloadedVerifiedSellerIds] = useState([]);
+  const [profileCache, setProfileCache] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
@@ -197,14 +263,22 @@ export default function App() {
     let cancelled = false;
     let timeoutId;
 
+    const safeSetProgress = (value, text) => {
+      if (cancelled) return;
+      setBootProgress(value);
+      if (text) setBootSubtitle(text);
+    };
+
     const boot = async () => {
       initTelegram();
 
       const tg = window.Telegram?.WebApp;
+      let user = null;
+
       if (tg) {
         tg.ready();
         tg.expand();
-        const user = tg.initDataUnsafe?.user || null;
+        user = tg.initDataUnsafe?.user || null;
         if (!cancelled) {
           setTgUser(user);
         }
@@ -212,24 +286,73 @@ export default function App() {
 
       const startAdId = getStartAdIdFromLaunch();
 
-      if (startAdId) {
-        try {
+      try {
+        safeSetProgress(18, "Подключаем Telegram…");
+
+        if (startAdId) {
+          safeSetProgress(34, "Открываем объявление…");
           const ad = await getAdById(startAdId);
 
           if (!cancelled && ad) {
             setSelectedAd(ad);
             setPage("view");
+            await preloadImage(getAdPreviewImage(ad), 2200);
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
           }
-        } catch (error) {
-          console.error("Ошибка открытия объявления по startapp:", error);
         }
+
+        safeSetProgress(30, "Загружаем объявления…");
+        const data = await getAds();
+        const approved = data.filter((ad) => ad.status === "approved");
+
+        if (!cancelled) {
+          setPreloadedAds(approved);
+        }
+
+        safeSetProgress(52, "Подготавливаем карточки…");
+        await preloadFirstAdImages(approved, (ratio) => {
+          safeSetProgress(52 + Math.round(ratio * 30), "Подгружаем фото…");
+        });
+
+        safeSetProgress(86, "Проверяем продавцов…");
+        const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];
+        const verifiedIds = await Promise.all(
+          sellerIds.slice(0, 40).map(async (sellerId) => {
+            try {
+              const profile = await getUserProfile(sellerId);
+              return profile?.isVerified ? sellerId : null;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        if (!cancelled) {
+          setPreloadedVerifiedSellerIds(verifiedIds.filter(Boolean));
+        }
+
+        if (user?.id) {
+          safeSetProgress(94, "Обновляем профиль…");
+          getUserProfileBundle(user)
+            .then((data) => {
+              if (!cancelled) setProfileCache(data);
+            })
+            .catch((error) => console.warn("Не удалось заранее загрузить профиль:", error));
+        }
+
+        safeSetProgress(100, "Готово");
+      } catch (error) {
+        console.error("Ошибка стартовой загрузки:", error);
+        safeSetProgress(100, "Открываем приложение…");
       }
 
       timeoutId = setTimeout(() => {
         if (!cancelled) {
           setBootLoading(false);
         }
-      }, 950);
+      }, 250);
     };
 
     boot();
@@ -259,7 +382,7 @@ export default function App() {
   };
 
   if (bootLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen progress={bootProgress} subtitle={bootSubtitle} />;
   }
 
   return (
@@ -268,6 +391,8 @@ export default function App() {
         <AdList
           onOpenSettings={() => goToPage("settings")}
           onCreate={() => goToPage("add")}
+          initialAds={preloadedAds}
+          initialVerifiedSellerIds={preloadedVerifiedSellerIds}
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
@@ -281,6 +406,8 @@ export default function App() {
       {page === "profile" && (
         <ProfilePage
           user={tgUser}
+          initialProfileData={profileCache}
+          onProfileDataLoaded={setProfileCache}
           onOpenSection={(status) => {
             setProfileStatusPage(status);
             setPage("profileAds");
