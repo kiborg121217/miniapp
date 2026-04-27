@@ -8229,3 +8229,65 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
     width: calc(100% - 26px) !important;
   }
 }
+
+/* === Fullscreen safe-area hotfix v2 ===
+   Исправляет: низ навигации, перекрытие hero-блоков кнопкой назад,
+   выравнивание кнопок репоста в объявлении/профиле продавца. */
+
+:root {
+  --fullscreen-top-btn-offset: calc(10px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px));
+  --fullscreen-content-top-gap: calc(92px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px));
+}
+
+/* 1) Нижнее меню было слишком высоко из-за двойного учёта Telegram bottom inset. */
+.bottom-nav {
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+@media (max-width: 390px) {
+  .bottom-nav {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* 2) Все фиксированные верхние кнопки держим на одном safe-level. */
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn,
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  top: var(--fullscreen-top-btn-offset) !important;
+}
+
+/* 3) В объявлении и профиле продавца кнопка репоста должна быть справа на уровне назад. */
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  right: 16px !important;
+  left: auto !important;
+}
+
+/* 4) Страницы с кнопкой назад: даём контенту место под кнопку. */
+.help-page,
+.settings-detail-page {
+  padding-top: var(--fullscreen-content-top-gap) !important;
+}
+
+/* Внутренние вкладки профиля используют старую help-разметку — не даём hero залезать под кнопку. */
+.help-page .help-hero,
+.settings-detail-page .settings-detail-hero,
+.settings-detail-page .help-hero {
+  margin-top: 0 !important;
+}
+
+/* 5) Объявление и профиль продавца — контент начинается ниже верхних кнопок. */
+.ad-page-wrap {
+  padding-top: calc(90px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+}
+
+.seller-premium-page {
+  padding-top: calc(92px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+}
