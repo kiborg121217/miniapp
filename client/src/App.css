@@ -8657,3 +8657,429 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
   border-color: rgba(15, 23, 42, 0.10) !important;
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
 }
+
+/* ======================================================================
+   FINAL RESPONSIVE POLISH vFinal
+   - gallery counter below image
+   - back/share buttons are page-anchored, not viewport-fixed
+   - landscape phone uses full width
+   - desktop/tablet gets adaptive readable layout
+   - vertical phone keeps current comfortable iPhone layout
+   ====================================================================== */
+
+:root {
+  --app-max-phone: 430px;
+  --app-max-tablet: 760px;
+  --app-max-desktop: 1180px;
+  --app-side-pad: clamp(16px, 3vw, 32px);
+  --page-top-control: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 12px);
+  --page-bottom-nav-gap: calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 10px);
+}
+
+/* Main app shell: vertical phones keep the current mobile look. */
+.app {
+  width: 100%;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* All pages that contain top buttons become button positioning context. */
+.page-enter,
+.page-screen,
+.profile-page,
+.profile-ads-page,
+.profile-ads-premium-page,
+.seller-premium-page,
+.seller-page,
+.settings-page,
+.settings-ios-page,
+.help-page,
+.legal-page,
+.add-ad-page,
+.create-premium-page,
+.ad-page-wrap,
+.ad-page-shell,
+.main-screen,
+.home-screen {
+  position: relative !important;
+}
+
+/* Back/share are attached to the page, not to the viewport. */
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn,
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  position: absolute !important;
+  top: var(--page-top-control) !important;
+  z-index: 80 !important;
+  margin: 0 !important;
+}
+
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn {
+  left: var(--app-side-pad) !important;
+}
+
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  right: var(--app-side-pad) !important;
+  left: auto !important;
+}
+
+/* Keep the page content safely below page-anchored controls. */
+.ad-page-wrap,
+.seller-premium-page,
+.seller-page,
+.profile-ads-page,
+.profile-ads-premium-page,
+.help-page,
+.legal-page,
+.settings-ios-page,
+.settings-page,
+.create-premium-page,
+.add-ad-page {
+  padding-top: calc(var(--page-top-control) + 62px) !important;
+}
+
+/* If a page has its own back row, keep it in normal document flow. */
+.page-top-row .back-btn,
+.page-top-row .premium-back-btn,
+.create-premium-topbar .back-btn,
+.create-premium-topbar .premium-back-btn,
+.settings-ios-topbar .back-btn,
+.settings-ios-topbar .premium-back-btn {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+}
+
+/* Bottom nav: phone vertical stays close to bottom, not too high. */
+.bottom-nav {
+  bottom: var(--page-bottom-nav-gap) !important;
+}
+
+/* ================= Gallery modal ================= */
+.modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding:
+    calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 58px)
+    14px
+    calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 22px) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  background: rgba(3, 7, 14, 0.94) !important;
+  z-index: 10000 !important;
+  overflow: hidden !important;
+}
+
+.modal img {
+  order: 1 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: min(100%, 1280px) !important;
+  max-height: calc(100dvh - 138px - var(--tg-safe-top, 0px) - var(--tg-content-safe-top, 0px) - var(--tg-safe-bottom, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  object-fit: contain !important;
+  border-radius: 18px !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Counter is under the image, not above it. */
+.modal .gallery-counter,
+.photo-modal .gallery-counter,
+.image-modal .gallery-counter {
+  order: 2 !important;
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 72px !important;
+  max-width: max-content !important;
+  height: auto !important;
+  min-height: 32px !important;
+  padding: 7px 14px !important;
+  margin: 0 auto !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  color: #fff !important;
+  background: rgba(10, 14, 22, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  z-index: 10020 !important;
+}
+
+.modal-close {
+  position: fixed !important;
+  top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 14px) !important;
+  right: 14px !important;
+  left: auto !important;
+  z-index: 10030 !important;
+}
+
+[data-theme="light"] .modal .gallery-counter,
+[data-theme="light"] .photo-modal .gallery-counter,
+[data-theme="light"] .image-modal .gallery-counter {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* ================= Landscape phones =================
+   In landscape, do not keep a narrow centered mobile column. */
+@media (orientation: landscape) and (max-height: 620px) {
+  :root {
+    --app-side-pad: clamp(18px, 4vw, 44px);
+    --page-top-control: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 10px);
+  }
+
+  html,
+  body,
+  #root,
+  .app {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+  }
+
+  .app {
+    margin: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .main-screen,
+  .home-screen,
+  .page-screen,
+  .profile-page,
+  .profile-ads-page,
+  .profile-ads-premium-page,
+  .seller-premium-page,
+  .seller-page,
+  .settings-page,
+  .settings-ios-page,
+  .help-page,
+  .legal-page,
+  .add-ad-page,
+  .create-premium-page,
+  .ad-page-wrap,
+  .ad-page-shell,
+  .market-page,
+  .market-home,
+  .market-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-screen,
+  .home-screen,
+  .market-page,
+  .market-home,
+  .market-shell,
+  .page-screen,
+  .ad-page-wrap,
+  .seller-premium-page,
+  .settings-ios-page,
+  .create-premium-page,
+  .profile-page {
+    padding-left: var(--app-side-pad) !important;
+    padding-right: var(--app-side-pad) !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-grid,
+  .profile-premium-grid,
+  .ads-grid,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .ad-page-shell,
+  .seller-premium-layout,
+  .seller-premium-content,
+  .create-premium-layout,
+  .settings-ios-content,
+  .profile-premium-content {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .bottom-nav {
+    width: min(560px, calc(100vw - 36px)) !important;
+    max-width: 560px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    bottom: calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 6px) !important;
+  }
+
+  .modal {
+    padding:
+      calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 48px)
+      68px
+      calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+    gap: 8px !important;
+  }
+
+  .modal img {
+    max-width: calc(100vw - 150px) !important;
+    max-height: calc(100dvh - 92px - var(--tg-safe-top, 0px) - var(--tg-content-safe-top, 0px) - var(--tg-safe-bottom, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 16px !important;
+  }
+
+  .modal .gallery-counter,
+  .photo-modal .gallery-counter,
+  .image-modal .gallery-counter {
+    min-height: 28px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .modal-close {
+    top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    right: 10px !important;
+  }
+}
+
+/* ================= Tablets, laptops, desktop, TV =================
+   Wide screens get a real wide layout, not a narrow phone column. */
+@media (min-width: 760px) and (min-height: 621px),
+       (min-width: 900px) {
+  html,
+  body,
+  #root,
+  .app {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+  }
+
+  .app {
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .main-screen,
+  .home-screen,
+  .market-page,
+  .market-home,
+  .market-shell,
+  .page-screen,
+  .profile-page,
+  .profile-ads-page,
+  .profile-ads-premium-page,
+  .seller-premium-page,
+  .seller-page,
+  .settings-page,
+  .settings-ios-page,
+  .help-page,
+  .legal-page,
+  .add-ad-page,
+  .create-premium-page,
+  .ad-page-wrap {
+    width: 100% !important;
+    max-width: var(--app-max-desktop) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--app-side-pad) !important;
+    padding-right: var(--app-side-pad) !important;
+    box-sizing: border-box !important;
+  }
+
+  .ad-page-shell,
+  .seller-premium-content,
+  .seller-premium-layout,
+  .settings-ios-content,
+  .create-premium-layout,
+  .profile-premium-content,
+  .help-content,
+  .legal-content {
+    max-width: var(--app-max-desktop) !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-grid,
+  .profile-premium-grid,
+  .ads-grid,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  .settings-ios-grid,
+  .profile-menu-grid,
+  .profile-premium-menu,
+  .create-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .bottom-nav {
+    width: min(540px, calc(100vw - 44px)) !important;
+    max-width: 540px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    bottom: calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+  }
+
+  .modal img {
+    max-width: min(92vw, 1280px) !important;
+    max-height: calc(100dvh - 148px - var(--tg-safe-top, 0px) - var(--tg-content-safe-top, 0px) - var(--tg-safe-bottom, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Very large screens / TV: keep content readable. */
+@media (min-width: 1440px) {
+  :root {
+    --app-max-desktop: 1280px;
+    --app-side-pad: 36px;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-grid,
+  .profile-premium-grid,
+  .ads-grid,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1900px) {
+  :root {
+    --app-max-desktop: 1440px;
+  }
+}
