@@ -54,6 +54,14 @@ function ProfileTileIcon({ type }) {
     );
   }
 
+  if (type === "favorite") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 20.2C9.8 18.35 7.95 16.7 6.4 15.05C4.85 13.4 4 11.78 4 9.9C4 7.85 5.55 6.3 7.6 6.3C8.78 6.3 9.95 6.85 10.7 7.75L12 9.3L13.3 7.75C14.05 6.85 15.22 6.3 16.4 6.3C18.45 6.3 20 7.85 20 9.9C20 11.78 19.15 13.4 17.6 15.05C16.05 16.7 14.2 18.35 12 20.2Z" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="7" />
@@ -70,6 +78,7 @@ export default function ProfilePage({ user, onOpenSection, initialProfileData, o
   const [archivedAds, setArchivedAds] = useState([]);
   const [pendingAds, setPendingAds] = useState([]);
   const [rejectedAds, setRejectedAds] = useState([]);
+  const [favoriteAds, setFavoriteAds] = useState([]);
   const [message, setMessage] = useState("");
   const [isProfileLoading, setIsProfileLoading] = useState(!initialProfileData);
   const [nameTouched, setNameTouched] = useState(false);
@@ -110,6 +119,7 @@ export default function ProfilePage({ user, onOpenSection, initialProfileData, o
     setArchivedAds(Array.isArray(data.archivedAds) ? data.archivedAds : []);
     setPendingAds(Array.isArray(data.pendingAds) ? data.pendingAds : []);
     setRejectedAds(Array.isArray(data.rejectedAds) ? data.rejectedAds : []);
+    setFavoriteAds(Array.isArray(data.favoriteAds) ? data.favoriteAds : []);
   };
 
   const loadProfile = async () => {
@@ -326,6 +336,19 @@ export default function ProfilePage({ user, onOpenSection, initialProfileData, o
         )}
 
         {!!message && <div className="profile-message">{message}</div>}
+      </section>
+
+      <section className="profile-menu-section">
+        <div className="profile-menu-label">МОЙ РАЗДЕЛ</div>
+
+        <button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="favorite" /></span>
+          <span className="profile-menu-copy">
+            <strong>Избранное</strong>
+            <span>{favoriteAds.length} сохранённых объявлений</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
+        </button>
       </section>
 
       <section className="profile-menu-section">

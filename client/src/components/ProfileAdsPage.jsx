@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getUserAds, archiveAd, restoreAd } from "../firebase";
+import { getUserAds, getUserFavoriteAds, archiveAd, restoreAd } from "../firebase";
 import PageBackButton from "./PageBackButton";
 
 const TITLES = {
@@ -7,6 +7,7 @@ const TITLES = {
   pending: "На модерации",
   archived: "Архив",
   rejected: "Отклонённые",
+  favorites: "Избранное",
 };
 
 const PROMOTE_OPTIONS = [
@@ -72,7 +73,12 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
 
   const loadAds = async () => {
     if (!user?.id) return;
-    const data = await getUserAds(user.id, status);
+
+    const data =
+      status === "favorites"
+        ? await getUserFavoriteAds(user.id)
+        : await getUserAds(user.id, status);
+
     setAds(data);
   };
 
@@ -137,12 +143,12 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
       <div className="help-hero">
         <div className="help-badge">Профиль</div>
         <h2>{TITLES[status] || "Объявления"}</h2>
-        <p>Здесь собраны объявления выбранной категории.</p>
+        <p>{status === "favorites" ? "Здесь собраны объявления, которые ты добавил в избранное." : "Здесь собраны объявления выбранной категории."}</p>
       </div>
 
       <div className="help-card">
         {ads.length === 0 ? (
-          <p>В этой категории пока ничего нет.</p>
+          <p>{status === "favorites" ? "В избранном пока ничего нет." : "В этой категории пока ничего нет."}</p>
         ) : (
           ads.map((ad) => (
             <div key={ad.id} className="profile-ad-row">

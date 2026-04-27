@@ -8,6 +8,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   doc,
   query,
   where,
@@ -192,11 +193,12 @@ export async function getUserProfileBundle(user) {
     profile = await getUserProfile(user.id);
   }
 
-  const [activeAds, archivedAds, pendingAds, rejectedAds] = await Promise.all([
+  const [activeAds, archivedAds, pendingAds, rejectedAds, favoriteAds] = await Promise.all([
     getUserAds(user.id, "approved"),
     getUserAds(user.id, "archived"),
     getUserAds(user.id, "pending"),
     getUserAds(user.id, "rejected"),
+    getUserFavoriteAds(user.id),
   ]);
 
   return {
@@ -205,6 +207,7 @@ export async function getUserProfileBundle(user) {
     archivedAds,
     pendingAds,
     rejectedAds,
+    favoriteAds,
     loadedAt: Date.now(),
   };
 }
@@ -213,6 +216,78 @@ export async function updateUserProfile(userId, data) {
   if (!userId) return;
   const ref = doc(db, "users", String(userId));
   await setDoc(ref, data, { merge: true });
+}
+
+
+/* -------------------- FAVORITES -------------------- */
+
+function getFavoriteDocId(userId, adId) {
+  return `${String(userId)}_${String(adId)}`;
+}
+
+export async function getUserFavoriteIds(userId) {
+  if (!userId) return [];
+
+  const q = query(
+    collection(db, "user_favorites"),
+    where("userId", "==", String(userId))
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => String(d.data().adId)).filter(Boolean);
+}
+
+export async function isAdFavorite(userId, adId) {
+  if (!userId || !adId) return false;
+
+  const ref = doc(db, "user_favorites", getFavoriteDocId(userId, adId));
+  const snap = await getDoc(ref);
+
+  return snap.exists();
+}
+
+export async function toggleFavoriteAd(userId, adId) {
+  if (!userId || !adId) {
+    throw new Error("Для добавления в избранное нужно открыть приложение через Telegram");
+  }
+
+  const ref = doc(db, "user_favorites", getFavoriteDocId(userId, adId));
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    await deleteDoc(ref);
+    return false;
+  }
+
+  await setDoc(ref, {
+    userId: String(userId),
+    adId: String(adId),
+    createdAt: Date.now(),
+  });
+
+  return true;
+}
+
+export async function getUserFavoriteAds(userId) {
+  if (!userId) return [];
+
+  const favoriteIds = await getUserFavoriteIds(userId);
+
+  if (favoriteIds.length === 0) return [];
+
+  const ads = await Promise.all(
+    favoriteIds.map(async (adId) => {
+      try {
+        return await getAdById(adId);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return ads
+    .filter(Boolean)
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 /* -------------------- VIEWS -------------------- */

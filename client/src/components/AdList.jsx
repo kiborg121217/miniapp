@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAds, getUserProfile } from "../firebase";
+import { getAds, getUserProfile, getUserFavoriteIds, toggleFavoriteAd } from "../firebase";
 import { CATEGORIES } from "../categories";
 
 function isActiveUntil(value) {
@@ -362,7 +362,15 @@ function VerifiedSellersBanner({ active, onToggle }) {
   );
 }
 
-function MarketAdCard({ ad, index, onOpen }) {
+function FavoriteHeartIcon({ active }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 20.2C9.8 18.35 7.95 16.7 6.4 15.05C4.85 13.4 4 11.78 4 9.9C4 7.85 5.55 6.3 7.6 6.3C8.78 6.3 9.95 6.85 10.7 7.75L12 9.3L13.3 7.75C14.05 6.85 15.22 6.3 16.4 6.3C18.45 6.3 20 7.85 20 9.9C20 11.78 19.15 13.4 17.6 15.05C16.05 16.7 14.2 18.35 12 20.2Z" />
+    </svg>
+  );
+}
+
+function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
   const image = getAdImage(ad);
 
   return (
@@ -373,6 +381,27 @@ function MarketAdCard({ ad, index, onOpen }) {
       onClick={() => onOpen(ad)}
     >
       <div className="market-card-image-wrap">
+        <span
+          role="button"
+          tabIndex={0}
+          className={`favorite-card-btn ${isFavorite ? "active" : ""}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleFavorite?.(ad);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite?.(ad);
+            }
+          }}
+          aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+        >
+          <FavoriteHeartIcon active={isFavorite} />
+        </span>
+
         {image ? (
           <img src={image} alt={ad.title} className="market-card-image" />
         ) : (
@@ -425,6 +454,7 @@ export default function AdList({
   onCreate,
   initialAds = [],
   initialVerifiedSellerIds = [],
+  currentUser,
 }) {
   const [ads, setAds] = useState(() => Array.isArray(initialAds) ? initialAds : []);
   const [loading, setLoading] = useState(() => !(Array.isArray(initialAds) && initialAds.length > 0));
@@ -435,6 +465,8 @@ export default function AdList({
   const [verifiedSellerIds, setVerifiedSellerIds] = useState(
     () => new Set(Array.isArray(initialVerifiedSellerIds) ? initialVerifiedSellerIds : [])
   );
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
+  const [favoriteMessage, setFavoriteMessage] = useState("");
 
   useEffect(() => {
     if (Array.isArray(initialAds) && initialAds.length > 0) {
@@ -445,6 +477,66 @@ export default function AdList({
 
     loadAds();
   }, []);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [currentUser?.id]);
+
+  const loadFavorites = async () => {
+    if (!currentUser?.id) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
+    try {
+      const ids = await getUserFavoriteIds(currentUser.id);
+      setFavoriteIds(new Set(ids.map(String)));
+    } catch (error) {
+      console.warn("Не удалось загрузить избранное:", error);
+    }
+  };
+
+  const handleToggleFavorite = async (ad) => {
+    if (!currentUser?.id) {
+      setFavoriteMessage("Для добавления товара в избранное нужно быть авторизованным в приложении через Telegram");
+      window.setTimeout(() => setFavoriteMessage(""), 3600);
+      return;
+    }
+
+    if (!ad?.id) return;
+
+    const adId = String(ad.id);
+    const wasFavorite = favoriteIds.has(adId);
+
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(adId);
+      else next.add(adId);
+      return next;
+    });
+
+    try {
+      const isFavoriteNow = await toggleFavoriteAd(currentUser.id, adId);
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFavoriteNow) next.add(adId);
+        else next.delete(adId);
+        return next;
+      });
+      setFavoriteMessage(isFavoriteNow ? "Добавлено в избранное" : "Удалено из избранного");
+      window.setTimeout(() => setFavoriteMessage(""), 1800);
+    } catch (error) {
+      console.error("Ошибка избранного:", error);
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(adId);
+        else next.delete(adId);
+        return next;
+      });
+      setFavoriteMessage("Не удалось обновить избранное. Попробуй ещё раз.");
+      window.setTimeout(() => setFavoriteMessage(""), 2600);
+    }
+  };
 
   const loadAds = async () => {
     try {
@@ -503,6 +595,8 @@ export default function AdList({
     return (
       <main className="market-home page-enter">
         <MainHeader onOpenSettings={onOpenSettings} />
+
+        {!!favoriteMessage && <div className="favorite-toast">{favoriteMessage}</div>}
 
         <CategoryRail
           selectedCategory={selectedCategory}
@@ -580,7 +674,14 @@ export default function AdList({
       ) : (
         <div className="market-grid">
           {filteredAds.map((ad, index) => (
-            <MarketAdCard key={ad.id} ad={ad} index={index} onOpen={onOpen} />
+            <MarketAdCard
+              key={ad.id}
+              ad={ad}
+              index={index}
+              onOpen={onOpen}
+              isFavorite={favoriteIds.has(String(ad.id))}
+              onToggleFavorite={handleToggleFavorite}
+            />
           ))}
         </div>
       )}

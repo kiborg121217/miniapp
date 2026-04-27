@@ -3,6 +3,8 @@ import {
   incrementAdViewsForUser,
   getSellerActiveAdsCount,
   getUserProfile,
+  isAdFavorite,
+  toggleFavoriteAd,
 } from "../firebase";
 
 const BOT_USERNAME = "baraholka_miniapp_bot";
@@ -15,11 +17,21 @@ function buildAdShareLink(adId) {
   return `${window.location.origin}/?ad=${adId}`;
 }
 
+function FavoriteHeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M12 20.2C9.8 18.35 7.95 16.7 6.4 15.05C4.85 13.4 4 11.78 4 9.9C4 7.85 5.55 6.3 7.6 6.3C8.78 6.3 9.95 6.85 10.7 7.75L12 9.3L13.3 7.75C14.05 6.85 15.22 6.3 16.4 6.3C18.45 6.3 20 7.85 20 9.9C20 11.78 19.15 13.4 17.6 15.05C16.05 16.7 14.2 18.35 12 20.2Z" />
+    </svg>
+  );
+}
+
 export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
   const [modalImage, setModalImage] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
   const [sellerProfile, setSellerProfile] = useState(null);
   const [sellerAdsCount, setSellerAdsCount] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteMessage, setFavoriteMessage] = useState("");
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -33,6 +45,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
     }
 
     loadSellerInfo();
+    loadFavoriteState();
   }, [ad, currentUser?.id]);
 
   const loadSellerInfo = async () => {
@@ -52,6 +65,20 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
       setSellerAdsCount(count);
     } catch (error) {
       console.error("Ошибка загрузки продавца:", error);
+    }
+  };
+
+  const loadFavoriteState = async () => {
+    if (!ad?.id || !currentUser?.id) {
+      setIsFavorite(false);
+      return;
+    }
+
+    try {
+      const value = await isAdFavorite(currentUser.id, ad.id);
+      setIsFavorite(value);
+    } catch (error) {
+      console.warn("Не удалось загрузить избранное:", error);
     }
   };
 
@@ -99,6 +126,31 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
       nextImage();
     } else {
       prevImage();
+    }
+  };
+
+  const handleFavorite = async () => {
+    if (!ad?.id) return;
+
+    if (!currentUser?.id) {
+      setFavoriteMessage("Для добавления товара в избранное нужно быть авторизованным в приложении через Telegram");
+      window.setTimeout(() => setFavoriteMessage(""), 3600);
+      return;
+    }
+
+    const previous = isFavorite;
+    setIsFavorite(!previous);
+
+    try {
+      const next = await toggleFavoriteAd(currentUser.id, ad.id);
+      setIsFavorite(next);
+      setFavoriteMessage(next ? "Добавлено в избранное" : "Удалено из избранного");
+      window.setTimeout(() => setFavoriteMessage(""), 1900);
+    } catch (error) {
+      console.error("Ошибка избранного:", error);
+      setIsFavorite(previous);
+      setFavoriteMessage("Не удалось обновить избранное. Попробуй ещё раз.");
+      window.setTimeout(() => setFavoriteMessage(""), 2600);
     }
   };
 
@@ -166,6 +218,17 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
       </button>
 
       <button
+        className={`favorite-top-btn premium-favorite-btn ${isFavorite ? "active" : ""}`}
+        onClick={handleFavorite}
+        aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+        title={isFavorite ? "В избранном" : "В избранное"}
+      >
+        <span className="favorite-btn-icon" aria-hidden="true">
+          <FavoriteHeartIcon />
+        </span>
+      </button>
+
+      <button
         className="share-top-btn premium-share-btn"
         onClick={handleShare}
         aria-label="Поделиться объявлением"
@@ -177,6 +240,8 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
           </svg>
         </span>
       </button>
+
+      {!!favoriteMessage && <div className="ad-favorite-toast">{favoriteMessage}</div>}
 
       <div className="ad-page-shell">
         {gallery.length > 0 && (

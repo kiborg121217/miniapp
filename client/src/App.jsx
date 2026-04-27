@@ -427,6 +427,7 @@ export default function App() {
           onCreate={() => goToPage("add")}
           initialAds={preloadedAds}
           initialVerifiedSellerIds={preloadedVerifiedSellerIds}
+          currentUser={tgUser}
           onOpen={(ad) => {
             setSelectedAd(ad);
             setPage("view");
