@@ -130,6 +130,24 @@ function getStartAdIdFromLaunch() {
   return null;
 }
 
+
+function getStartSellerIdFromLaunch() {
+  const tg = window.Telegram?.WebApp;
+
+  const startParam =
+    tg?.initDataUnsafe?.start_param ||
+    new URLSearchParams(window.location.search).get("tgWebAppStartParam");
+
+  if (startParam && startParam.startsWith("seller_")) {
+    return startParam.replace("seller_", "");
+  }
+
+  const querySeller = new URLSearchParams(window.location.search).get("seller");
+  if (querySeller) return querySeller;
+
+  return null;
+}
+
 function getAdPreviewImage(ad) {
   if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
   return ad?.imageUrl || "";
@@ -285,9 +303,23 @@ export default function App() {
       }
 
       const startAdId = getStartAdIdFromLaunch();
+      const startSellerId = getStartSellerIdFromLaunch();
 
       try {
         safeSetProgress(18, "Подключаем Telegram…");
+
+        if (startSellerId) {
+          safeSetProgress(42, "Открываем профиль продавца…");
+
+          if (!cancelled) {
+            setSelectedSellerId(String(startSellerId));
+            setSellerBackTarget("list");
+            setPage("seller");
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
+          }
+        }
 
         if (startAdId) {
           safeSetProgress(34, "Открываем объявление…");
