@@ -9290,3 +9290,230 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
     min-height: 44px !important;
   }
 }
+
+/* =========================================================
+   FINAL POLISH: favorites, profile ads, promote sheet
+   ========================================================= */
+
+/* 1) Heart on listing cards: transparent hit-area, larger heart only */
+.favorite-card-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  top: 8px !important;
+  right: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.42));
+}
+
+.favorite-card-btn svg {
+  width: 26px !important;
+  height: 26px !important;
+  stroke-width: 2.05 !important;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.34));
+}
+
+.favorite-card-btn.active {
+  color: #ff78df !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255, 120, 223, 0.52))
+    drop-shadow(0 7px 12px rgba(0, 0, 0, 0.34));
+}
+
+[data-theme="light"] .favorite-card-btn {
+  color: rgba(20, 29, 46, 0.78) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 5px 9px rgba(15, 23, 42, 0.18));
+}
+
+[data-theme="light"] .favorite-card-btn.active {
+  color: #dc2ea8 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  filter:
+    drop-shadow(0 0 8px rgba(220, 46, 168, 0.34))
+    drop-shadow(0 6px 10px rgba(15, 23, 42, 0.16));
+}
+
+/* 2) Favorite button inside ad page: same shape/size as back/share */
+.favorite-top-btn,
+.favorite-top-btn.premium-favorite-btn,
+.premium-favorite-btn.favorite-top-btn {
+  width: 50px !important;
+  height: 46px !important;
+  min-width: 50px !important;
+  min-height: 46px !important;
+  border-radius: 18px !important;
+  top: var(--page-top-control, 16px) !important;
+  right: calc(var(--app-side-pad, 16px) + 58px) !important;
+  left: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.favorite-btn-icon,
+.favorite-btn-icon svg {
+  width: 23px !important;
+  height: 23px !important;
+}
+
+.favorite-btn-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 3) More space between promotion tariffs and Cancel button */
+.ios-sheet-wrap > .ios-sheet-cancel {
+  margin-top: 24px !important;
+}
+
+.premium-promote-sheet {
+  margin-bottom: 0 !important;
+}
+
+/* 4) Profile ad buttons: less pill-like, more premium glass/iOS */
+.profile-ad-actions {
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+.profile-ad-actions .soft-action-btn,
+.profile-ad-actions .soft-premium-btn,
+.profile-ad-actions .soft-danger-btn {
+  min-width: 96px !important;
+  min-height: 42px !important;
+  padding: 0 15px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.profile-ad-actions .soft-action-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.045)),
+    rgba(255,255,255,0.045) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: var(--text) !important;
+  box-shadow:
+    0 12px 24px rgba(0,0,0,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+.profile-ad-actions .soft-premium-btn {
+  background:
+    linear-gradient(135deg, rgba(118,255,208,0.18), rgba(255,216,112,0.14)),
+    rgba(118,255,208,0.07) !important;
+  border: 1px solid rgba(118,255,208,0.20) !important;
+  color: #eafff8 !important;
+  box-shadow:
+    0 12px 24px rgba(52, 211, 153, 0.10),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+.profile-ad-actions .soft-danger-btn {
+  background:
+    linear-gradient(180deg, rgba(255,105,120,0.18), rgba(255,105,120,0.09)),
+    rgba(255,105,120,0.07) !important;
+  border: 1px solid rgba(255,105,120,0.20) !important;
+  color: #ffc6cc !important;
+  box-shadow:
+    0 12px 24px rgba(255,105,120,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+[data-theme="light"] .profile-ad-actions .soft-action-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,248,255,0.86)),
+    rgba(255,255,255,0.90) !important;
+  border-color: rgba(15,23,42,0.10) !important;
+  color: #101828 !important;
+  box-shadow:
+    0 10px 22px rgba(15,23,42,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.92) !important;
+}
+
+[data-theme="light"] .profile-ad-actions .soft-premium-btn {
+  background:
+    linear-gradient(135deg, rgba(13,148,136,0.12), rgba(234,179,8,0.12)),
+    rgba(255,255,255,0.88) !important;
+  border-color: rgba(13,148,136,0.16) !important;
+  color: #0f766e !important;
+  box-shadow:
+    0 10px 22px rgba(15,118,110,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.90) !important;
+}
+
+[data-theme="light"] .profile-ad-actions .soft-danger-btn {
+  background:
+    linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05)),
+    rgba(255,255,255,0.90) !important;
+  border-color: rgba(239,68,68,0.16) !important;
+  color: #dc2626 !important;
+}
+
+/* 5) Favorites/profile sections: show loading instead of false empty state */
+.profile-ads-loading-state {
+  min-height: 160px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  text-align: center !important;
+  color: var(--muted) !important;
+}
+
+.profile-ads-loading-spinner {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  border: 3px solid rgba(255,255,255,0.14) !important;
+  border-top-color: rgba(118,255,208,0.95) !important;
+  box-shadow: 0 0 22px rgba(118,255,208,0.18) !important;
+  animation: profileAdsSpinner 0.82s linear infinite !important;
+}
+
+@keyframes profileAdsSpinner {
+  to { transform: rotate(360deg); }
+}
+
+[data-theme="light"] .profile-ads-loading-state {
+  color: rgba(15, 23, 42, 0.62) !important;
+}
+
+[data-theme="light"] .profile-ads-loading-spinner {
+  border-color: rgba(15,23,42,0.10) !important;
+  border-top-color: #0f766e !important;
+  box-shadow: 0 0 18px rgba(15,118,110,0.14) !important;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .favorite-top-btn,
+  .favorite-top-btn.premium-favorite-btn,
+  .premium-favorite-btn.favorite-top-btn {
+    right: calc(var(--app-side-pad, 16px) + 56px) !important;
+  }
+}

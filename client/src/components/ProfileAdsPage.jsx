@@ -62,6 +62,7 @@ function PromoteState({ ad }) {
 
 export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
   const [ads, setAds] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showPromoteSheet, setShowPromoteSheet] = useState(false);
   const [selectedAd, setSelectedAd] = useState(null);
   const [promoteMessage, setPromoteMessage] = useState("");
@@ -72,14 +73,27 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
   }, [user?.id, status]);
 
   const loadAds = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setAds([]);
+      setLoading(false);
+      return;
+    }
 
-    const data =
-      status === "favorites"
-        ? await getUserFavoriteAds(user.id)
-        : await getUserAds(user.id, status);
+    setLoading(true);
 
-    setAds(data);
+    try {
+      const data =
+        status === "favorites"
+          ? await getUserFavoriteAds(user.id)
+          : await getUserAds(user.id, status);
+
+      setAds(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Ошибка загрузки объявлений профиля:", error);
+      setAds([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleArchive = async (adId) => {
@@ -146,8 +160,13 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
         <p>{status === "favorites" ? "Здесь собраны объявления, которые ты добавил в избранное." : "Здесь собраны объявления выбранной категории."}</p>
       </div>
 
-      <div className="help-card">
-        {ads.length === 0 ? (
+      <div className="help-card profile-ads-list-card">
+        {loading ? (
+          <div className="profile-ads-loading-state">
+            <div className="profile-ads-loading-spinner" aria-hidden="true" />
+            <p>{status === "favorites" ? "Загружаем избранные объявления…" : "Загружаем объявления…"}</p>
+          </div>
+        ) : ads.length === 0 ? (
           <p>{status === "favorites" ? "В избранном пока ничего нет." : "В этой категории пока ничего нет."}</p>
         ) : (
           ads.map((ad) => (
