@@ -8489,3 +8489,171 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
     box-shadow: 0 0 80px rgba(15,23,42,0.10) !important;
   }
 }
+
+/* ===== FINAL FIX: фото-модалка, горизонтальный режим и ПК =====
+   Этот блок должен быть в самом конце App.css.
+   Он исправляет огромный счетчик фото и адаптацию широких экранов. */
+
+.modal .gallery-counter,
+.photo-modal .gallery-counter,
+.image-modal .gallery-counter {
+  position: fixed !important;
+  top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 18px) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  min-width: 74px !important;
+  max-width: max-content !important;
+  height: auto !important;
+  min-height: 34px !important;
+  padding: 7px 14px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  color: #fff !important;
+  background: rgba(10, 14, 22, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  z-index: 10020 !important;
+}
+
+.modal-close {
+  position: fixed !important;
+  top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 18px) !important;
+  right: 16px !important;
+  left: auto !important;
+  z-index: 10030 !important;
+}
+
+.modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding:
+    calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 72px)
+    14px
+    calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 24px) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(3, 7, 14, 0.94) !important;
+  z-index: 10000 !important;
+  overflow: hidden !important;
+}
+
+.modal img {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 18px !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45) !important;
+}
+
+@media (min-width: 760px) {
+  .app {
+    max-width: 430px !important;
+    margin: 0 auto !important;
+    min-height: 100dvh !important;
+    position: relative !important;
+  }
+
+  .bottom-nav {
+    max-width: 430px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .modal {
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .modal img {
+    max-width: min(92vw, 1200px) !important;
+    max-height: calc(100dvh - 130px) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .app {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .main-screen,
+  .home-screen,
+  .page-screen,
+  .seller-page,
+  .profile-page,
+  .add-ad-page,
+  .settings-page,
+  .help-page,
+  .ad-page-wrap,
+  .ad-page-shell {
+    max-width: none !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .bottom-nav {
+    width: min(560px, calc(100vw - 32px)) !important;
+    max-width: 560px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 8px) !important;
+  }
+
+  .modal {
+    padding:
+      calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 54px)
+      72px
+      calc(var(--tg-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+  }
+
+  .modal img {
+    max-width: calc(100vw - 160px) !important;
+    max-height: calc(100dvh - 84px) !important;
+    border-radius: 16px !important;
+  }
+
+  .modal .gallery-counter,
+  .photo-modal .gallery-counter,
+  .image-modal .gallery-counter {
+    top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 12px) !important;
+    min-height: 30px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .modal-close {
+    top: calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + 10px) !important;
+    right: 12px !important;
+  }
+}
+
+[data-theme="light"] .modal .gallery-counter,
+[data-theme="light"] .photo-modal .gallery-counter,
+[data-theme="light"] .image-modal .gallery-counter {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
+}
