@@ -8061,3 +8061,67 @@ body,
 .share-top-btn.premium-share-btn .share-btn-icon {
   color: #f6fbff !important;
 }
+
+/* ===== Final share button alignment: same shape as Back button ===== */
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 19px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background:
+    radial-gradient(circle at 35% 16%, rgba(255,255,255,0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025)),
+    rgba(12, 20, 34, 0.74) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: rgba(244,250,255,0.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 12px 28px rgba(0,0,0,0.28) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.share-top-btn.premium-share-btn .share-btn-icon {
+  width: 30px !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+}
+
+.share-top-btn.premium-share-btn .share-btn-icon svg {
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  transform: translateX(-0.8px) !important;
+  transform-origin: center !important;
+}
+
+.share-top-btn.premium-share-btn .share-btn-icon svg path {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+[data-theme="light"] .share-top-btn,
+[data-theme="light"] .share-top-btn.premium-share-btn,
+[data-theme="light"] .premium-share-btn.share-top-btn {
+  background:
+    radial-gradient(circle at 35% 16%, rgba(255,255,255,0.96), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,248,250,0.86)) !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  color: #13212c !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.96),
+    0 12px 28px rgba(15,23,42,0.08) !important;
+}
