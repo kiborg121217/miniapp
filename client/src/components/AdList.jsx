@@ -355,10 +355,8 @@ function VerifiedSellersBanner({ active, onToggle }) {
         <p>{active ? "Показаны только подтвержденные" : "Только надежные сделки"}</p>
       </div>
 
-      <span className="verified-sellers-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d={active ? "M15 6L9 12L15 18" : "M9 5L16 12L9 19"} />
-        </svg>
+      <span className="verified-sellers-toggle" aria-hidden="true">
+        <span className="verified-sellers-toggle-knob" />
       </span>
     </button>
   );
