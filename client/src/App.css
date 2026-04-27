@@ -8291,3 +8291,201 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
 .seller-premium-page {
   padding-top: calc(92px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
 }
+
+/* === Fullscreen safe-area hotfix v3: gallery modal + landscape/desktop === */
+:root {
+  --modal-safe-top-gap: calc(14px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px));
+  --modal-safe-bottom-gap: calc(18px + env(safe-area-inset-bottom, 0px) + var(--app-safe-bottom, 0px));
+}
+
+/* Кнопка закрытия фото больше не уезжает под Dynamic Island / статусбар Telegram */
+.modal-close {
+  top: var(--modal-safe-top-gap) !important;
+  left: calc(14px + env(safe-area-inset-left, 0px)) !important;
+  z-index: 2105 !important;
+}
+
+.modal .gallery-counter {
+  top: var(--modal-safe-top-gap) !important;
+  right: calc(14px + env(safe-area-inset-right, 0px)) !important;
+  z-index: 2104 !important;
+}
+
+.modal img {
+  max-width: calc(100vw - 28px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+  max-height: calc(
+    var(--tg-viewport-height, 100dvh)
+    - var(--modal-safe-top-gap)
+    - var(--modal-safe-bottom-gap)
+    - 58px
+  ) !important;
+}
+
+/* Удобный просмотр на ПК: приложение остаётся мобильным, а не растягивается на весь экран */
+@media (min-width: 860px) and (orientation: portrait) {
+  body {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(98,236,255,0.12), transparent 34%),
+      radial-gradient(circle at 50% 100%, rgba(255,214,112,0.09), transparent 32%),
+      #071019 !important;
+  }
+
+  .app {
+    width: min(100%, 460px) !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+    min-height: var(--tg-viewport-height, 100dvh) !important;
+    box-shadow: 0 0 80px rgba(0,0,0,0.28) !important;
+  }
+
+  .market-home,
+  .profile-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page,
+  .create-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap {
+    max-width: 460px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .bottom-nav {
+    width: min(430px, calc(100vw - 30px)) !important;
+  }
+}
+
+/* Планшеты/ПК в широком окне: карточки не превращаются в огромные плитки */
+@media (min-width: 900px) and (orientation: landscape) {
+  .app {
+    width: 100% !important;
+    max-width: 1040px !important;
+    margin: 0 auto !important;
+  }
+
+  .market-home,
+  .profile-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page,
+  .create-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap {
+    max-width: 980px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: max(18px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(18px, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .ad-page-shell {
+    max-width: 760px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .bottom-nav {
+    width: min(430px, calc(100vw - 42px)) !important;
+  }
+}
+
+/* Телефон в горизонтальном режиме: больше полезного места, меньше пустых отступов */
+@media (orientation: landscape) and (max-height: 560px) {
+  :root {
+    --fullscreen-top-btn-offset: calc(8px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px));
+    --fullscreen-content-top-gap: calc(68px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px));
+  }
+
+  .market-home {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .profile-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page {
+    padding-top: var(--fullscreen-content-top-gap) !important;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .seller-premium-page,
+  .ad-page-wrap {
+    padding-top: calc(70px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .create-premium-page {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+    padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .market-header,
+  .create-premium-topbar {
+    margin-bottom: 10px !important;
+  }
+
+  .market-city {
+    font-size: 24px !important;
+  }
+
+  .market-verified-banner,
+  .sell-faster-banner,
+  .profile-premium-hero,
+  .seller-premium-hero,
+  .settings-ios-hero,
+  .create-premium-card {
+    border-radius: 22px !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .bottom-nav {
+    height: 62px !important;
+    width: min(360px, calc(100vw - 32px)) !important;
+    bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 6px 0 !important;
+  }
+
+  .nav-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .nav-label {
+    font-size: 11px !important;
+  }
+
+  .modal-close {
+    top: calc(8px + env(safe-area-inset-top, 0px) + var(--app-safe-top, 0px)) !important;
+  }
+
+  .modal img {
+    max-height: calc(var(--tg-viewport-height, 100dvh) - 58px - env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Светлая тема для desktop-wrapper */
+@media (min-width: 860px) {
+  [data-theme="light"] body {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(34,211,238,0.13), transparent 34%),
+      radial-gradient(circle at 50% 100%, rgba(245,158,11,0.12), transparent 32%),
+      #eef5f6 !important;
+  }
+
+  [data-theme="light"] .app {
+    box-shadow: 0 0 80px rgba(15,23,42,0.10) !important;
+  }
+}
