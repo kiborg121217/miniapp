@@ -215,6 +215,22 @@ function readInitialPage() {
   return allowedPages.has(saved) ? saved : "list";
 }
 
+function shouldShowBootScreen() {
+  try {
+    return sessionStorage.getItem("baraholka_boot_shown_v12") !== "1";
+  } catch {
+    return false;
+  }
+}
+
+function markBootScreenShown() {
+  try {
+    sessionStorage.setItem("baraholka_boot_shown_v12", "1");
+  } catch {
+    // ignore storage errors
+  }
+}
+
 function withTimeout(promise, timeoutMs, fallback = null) {
   let timerId;
   const timeout = new Promise((resolve) => {
@@ -363,7 +379,7 @@ export default function App() {
 
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
-  const [bootLoading, setBootLoading] = useState(true);
+  const [bootLoading, setBootLoading] = useState(() => shouldShowBootScreen());
   const [bootProgress, setBootProgress] = useState(10);
   const [bootSubtitle, setBootSubtitle] = useState("Подготавливаем витрину…");
   const [preloadedAds, setPreloadedAds] = useState(() => readMainAdsCache());
@@ -433,6 +449,8 @@ export default function App() {
     let closeTimer = null;
     let hardStopTimer = null;
 
+    markBootScreenShown();
+
     const safeSetProgress = (value, text) => {
       if (cancelled) return;
       setBootProgress(Math.max(8, Math.min(100, value)));
@@ -447,7 +465,7 @@ export default function App() {
       if (closeTimer) window.clearTimeout(closeTimer);
       closeTimer = window.setTimeout(() => {
         if (!cancelled) setBootLoading(false);
-      }, 260);
+      }, 180);
     };
 
     const forceHome = () => {
@@ -511,7 +529,7 @@ export default function App() {
         forceHome();
         setBootLoading(false);
       }
-    }, 3800);
+    }, 1800);
 
     const boot = async () => {
       try {
@@ -546,11 +564,11 @@ export default function App() {
 
           if (initData) {
             safeSetProgress(32, "Проверяем вход…");
-            const auth = await withTimeout(authenticateMiniAppInitData(initData), 1600, null);
+            const auth = await withTimeout(authenticateMiniAppInitData(initData), 900, null);
             user = auth?.user || null;
           } else {
             safeSetProgress(32, "Проверяем сессию…");
-            const session = await withTimeout(restoreAuthSession().catch(() => null), 1200, null);
+            const session = await withTimeout(restoreAuthSession().catch(() => null), 700, null);
             user = session?.user || null;
           }
         } catch (error) {
@@ -579,7 +597,7 @@ export default function App() {
           setSelectedChatId(String(startChatId));
           setPage("chats");
         } else if (startAdId) {
-          const ad = await withTimeout(getAdById(startAdId), 1400, null);
+          const ad = await withTimeout(getAdById(startAdId), 900, null);
           if (ad) {
             setSelectedAd(ad);
             setPage("view");

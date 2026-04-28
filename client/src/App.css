@@ -13014,3 +13014,41 @@ select {
     padding-top: clamp(16px, calc(var(--app-safe-top, 0px) + 12px), 54px) !important;
   }
 }
+
+
+/* === v12 boot loop / black screen guard === */
+/* Возвращаем прежнюю полоску: обычная ширина + мягкий transition, без "догоняющих" прыжков */
+.loading-progress-fill {
+  transition: width 0.32s ease !important;
+}
+
+/* Если какой-то экран не успел отрисоваться, фон не превращается в пустую чёрную дыру */
+.app {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(92,124,255,0.18), transparent 26%),
+    radial-gradient(circle at 85% 0%, rgba(124,92,255,0.16), transparent 24%),
+    linear-gradient(180deg, #0a0a0f 0%, #11111a 100%) !important;
+}
+
+/* Верхние отступы без провала вниз */
+.create-premium-page {
+  padding-top: clamp(22px, calc(var(--app-safe-top, 0px) + 10px), 54px) !important;
+}
+
+@media (max-width: 759px) {
+  .market-home,
+  .profile-premium-page,
+  .chats-page {
+    padding-top: clamp(12px, calc(var(--app-safe-top, 0px) + 10px), 40px) !important;
+  }
+
+  .settings-ios-page,
+  .settings-detail-page,
+  .profile-ads-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap,
+  .help-page,
+  .legal-page {
+    padding-top: clamp(16px, calc(var(--app-safe-top, 0px) + 12px), 52px) !important;
+  }
+}
