@@ -209,6 +209,12 @@ function writeSafeStorageValue(storage, key, value) {
   }
 }
 
+function readInitialPage() {
+  const allowedPages = new Set(["list", "add", "profile", "chats", "settings", "help", "legal", "seller", "view", "profileAds"]);
+  const saved = readSafeStorageValue(sessionStorage, "app_page", "list");
+  return allowedPages.has(saved) ? saved : "list";
+}
+
 function withTimeout(promise, timeoutMs, fallback = null) {
   let timerId;
   const timeout = new Promise((resolve) => {
@@ -321,11 +327,11 @@ async function preloadFirstAdImages(ads, onStep) {
 
 export default function App() {
   useTelegramViewport();
-  const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
+  const [page, setPage] = useState(readInitialPage);
 
   const [selectedAd, setSelectedAd] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("selected_ad");
+      const saved = readSafeStorageValue(sessionStorage, "selected_ad", null);
       return saved ? JSON.parse(saved) : null;
     } catch {
       sessionStorage.removeItem("selected_ad");
@@ -334,23 +340,23 @@ export default function App() {
   });
 
   const [selectedSellerId, setSelectedSellerId] = useState(
-    () => sessionStorage.getItem("selected_seller_id") || null
+    () => readSafeStorageValue(sessionStorage, "selected_seller_id", null)
   );
 
   const [profileStatusPage, setProfileStatusPage] = useState(
-    () => sessionStorage.getItem("profile_status_page") || null
+    () => readSafeStorageValue(sessionStorage, "profile_status_page", null)
   );
 
   const [selectedChatId, setSelectedChatId] = useState(
-    () => sessionStorage.getItem("selected_chat_id") || null
+    () => readSafeStorageValue(sessionStorage, "selected_chat_id", null)
   );
 
   const [sellerBackTarget, setSellerBackTarget] = useState(
-    () => sessionStorage.getItem("seller_back_target") || "list"
+    () => readSafeStorageValue(sessionStorage, "seller_back_target", "list") || "list"
   );
 
   const [viewBackTarget, setViewBackTarget] = useState(
-    () => sessionStorage.getItem("view_back_target") || "list"
+    () => readSafeStorageValue(sessionStorage, "view_back_target", "list") || "list"
   );
 
   const [viewLoading, setViewLoading] = useState(false);
@@ -366,12 +372,12 @@ export default function App() {
   const [theme, setTheme] = useState(() => readSafeStorageValue(localStorage, "theme", "dark") || "dark");
 
   useEffect(() => {
-    sessionStorage.setItem("app_page", page);
+    writeSafeStorageValue(sessionStorage, "app_page", page);
   }, [page]);
 
   useEffect(() => {
     if (selectedSellerId) {
-      sessionStorage.setItem("selected_seller_id", String(selectedSellerId));
+      writeSafeStorageValue(sessionStorage, "selected_seller_id", String(selectedSellerId));
     } else {
       sessionStorage.removeItem("selected_seller_id");
     }
@@ -379,7 +385,7 @@ export default function App() {
 
   useEffect(() => {
     if (profileStatusPage) {
-      sessionStorage.setItem("profile_status_page", profileStatusPage);
+      writeSafeStorageValue(sessionStorage, "profile_status_page", profileStatusPage);
     } else {
       sessionStorage.removeItem("profile_status_page");
     }
@@ -387,7 +393,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedChatId) {
-      sessionStorage.setItem("selected_chat_id", selectedChatId);
+      writeSafeStorageValue(sessionStorage, "selected_chat_id", selectedChatId);
     } else {
       sessionStorage.removeItem("selected_chat_id");
     }
@@ -395,7 +401,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedAd) {
-      sessionStorage.setItem("selected_ad", JSON.stringify(selectedAd));
+      writeSafeStorageValue(sessionStorage, "selected_ad", JSON.stringify(selectedAd));
     } else {
       sessionStorage.removeItem("selected_ad");
     }
@@ -403,7 +409,7 @@ export default function App() {
 
   useEffect(() => {
     if (sellerBackTarget) {
-      sessionStorage.setItem("seller_back_target", sellerBackTarget);
+      writeSafeStorageValue(sessionStorage, "seller_back_target", sellerBackTarget);
     } else {
       sessionStorage.removeItem("seller_back_target");
     }
@@ -411,7 +417,7 @@ export default function App() {
 
   useEffect(() => {
     if (viewBackTarget) {
-      sessionStorage.setItem("view_back_target", viewBackTarget);
+      writeSafeStorageValue(sessionStorage, "view_back_target", viewBackTarget);
     } else {
       sessionStorage.removeItem("view_back_target");
     }
@@ -422,30 +428,41 @@ export default function App() {
     writeSafeStorageValue(localStorage, "theme", theme);
   }, [theme]);
 
-
   useEffect(() => {
     const isZoomAllowed = (target) => {
       if (!target || typeof target.closest !== "function") return false;
       return Boolean(target.closest('[data-allow-zoom="true"], .photo-modal, .image-modal, .modal'));
     };
 
-    const preventPageZoom = (event) => {
+    const preventPageGestureZoom = (event) => {
       if (isZoomAllowed(event.target)) return;
-      if (event.touches?.length > 1 || event.scale !== undefined || event.ctrlKey) {
+      event.preventDefault();
+    };
+
+    const preventMultiTouchZoom = (event) => {
+      if (isZoomAllowed(event.target)) return;
+      if (event.touches && event.touches.length > 1) {
         event.preventDefault();
       }
     };
 
-    document.addEventListener("gesturestart", preventPageZoom, { passive: false });
-    document.addEventListener("gesturechange", preventPageZoom, { passive: false });
-    document.addEventListener("touchmove", preventPageZoom, { passive: false });
-    document.addEventListener("wheel", preventPageZoom, { passive: false });
+    const preventCtrlWheelZoom = (event) => {
+      if (isZoomAllowed(event.target)) return;
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("gesturestart", preventPageGestureZoom, { passive: false });
+    document.addEventListener("gesturechange", preventPageGestureZoom, { passive: false });
+    document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false });
+    document.addEventListener("wheel", preventCtrlWheelZoom, { passive: false });
 
     return () => {
-      document.removeEventListener("gesturestart", preventPageZoom);
-      document.removeEventListener("gesturechange", preventPageZoom);
-      document.removeEventListener("touchmove", preventPageZoom);
-      document.removeEventListener("wheel", preventPageZoom);
+      document.removeEventListener("gesturestart", preventPageGestureZoom);
+      document.removeEventListener("gesturechange", preventPageGestureZoom);
+      document.removeEventListener("touchmove", preventMultiTouchZoom);
+      document.removeEventListener("wheel", preventCtrlWheelZoom);
     };
   }, []);
 
@@ -644,6 +661,25 @@ export default function App() {
       clearTimeout(bootFailSafeId);
     };
   }, []);
+
+  useEffect(() => {
+    if (bootLoading) return;
+
+    if (page === "view" && !viewLoading && !selectedAd) {
+      setSelectedAd(null);
+      setPage("list");
+      return;
+    }
+
+    if (page === "seller" && !selectedSellerId) {
+      setPage("list");
+      return;
+    }
+
+    if (page === "profileAds" && !profileStatusPage) {
+      setPage(tgUser ? "profile" : "list");
+    }
+  }, [bootLoading, page, profileStatusPage, selectedAd, selectedSellerId, tgUser, viewLoading]);
 
   const handleAuthSuccess = (user, profile = null) => {
     setTgUser(user || null);

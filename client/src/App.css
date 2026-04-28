@@ -12700,3 +12700,135 @@ select {
 [data-theme="light"] .profile-ad-premium-image-wrap {
   background: rgba(241,245,249,0.92) !important;
 }
+
+/* === v9 emergency fix: restore scrolling, prevent black route, safer zoom === */
+html,
+body,
+#root,
+.app {
+  touch-action: auto !important;
+  -ms-touch-action: auto !important;
+  overscroll-behavior-x: none !important;
+}
+
+/* Обычные страницы: вертикальный скролл всегда разрешён, горизонтальный свайп/зум не ломает прокрутку */
+.market-home,
+.profile-premium-page,
+.profile-ads-premium-page,
+.seller-premium-page,
+.seller-page,
+.settings-ios-page,
+.settings-detail-page,
+.help-page,
+.legal-page,
+.create-premium-page,
+.ad-page-wrap,
+.chats-page,
+.page-screen,
+.main-screen,
+.home-screen {
+  touch-action: pan-y !important;
+  overflow-x: hidden !important;
+}
+
+/* Поля и кнопки не должны блокировать обычную прокрутку страницы */
+button,
+a,
+input,
+textarea,
+select {
+  touch-action: manipulation !important;
+}
+
+/* В просмотре фото оставляем pinch-zoom */
+.modal,
+.photo-modal,
+.image-modal,
+.modal img,
+.photo-modal img,
+.image-modal img,
+[data-allow-zoom="true"] {
+  touch-action: pinch-zoom !important;
+  -ms-touch-action: pinch-zoom !important;
+}
+
+/* Создать: вернуть кнопку ниже системной зоны Telegram/iPhone */
+.create-premium-page {
+  padding-top: max(
+    82px,
+    calc(var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px) + var(--app-safe-top, 0px) + env(safe-area-inset-top, 0px) + 28px)
+  ) !important;
+}
+
+@media (min-width: 760px) {
+  .create-premium-page {
+    padding-top: 46px !important;
+  }
+
+  html,
+  body,
+  #root,
+  .app {
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .app {
+    box-shadow: none !important;
+  }
+
+  .market-home,
+  .profile-premium-page,
+  .profile-ads-premium-page,
+  .seller-premium-page,
+  .seller-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page,
+  .legal-page,
+  .create-premium-page,
+  .ad-page-wrap,
+  .ad-page-shell,
+  .chats-page,
+  .page-screen,
+  .main-screen,
+  .home-screen {
+    width: 100vw !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: clamp(28px, 4vw, 96px) !important;
+    padding-right: clamp(28px, 4vw, 96px) !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-premium-grid,
+  .profile-premium-grid,
+  .ads-grid,
+  .cards-grid {
+    width: 100% !important;
+    max-width: none !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    justify-content: stretch !important;
+  }
+
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fill, minmax(390px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .market-grid,
+  .seller-premium-grid,
+  .profile-premium-grid,
+  .ads-grid,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)) !important;
+  }
+}
