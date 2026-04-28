@@ -24,24 +24,96 @@ function GearIcon() {
 
 function TileIcon({ type }) {
   const props = { viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true" };
-  const icons = {
-    theme: <><path d="M4 16.5C7.8 16.5 7.8 7.5 12 7.5C16.2 7.5 16.2 16.5 20 16.5" /><path d="M8 19H16" /><path d="M12 5V3" /></>,
-    help: <><circle cx="12" cy="12" r="8" /><path d="M9.8 9.6C10.1 8.4 11 7.7 12.2 7.7C13.6 7.7 14.5 8.5 14.5 9.7C14.5 11.7 12 11.8 12 14" /><path d="M12 16.7H12.01" /></>,
-    rules: <><path d="M12 3.8L18 6.3V11.3C18 15.1 15.6 18.4 12 20.2C8.4 18.4 6 15.1 6 11.3V6.3L12 3.8Z" /><path d="M9.5 12L11.2 13.7L15 9.5" /></>,
-    bell: <><path d="M18 16.2H6C7.1 15 7.6 13.7 7.6 11.6V10.2C7.6 7.8 9.4 5.9 12 5.9C14.6 5.9 16.4 7.8 16.4 10.2V11.6C16.4 13.7 16.9 15 18 16.2Z" /><path d="M10.3 18.2C10.7 19.1 11.2 19.5 12 19.5C12.8 19.5 13.3 19.1 13.7 18.2" /></>,
-    lock: <><rect x="6" y="10" width="12" height="9" rx="2.3" /><path d="M8.7 10V8.2C8.7 6.2 10.1 4.8 12 4.8C13.9 4.8 15.3 6.2 15.3 8.2V10" /><path d="M12 13.2V15.8" /></>,
-    info: <><circle cx="12" cy="12" r="8" /><path d="M12 11.2V16" /><path d="M12 8H12.01" /></>,
-    doc: <><rect x="6.2" y="4.2" width="11.6" height="15.6" rx="2.8" /><path d="M9 8H15" /><path d="M9 11.5H15" /><path d="M9 15H13" /></>,
-  };
 
-  return icons[type] ? <svg {...props}>{icons[type]}</svg> : null;
+  if (type === "theme") {
+    return (
+      <svg {...props}>
+        <path d="M4 16.5C7.8 16.5 7.8 7.5 12 7.5C16.2 7.5 16.2 16.5 20 16.5" />
+        <path d="M8 19H16" />
+        <path d="M12 5V3" />
+      </svg>
+    );
+  }
+
+  if (type === "help") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M9.8 9.6C10.1 8.4 11 7.7 12.2 7.7C13.6 7.7 14.5 8.5 14.5 9.7C14.5 11.7 12 11.8 12 14" />
+        <path d="M12 16.7H12.01" />
+      </svg>
+    );
+  }
+
+  if (type === "rules") {
+    return (
+      <svg {...props}>
+        <path d="M12 3.8L18 6.3V11.3C18 15.1 15.6 18.4 12 20.2C8.4 18.4 6 15.1 6 11.3V6.3L12 3.8Z" />
+        <path d="M9.5 12L11.2 13.7L15 9.5" />
+      </svg>
+    );
+  }
+
+  if (type === "bell") {
+    return (
+      <svg {...props}>
+        <path d="M18 16.2H6C7.1 15 7.6 13.7 7.6 11.6V10.2C7.6 7.8 9.4 5.9 12 5.9C14.6 5.9 16.4 7.8 16.4 10.2V11.6C16.4 13.7 16.9 15 18 16.2Z" />
+        <path d="M10.3 18.2C10.7 19.1 11.2 19.5 12 19.5C12.8 19.5 13.3 19.1 13.7 18.2" />
+      </svg>
+    );
+  }
+
+  if (type === "lock") {
+    return (
+      <svg {...props}>
+        <rect x="6" y="10" width="12" height="9" rx="2.3" />
+        <path d="M8.7 10V8.2C8.7 6.2 10.1 4.8 12 4.8C13.9 4.8 15.3 6.2 15.3 8.2V10" />
+        <path d="M12 13.2V15.8" />
+      </svg>
+    );
+  }
+
+  if (type === "info") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 11.2V16" />
+        <path d="M12 8H12.01" />
+      </svg>
+    );
+  }
+
+  if (type === "doc") {
+    return (
+      <svg {...props}>
+        <rect x="6.2" y="4.2" width="11.6" height="15.6" rx="2.8" />
+        <path d="M9 8H15" />
+        <path d="M9 11.5H15" />
+        <path d="M9 15H13" />
+      </svg>
+    );
+  }
+
+  return null;
 }
 
 function ThemeSegment({ theme, onToggleTheme }) {
   return (
     <div className="settings-theme-segment" aria-label="Выбор темы">
-      <button type="button" className={theme === "light" ? "active" : ""} onClick={() => theme !== "light" && onToggleTheme?.()}>Светлая</button>
-      <button type="button" className={theme === "dark" ? "active" : ""} onClick={() => theme !== "dark" && onToggleTheme?.()}>Тёмная</button>
+      <button
+        type="button"
+        className={theme === "light" ? "active" : ""}
+        onClick={() => theme !== "light" && onToggleTheme?.()}
+      >
+        Светлая
+      </button>
+      <button
+        type="button"
+        className={theme === "dark" ? "active" : ""}
+        onClick={() => theme !== "dark" && onToggleTheme?.()}
+      >
+        Тёмная
+      </button>
     </div>
   );
 }
@@ -50,13 +122,335 @@ function SettingsRow({ icon, accent = "cyan", title, subtitle, right, onClick })
   return (
     <button type="button" className={`settings-ios-row accent-${accent}`} onClick={onClick}>
       <span className="settings-ios-row-icon"><TileIcon type={icon} /></span>
-      <span className="settings-ios-row-text"><span className="settings-ios-row-title">{title}</span><span className="settings-ios-row-sub">{subtitle}</span></span>
-      {right || <span className="settings-ios-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5L16 12L9 19" /></svg></span>}
+      <span className="settings-ios-row-text">
+        <span className="settings-ios-row-title">{title}</span>
+        <span className="settings-ios-row-sub">{subtitle}</span>
+      </span>
+      {right || (
+        <span className="settings-ios-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 5L16 12L9 19" /></svg>
+        </span>
+      )}
     </button>
   );
 }
 
-function ChatNotificationIcon() {
+
+
+function NotificationIcon({ type }) {
+  if (type === "chat") {
+    return (
+      <svg viewBox="0 0 128 128" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M116.73,31.83a3,3,0,0,0-4.2-.61L64.14,67.34a1,1,0,0,1-1.2,0L15.5,31.06a3,3,0,1,0-3.64,4.77L49.16,64.36,12.27,92.16A3,3,0,1,0,15.88,97L54.11,68.14l5.18,4a7,7,0,0,0,8.43.06l5.44-4.06L111.84,97a3,3,0,1,0,3.59-4.81L78.17,64.35,116.12,36A3,3,0,0,0,116.73,31.83Z" />
+        <path fill="currentColor" d="M113,19H15A15,15,0,0,0,0,34V94a15,15,0,0,0,15,15h98a15,15,0,0,0,15-15V34A15,15,0,0,0,113,19Zm9,75a9,9,0,0,1-9,9H15a9,9,0,0,1-9-9V34a9,9,0,0,1,9-9h98a9,9,0,0,1,9,9Z" />
+      </svg>
+    );
+  }
+
+  if (type === "moderation") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path d="M16.2802 9.78034C16.5731 9.48746 16.5731 9.01258 16.2802 8.71968C15.9873 8.42678 15.5125 8.42677 15.2196 8.71966L10.7499 13.1891L9.27642 11.7157C8.98353 11.4228 8.50865 11.4228 8.21576 11.7157C7.92287 12.0085 7.92287 12.4834 8.21576 12.7763L10.2196 14.7801C10.5124 15.073 10.9873 15.073 11.2802 14.7801L16.2802 9.78034ZM6.25 3C4.45507 3 3 4.45507 3 6.25V17.75C3 19.5449 4.45507 21 6.25 21H17.75C19.5449 21 21 19.5449 21 17.75V6.25C21 4.45507 19.5449 3 17.75 3H6.25ZM4.5 6.25C4.5 5.2835 5.2835 4.5 6.25 4.5H17.75C18.7165 4.5 19.5 5.2835 19.5 6.25V17.75C19.5 18.7165 18.7165 19.5 17.75 19.5H6.25C5.2835 19.5 4.5 18.7165 4.5 17.75V6.25Z" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (type === "promotion") {
+    return (
+      <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M118.75,157a4.87,4.87,0,0,1-.66,0,5,5,0,0,1-3.67-2.46l-11.73-20.32L91,132.41A27.58,27.58,0,0,1,67.59,109l-1.73-11.7L45.54,85.58a5,5,0,0,1-2.46-3.67,5,5,0,0,1,1.42-4.19L62.18,60a5,5,0,0,1,3.53-1.46H99l24.76-24.77a32.31,32.31,0,0,1,26-9.35l19.46,1.83a5,5,0,0,1,4.51,4.51l1.83,19.46a32.3,32.3,0,0,1-9.35,26L141.42,101v33.29a5,5,0,0,1-1.46,3.53L122.28,155.5A5,5,0,0,1,118.75,157ZM56.18,80.18,73,89.86a5,5,0,0,1,2.45,3.6l2.08,14.09a17.65,17.65,0,0,0,15,15l14.09,2.08a5,5,0,0,1,3.6,2.45l9.68,16.77,11.6-11.61V98.93a5,5,0,0,1,1.47-3.53l26.23-26.23a22.39,22.39,0,0,0,6.47-18l-1.45-15.34L148.8,34.41a22.41,22.41,0,0,0-18,6.47L104.6,67.11a5,5,0,0,1-3.53,1.47H67.79Z" />
+        <path fill="currentColor" d="M29.31,175.69a5,5,0,0,1-3.53-8.54l35.33-35.33a5,5,0,1,1,7.07,7.07L32.85,174.22A5,5,0,0,1,29.31,175.69Z" />
+        <path fill="currentColor" d="M28.91,135.13a5,5,0,0,1-3.54-8.53l21.09-21.1a5,5,0,1,1,7.08,7.07l-21.1,21.1A5,5,0,0,1,28.91,135.13Z" />
+        <path fill="currentColor" d="M69.46,175.69a5,5,0,0,1-3.53-8.54L87,146.06a5,5,0,1,1,7.07,7.07L73,174.22A5,5,0,0,1,69.46,175.69Z" />
+        <path fill="currentColor" d="M141,73a14,14,0,1,1,14-14A14,14,0,0,1,141,73Zm0-18a4,4,0,1,0,4,4A4,4,0,0,0,141,55Z" />
+      </svg>
+    );
+  }
+
+  if (type === "favorites") {
+    return (
+      <svg viewBox="0 0 491.115 491.115" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M475.624,177.416l-154.417-13.033l-60.067-142.8c-2.55-6.233-8.783-10.483-15.583-10.483s-13.033,3.967-15.583,10.483l-60.067,142.8L15.491,177.416c-6.8,0.567-12.75,5.1-14.733,11.617s0,13.6,5.1,18.133l117.017,101.15L87.741,459.049c-1.417,6.8,1.133,13.6,6.517,17.567c5.667,3.967,13.033,4.25,18.7,0.85l132.6-80.183l132.6,80.183c2.833,1.7,5.667,2.55,8.783,2.55c3.4,0,7.083-1.133,9.917-3.117c5.667-3.967,8.217-11.05,6.517-17.567l-35.133-150.733l117.017-101.15c5.1-4.533,7.083-11.617,5.1-18.133C488.374,182.516,482.424,177.983,475.624,177.416z M338.208,289.616c-4.817,4.25-6.8,10.483-5.383,16.717l28.333,121.55l-106.817-64.6c-2.833-1.7-5.667-2.55-8.783-2.55c-3.117,0-6.233,0.85-8.783,2.55l-106.817,64.6l28.333-121.55c1.417-6.233-0.567-12.467-5.383-16.717l-94.35-81.6l124.383-10.483c6.233-0.567,11.9-4.533,14.167-10.2l48.45-115.317l48.45,115.033c2.55,5.95,7.933,9.917,14.167,10.2l124.383,10.483L338.208,289.616z" />
+      </svg>
+    );
+  }
+
+  return null;
+}
+
+function NotificationLoading() {
   return (
-    <svg viewBox="0 0 128 128" aria-hidden="true" focusable="false">
-      <path fill="currentColor" d="M116.73,31.83a3,3,0,0,0-4.2-.61L64.14,67.34a1,1,0,0,1-1.2,0L15.5,31.06a3,3,0,1,0-3.64,4.77L49.16,64.36,12.27,92.16A3,3,0,1,0,15.88,97L54.11,68.14l5.18,4a7,7,0,0,0,8.43.06l5.44-4.06L111.84,97a3,3,0,1,0,3.59-4.81L78.17,64.35,116.12,36A3,3,0,0,0,116.73,31.83Z" />
+    <div className="notification-loading-pretty" aria-busy="true" aria-label="Загрузка уведомлений">
+      <div className="notification-loading-hero">
+        <span className="notification-loading-pulse" />
+        <div>
+          <strong>Загружаем уведомления</strong>
+          <small>Подтягиваем ваши настройки из Firestore</small>
+        </div>
+      </div>
+
+      <div className="notification-skeleton-list">
+        {[1, 2, 3, 4].map((item) => (
+          <div key={item} className="notification-skeleton-card">
+            <span className="notification-skeleton-icon shimmer" />
+            <span className="notification-skeleton-lines">
+              <span className="notification-skeleton-line shimmer" />
+              <span className="notification-skeleton-line short shimmer" />
+            </span>
+            <span className="notification-skeleton-toggle shimmer" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NotificationSwitch({ icon, title, subtitle, checked, disabled, onChange }) {
+  return (
+    <button
+      type="button"
+      className={`notification-switch-row ${checked ? "is-on" : "is-off"}`}
+      disabled={disabled}
+      aria-pressed={checked}
+      onClick={() => onChange?.(!checked)}
+    >
+      <span className={`notification-row-icon notification-row-icon-${icon}`} aria-hidden="true"><NotificationIcon type={icon} /></span>
+      <span className="notification-row-copy">
+        <strong>{title}</strong>
+        <small>{subtitle}</small>
+      </span>
+      <span className={`notification-switch ${checked ? "checked" : ""}`} aria-hidden="true">
+        <span />
+      </span>
+    </button>
+  );
+}
+
+function NotificationsPage({ user, onBack }) {
+  const [settings, setSettings] = useState({
+    chatMessages: true,
+    moderation: true,
+    promotion: true,
+    favorites: false,
+    botCanMessage: false,
+  });
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user?.id) {
+      setLoading(false);
+      return undefined;
+    }
+
+    getNotificationSettings(user.id)
+      .then((data) => {
+        if (!cancelled) setSettings(data);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("Не удалось загрузить настройки уведомлений");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const savePatch = async (patch) => {
+    if (!user?.id) {
+      setStatus("Войдите через Telegram, чтобы управлять уведомлениями");
+      return;
+    }
+
+    const previous = settings;
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    setStatus("Сохраняем...");
+
+    try {
+      await updateNotificationSettings(user.id, patch);
+      setStatus("Настройки сохранены");
+    } catch (error) {
+      console.error("Ошибка настроек уведомлений:", error);
+      setSettings(previous);
+      setStatus(error.message || "Не удалось сохранить настройки");
+    }
+  };
+
+  const handleRequestAccess = async () => {
+    if (!user?.id) {
+      setStatus("Войдите через Telegram, чтобы включить уведомления");
+      return;
+    }
+
+    setStatus("Запрашиваем разрешение Telegram...");
+
+    try {
+      const allowed = await requestBotWriteAccess();
+      await savePatch({ botCanMessage: allowed });
+      setStatus(
+        allowed
+          ? "Разрешение получено. Бот сможет присылать уведомления."
+          : "Telegram не дал разрешение. Можно попробовать ещё раз позже."
+      );
+    } catch (error) {
+      console.error("requestWriteAccess error:", error);
+      setStatus(error.message || "Не удалось запросить разрешение Telegram");
+    }
+  };
+
+  return (
+    <div className="settings-detail-page page-enter">
+      <PageBackButton onClick={onBack} />
+      <section className="settings-about-card notifications-card">
+        <div className="settings-soon-icon"><TileIcon type="bell" /></div>
+        <h2>Уведомления</h2>
+        <p>
+          Управляйте сообщениями от бота. Чаты работают через Firestore, а Telegram нужен только для пуш-уведомлений.
+        </p>
+
+        {loading ? (
+          <NotificationLoading />
+        ) : (
+          <div className="notification-list">
+            <NotificationSwitch
+              icon="chat"
+              title="Сообщения по объявлениям"
+              subtitle="Уведомлять о новых сообщениях в чатах"
+              checked={settings.chatMessages}
+              onChange={(value) => savePatch({ chatMessages: value })}
+            />
+            <NotificationSwitch
+              icon="moderation"
+              title="Модерация объявлений"
+              subtitle="Одобрено или отклонено"
+              checked={settings.moderation}
+              onChange={(value) => savePatch({ moderation: value })}
+            />
+            <NotificationSwitch
+              icon="promotion"
+              title="Продвижение"
+              subtitle="Окончание VIP, Турбо или закрепа"
+              checked={settings.promotion}
+              onChange={(value) => savePatch({ promotion: value })}
+            />
+            <NotificationSwitch
+              icon="★"
+              title="Избранное"
+              subtitle="Позже: изменение цены или снятие объявления"
+              checked={settings.favorites}
+              onChange={(value) => savePatch({ favorites: value })}
+            />
+          </div>
+        )}
+
+        <button type="button" className="notification-access-btn" onClick={handleRequestAccess}>
+          {settings.botCanMessage ? "Разрешение Telegram получено" : "Разрешить уведомления от бота"}
+        </button>
+
+        {status && <div className="notification-status">{status}</div>}
+      </section>
+    </div>
+  );
+}
+
+function ComingSoonPage({ type, onBack }) {
+  const title = type === "security" ? "Безопасность" : "Уведомления";
+  const text =
+    type === "security"
+      ? "Раздел безопасности появится в одном из следующих обновлений. Здесь будут настройки приватности, доступа и защиты профиля."
+      : "Раздел уведомлений появится скоро. Здесь будут настройки сообщений, важных событий и обновлений по объявлениям.";
+
+  return (
+    <div className="settings-detail-page page-enter">
+      <PageBackButton onClick={onBack} />
+      <section className="settings-soon-card">
+        <div className="settings-soon-icon"><TileIcon type={type === "security" ? "lock" : "bell"} /></div>
+        <h2>{title}</h2>
+        <p>{text}</p>
+        <span>Будет скоро — следите за обновлениями в канале</span>
+        <button type="button" onClick={openChannel}>Открыть @baraholka_channel</button>
+      </section>
+    </div>
+  );
+}
+
+function AboutPage({ onBack }) {
+  return (
+    <div className="settings-detail-page page-enter">
+      <PageBackButton onClick={onBack} />
+      <section className="settings-about-card">
+        <div className="settings-soon-icon"><TileIcon type="info" /></div>
+        <h2>О приложении</h2>
+        <p className="settings-about-version">Версия 1.0.3</p>
+        <div className="settings-update-list">
+          <div><strong>Новый главный экран</strong><span>Обновили карточки, категории и визуальный стиль.</span></div>
+          <div><strong>Проверенные продавцы</strong><span>Добавили быстрый фильтр по подтверждённым профилям.</span></div>
+          <div><strong>Продвижение объявлений</strong><span>Подготовлена основа для VIP, закрепа и турбо-поднятия.</span></div>
+          <div><strong>Настройки</strong><span>Перенесли управление темой и важные разделы в отдельную панель.</span></div>
+        </div>
+        <span className="settings-channel-caption">За новыми обновлениями следите в канале</span>
+        <button type="button" onClick={openChannel}>Открыть @baraholka_channel</button>
+      </section>
+    </div>
+  );
+}
+
+export default function SettingsPage({ user, onOpenHelp, onOpenLegal, onBack, theme, onToggleTheme }) {
+  const [innerPage, setInnerPage] = useState(null);
+
+  if (innerPage === "notifications") {
+    return <NotificationsPage user={user} onBack={() => setInnerPage(null)} />;
+  }
+
+  if (innerPage === "security") {
+    return <ComingSoonPage type={innerPage} onBack={() => setInnerPage(null)} />;
+  }
+
+  if (innerPage === "about") {
+    return <AboutPage onBack={() => setInnerPage(null)} />;
+  }
+
+  return (
+    <div className="settings-ios-page page-enter">
+      <section className="settings-ios-hero">
+        <div className="settings-ios-hero-icon"><GearIcon /></div>
+        <div>
+          <h1>Настройки</h1>
+          <p>Управляйте приложением</p>
+        </div>
+      </section>
+
+      <section className="settings-ios-list">
+        <SettingsRow
+          icon="theme"
+          accent="cyan"
+          title="Тема"
+          subtitle="Светлая / Тёмная"
+          right={<ThemeSegment theme={theme} onToggleTheme={onToggleTheme} />}
+          onClick={() => {}}
+        />
+        <SettingsRow icon="help" accent="gold" title="Помощь" subtitle="Ответы на частые вопросы" onClick={onOpenHelp} />
+        <SettingsRow icon="rules" accent="cyan" title="Правила" subtitle="Правила платформы и публикаций" onClick={() => onOpenLegal("terms")} />
+      </section>
+
+      <div className="settings-ios-section-title">Важные разделы</div>
+
+      <section className="settings-ios-list">
+        <SettingsRow icon="bell" accent="cyan" title="Уведомления" subtitle="Настройка уведомлений" onClick={() => setInnerPage("notifications")} />
+        <SettingsRow icon="lock" accent="gold" title="Безопасность" subtitle="Конфиденциальность и доступ" onClick={() => setInnerPage("security")} />
+        <SettingsRow icon="info" accent="cyan" title="О приложении" subtitle="Версия 1.0.3" onClick={() => setInnerPage("about")} />
+      </section>
+
+      <section className="settings-ios-list settings-ios-doc-list">
+        <SettingsRow icon="doc" accent="gold" title="Пользовательское соглашение" subtitle="Открыть документ" onClick={() => onOpenLegal("agreement")} />
+        <SettingsRow icon="doc" accent="cyan" title="Политика конфиденциальности" subtitle="Открыть документ" onClick={() => onOpenLegal("privacy")} />
+      </section>
+    </div>
+  );
+}
