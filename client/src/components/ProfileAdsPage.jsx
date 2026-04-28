@@ -1,13 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getUserAds, getUserFavoriteAds, archiveAd, restoreAd } from "../firebase";
 import PageBackButton from "./PageBackButton";
 
-const TITLES = {
-  approved: "Активные объявления",
-  pending: "На модерации",
-  archived: "Архив",
-  rejected: "Отклонённые",
-  favorites: "Избранное",
+const PAGE_META = {
+  approved: {
+    title: "Активные объявления",
+    subtitle: "Объявления, которые сейчас видят покупатели.",
+    badge: "Профиль",
+    tone: "mint",
+  },
+  pending: {
+    title: "На модерации",
+    subtitle: "Объявления, которые ждут проверки перед публикацией.",
+    badge: "Проверка",
+    tone: "gold",
+  },
+  archived: {
+    title: "Архив",
+    subtitle: "Снятые с публикации объявления, которые можно вернуть.",
+    badge: "История",
+    tone: "blue",
+  },
+  rejected: {
+    title: "Отклонённые",
+    subtitle: "Объявления, которые не прошли модерацию.",
+    badge: "Модерация",
+    tone: "red",
+  },
+  favorites: {
+    title: "Избранное",
+    subtitle: "Сохранённые объявления, к которым можно быстро вернуться.",
+    badge: "Покупки",
+    tone: "pink",
+  },
 };
 
 const PROMOTE_OPTIONS = [
@@ -41,6 +66,73 @@ function isActiveUntil(value) {
   return typeof value === "number" && value > Date.now();
 }
 
+function getAdImage(ad) {
+  if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
+  return ad?.imageUrl || "";
+}
+
+function formatPrice(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return `${value || 0} ₽`;
+  return `${number.toLocaleString("ru-RU")} ₽`;
+}
+
+function PageIcon({ status }) {
+  if (status === "favorites") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 20.5C9.3 18.1 5.2 14.9 4.1 11.8C3.1 9 4.6 6.4 7.3 6.1C9 5.9 10.4 6.7 11.2 8C11.5 8.4 12.1 8.4 12.4 8C13.3 6.7 14.8 5.9 16.4 6.1C19.1 6.4 20.6 9 19.6 11.8C18.5 14.9 14.7 18.1 12 20.5Z" />
+      </svg>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="7.2" />
+        <path d="M12 8.4V12.3L14.8 14" />
+      </svg>
+    );
+  }
+
+  if (status === "archived") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5.2 8.5H18.8V18.3C18.8 19.2 18.1 19.9 17.2 19.9H6.8C5.9 19.9 5.2 19.2 5.2 18.3V8.5Z" />
+        <path d="M4.4 5.2H19.6V8.5H4.4V5.2Z" />
+        <path d="M9.2 12.2H14.8" />
+      </svg>
+    );
+  }
+
+  if (status === "rejected") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3.7L20.1 18.2C20.6 19.1 20 20.2 19 20.2H5C4 20.2 3.4 19.1 3.9 18.2L12 3.7Z" />
+        <path d="M12 8.8V13.1" />
+        <path d="M12 16.8H12.01" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="4.5" width="14" height="15" rx="3.6" />
+      <path d="M8.4 9.3H15.6" />
+      <path d="M8.4 12.6H15.6" />
+      <path d="M8.4 15.9H13.4" />
+    </svg>
+  );
+}
+
+function EmptyIcon({ status }) {
+  return (
+    <div className={`profile-ads-empty-icon profile-ads-empty-${status || "approved"}`}>
+      <PageIcon status={status} />
+    </div>
+  );
+}
+
 function PromoteState({ ad }) {
   const pinned = !!ad.isPinned && isActiveUntil(ad.pinnedUntil);
   const vip = !!ad.isVip && isActiveUntil(ad.vipUntil);
@@ -67,9 +159,12 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
   const [selectedAd, setSelectedAd] = useState(null);
   const [promoteMessage, setPromoteMessage] = useState("");
 
+  const meta = useMemo(() => PAGE_META[status] || PAGE_META.approved, [status]);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
     loadAds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, status]);
 
   const loadAds = async () => {
@@ -150,67 +245,96 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
     }
   };
 
+  const emptyText = status === "favorites"
+    ? "Сохраняй понравившиеся объявления сердечком — они появятся здесь."
+    : "В этой категории пока ничего нет.";
+
   return (
-    <div className="help-page page-enter">
+    <div className={`profile-ads-premium-page profile-ads-status-${status || "approved"} page-enter`}>
       <PageBackButton onClick={onBack} />
 
-      <div className="help-hero">
-        <div className="help-badge">Профиль</div>
-        <h2>{TITLES[status] || "Объявления"}</h2>
-        <p>{status === "favorites" ? "Здесь собраны объявления, которые ты добавил в избранное." : "Здесь собраны объявления выбранной категории."}</p>
-      </div>
+      <section className={`profile-ads-premium-hero profile-ads-tone-${meta.tone}`}>
+        <div className="profile-ads-hero-icon">
+          <PageIcon status={status} />
+        </div>
 
-      <div className="help-card profile-ads-list-card">
+        <div className="profile-ads-hero-text">
+          <div className="profile-ads-hero-badge">{meta.badge}</div>
+          <h1>{meta.title}</h1>
+          <p>{meta.subtitle}</p>
+        </div>
+
+        <div className="profile-ads-count-pill">
+          <span>{loading ? "…" : ads.length}</span>
+          <small>{ads.length === 1 ? "объявление" : "объявлений"}</small>
+        </div>
+      </section>
+
+      <section className="profile-ads-premium-panel">
         {loading ? (
-          <div className="profile-ads-loading-state">
+          <div className="profile-ads-loading-state profile-ads-premium-loading">
             <div className="profile-ads-loading-spinner" aria-hidden="true" />
             <p>{status === "favorites" ? "Загружаем избранные объявления…" : "Загружаем объявления…"}</p>
           </div>
         ) : ads.length === 0 ? (
-          <p>{status === "favorites" ? "В избранном пока ничего нет." : "В этой категории пока ничего нет."}</p>
+          <div className="profile-ads-empty-state">
+            <EmptyIcon status={status} />
+            <h2>{status === "favorites" ? "Избранных пока нет" : "Пока пусто"}</h2>
+            <p>{emptyText}</p>
+          </div>
         ) : (
-          ads.map((ad) => (
-            <div key={ad.id} className="profile-ad-row">
-              <div className="profile-ad-main" onClick={() => onOpenAd(ad)}>
-                {ad.imageUrl ? (
-                  <img src={ad.imageUrl} alt={ad.title} className="profile-ad-thumb" />
-                ) : null}
-
-                <div className="profile-ad-text">
-                  <div className="profile-ad-title">{ad.title}</div>
-                  <div className="profile-ad-meta">
-                    {ad.price} ₽ · просмотров: {ad.views || 0}
+          <div className="profile-ads-premium-grid">
+            {ads.map((ad) => (
+              <article key={ad.id} className="profile-ad-premium-card">
+                <button type="button" className="profile-ad-premium-main" onClick={() => onOpenAd(ad)}>
+                  <div className="profile-ad-premium-image-wrap">
+                    {getAdImage(ad) ? (
+                      <img src={getAdImage(ad)} alt={ad.title} className="profile-ad-premium-image" />
+                    ) : (
+                      <div className="profile-ad-premium-placeholder">
+                        <PageIcon status={status} />
+                      </div>
+                    )}
                   </div>
-                  <PromoteState ad={ad} />
-                </div>
-              </div>
 
-              <div className="profile-ad-actions">
-                <button className="soft-action-btn" onClick={() => onOpenAd(ad)}>
-                  Открыть
+                  <div className="profile-ad-premium-body">
+                    <div className="profile-ad-premium-title">{ad.title}</div>
+                    <div className="profile-ad-premium-price">{formatPrice(ad.price)}</div>
+                    <div className="profile-ad-premium-meta">
+                      <span>{ad.city || "Вологда"}</span>
+                      <span>Просмотры: {ad.views || 0}</span>
+                    </div>
+                    <PromoteState ad={ad} />
+                  </div>
                 </button>
 
-                {status === "approved" && (
-                  <>
-                    <button className="soft-premium-btn" onClick={() => openPromote(ad)}>
-                      Продвинуть
-                    </button>
-                    <button className="soft-danger-btn" onClick={() => handleArchive(ad.id)}>
-                      Снять
-                    </button>
-                  </>
-                )}
-
-                {status === "archived" && (
-                  <button className="soft-action-btn" onClick={() => handleRestore(ad.id)}>
-                    Вернуть
+                <div className="profile-ad-actions profile-ad-premium-actions">
+                  <button className="soft-action-btn" onClick={() => onOpenAd(ad)}>
+                    Открыть
                   </button>
-                )}
-              </div>
-            </div>
-          ))
+
+                  {status === "approved" && (
+                    <>
+                      <button className="soft-premium-btn" onClick={() => openPromote(ad)}>
+                        Продвинуть
+                      </button>
+                      <button className="soft-danger-btn" onClick={() => handleArchive(ad.id)}>
+                        Снять
+                      </button>
+                    </>
+                  )}
+
+                  {status === "archived" && (
+                    <button className="soft-action-btn" onClick={() => handleRestore(ad.id)}>
+                      Вернуть
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
 
       {showPromoteSheet && selectedAd && (
         <div className="ios-sheet-backdrop" onClick={() => setShowPromoteSheet(false)}>

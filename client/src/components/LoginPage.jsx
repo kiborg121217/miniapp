@@ -98,11 +98,6 @@ export default function LoginPage({ onBack, returnPage = "profile" }) {
         </div>
       </section>
 
-      {onBack && (
-        <button type="button" className="login-back-link" onClick={onBack}>
-          Вернуться назад
-        </button>
-      )}
     </div>
   );
 }

@@ -595,7 +595,7 @@ export default function App() {
         />
       )}
 
-      {page !== "view" && page !== "add" && (
+      {page !== "view" && !(page === "add" && tgUser) && (
         <div className="bottom-nav">
           <button
             className={`nav-item ${page === "list" ? "active" : ""}`}
