@@ -49,9 +49,8 @@ export default function useTelegramViewport() {
     try {
       tg?.ready?.();
       tg?.expand?.();
-      tg?.requestFullscreen?.();
     } catch {
-      // Старые клиенты Telegram могут не поддерживать fullscreen API.
+      // Старые клиенты Telegram могут не поддерживать часть WebApp API.
     }
 
     applyTelegramViewportVars();

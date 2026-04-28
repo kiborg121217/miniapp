@@ -12975,3 +12975,42 @@ select {
 .loading-line-fill {
   transition: width 0.28s ease, transform 0.28s ease !important;
 }
+
+
+/* === v11 stable loading/no-black-screen overrides === */
+/* Возвращаем старое поведение полоски загрузки: прямой прогресс, без JS-интервального "догоняния" */
+.loading-progress-fill {
+  transition: width 0.32s ease !important;
+}
+
+/* Страница не должна быть полностью чёрной даже если какой-то раздел временно не отрисовался */
+.app {
+  min-height: 100dvh !important;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(92, 124, 255, 0.22), transparent 26%),
+    radial-gradient(circle at 85% 0%, rgba(124, 92, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, #0a0a0f 0%, #0d0e14 38%, #11111a 100%) !important;
+}
+
+/* Финальная правка fullscreen safe-area: без провала страниц вниз */
+.create-premium-page {
+  padding-top: clamp(22px, calc(var(--app-safe-top, 0px) + 10px), 56px) !important;
+}
+
+@media (max-width: 759px) {
+  .market-home,
+  .profile-premium-page,
+  .chats-page {
+    padding-top: clamp(12px, calc(var(--app-safe-top, 0px) + 10px), 42px) !important;
+  }
+
+  .settings-ios-page,
+  .settings-detail-page,
+  .profile-ads-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap,
+  .help-page,
+  .legal-page {
+    padding-top: clamp(16px, calc(var(--app-safe-top, 0px) + 12px), 54px) !important;
+  }
+}
