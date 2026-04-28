@@ -152,8 +152,56 @@ function PromoteState({ ad }) {
   );
 }
 
+const PROFILE_ADS_CACHE_PREFIX = "baraholka_profile_ads_v1";
+const PROFILE_BUNDLE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
+
+function readJsonCache(key) {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJsonCache(key, value) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore cache errors
+  }
+}
+
+function getCachedAdsForStatus(userId, status) {
+  if (!userId) return [];
+  const direct = readJsonCache(`${PROFILE_ADS_CACHE_PREFIX}_${userId}_${status}`);
+  if (Array.isArray(direct?.ads)) return direct.ads;
+
+  const bundle = readJsonCache(`${PROFILE_BUNDLE_CACHE_PREFIX}_${userId}`);
+  const map = {
+    approved: "activeAds",
+    archived: "archivedAds",
+    pending: "pendingAds",
+    rejected: "rejectedAds",
+    favorites: "favoriteAds",
+  };
+  const key = map[status] || map.approved;
+
+  return Array.isArray(bundle?.[key]) ? bundle[key] : [];
+}
+
+function setCachedAdsForStatus(userId, status, ads) {
+  if (!userId) return;
+  writeJsonCache(`${PROFILE_ADS_CACHE_PREFIX}_${userId}_${status}`, {
+    ads: Array.isArray(ads) ? ads : [],
+    cachedAt: Date.now(),
+  });
+}
+
 export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
-  const [ads, setAds] = useState([]);
+  const [ads, setAds] = useState(() => getCachedAdsForStatus(user?.id, status));
   const [loading, setLoading] = useState(true);
   const [showPromoteSheet, setShowPromoteSheet] = useState(false);
   const [selectedAd, setSelectedAd] = useState(null);
@@ -174,15 +222,23 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
       return;
     }
 
-    setLoading(true);
+    const cached = getCachedAdsForStatus(user.id, status);
+    if (cached.length > 0) {
+      setAds(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     try {
       const data =
         status === "favorites"
-          ? await getUserFavoriteAds(user.id)
+          ? await getUserFavoriteAds(user.id, 80)
           : await getUserAds(user.id, status);
 
-      setAds(Array.isArray(data) ? data : []);
+      const nextAds = Array.isArray(data) ? data : [];
+      setAds(nextAds);
+      setCachedAdsForStatus(user.id, status, nextAds);
     } catch (error) {
       console.error("Ошибка загрузки объявлений профиля:", error);
       setAds([]);

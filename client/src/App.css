@@ -12219,3 +12219,31 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
 [data-theme="light"] .notification-loading-hero small {
   color: #64748b !important;
 }
+
+
+/* === performance v6 + profile card spacing === */
+.profile-ad-premium-actions {
+  margin-top: 10px !important;
+  padding: 12px 12px 14px !important;
+  border-top: 1px solid rgba(255,255,255,0.075) !important;
+}
+
+.profile-ad-premium-card .profile-ad-premium-main {
+  margin-bottom: 2px !important;
+}
+
+[data-theme="light"] .profile-ad-premium-actions {
+  border-top-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.chats-hero-icon svg {
+  width: 27px;
+  height: 27px;
+  display: block;
+}
+
+.chat-empty-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}

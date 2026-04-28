@@ -14,7 +14,7 @@ import AuthCallbackPage from "./components/AuthCallbackPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
-import { getAdById, getAds, getUserProfile, getUserProfileBundle, startChatForAd } from "./firebase";
+import { getAdById, getAds, getNotificationSettings, getUserChatsOnce, getUserProfile, getUserProfileBundle, startChatForAd } from "./firebase";
 import {
   authenticateMiniAppInitData,
   getTelegramInitData,
@@ -187,6 +187,48 @@ function getStartChatIdFromLaunch() {
   return null;
 }
 
+
+const MAIN_CACHE_KEY = "baraholka_main_ads_v2";
+const PROFILE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
+const NOTIFICATION_CACHE_KEY = "baraholka_notification_settings_v1";
+const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
+
+function readJsonCache(key) {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJsonCache(key, value) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore cache errors
+  }
+}
+
+function readMainAdsCache() {
+  const cached = readJsonCache(MAIN_CACHE_KEY);
+  return Array.isArray(cached?.ads) ? cached.ads : [];
+}
+
+function writeMainAdsCache(ads) {
+  writeJsonCache(MAIN_CACHE_KEY, { ads: Array.isArray(ads) ? ads : [], cachedAt: Date.now() });
+}
+
+function writeUserBootCache(userId, { profile, notifications, chats } = {}) {
+  if (!userId) return;
+  if (profile) writeJsonCache(`${PROFILE_CACHE_PREFIX}_${userId}`, profile);
+  if (notifications) writeJsonCache(`${NOTIFICATION_CACHE_KEY}_${userId}`, notifications);
+  if (chats) writeJsonCache(`${CHAT_CACHE_PREFIX}_${userId}`, { chats, cachedAt: Date.now() });
+}
+
+
 function getAdPreviewImage(ad) {
   if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
   return ad?.imageUrl || "";
@@ -234,7 +276,7 @@ function preloadImage(src, timeoutMs = 2800) {
 }
 
 async function preloadFirstAdImages(ads, onStep) {
-  const firstAds = (Array.isArray(ads) ? ads : []).slice(0, 10);
+  const firstAds = (Array.isArray(ads) ? ads : []).slice(0, 15);
 
   if (firstAds.length === 0) {
     onStep?.(100);
@@ -288,7 +330,7 @@ export default function App() {
   const [bootLoading, setBootLoading] = useState(true);
   const [bootProgress, setBootProgress] = useState(10);
   const [bootSubtitle, setBootSubtitle] = useState("Подготавливаем витрину…");
-  const [preloadedAds, setPreloadedAds] = useState([]);
+  const [preloadedAds, setPreloadedAds] = useState(() => readMainAdsCache());
   const [preloadedVerifiedSellerIds, setPreloadedVerifiedSellerIds] = useState([]);
   const [profileCache, setProfileCache] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
@@ -448,42 +490,69 @@ export default function App() {
         }
 
         safeSetProgress(30, "Загружаем объявления…");
+        const cachedAds = readMainAdsCache();
+
+        if (!cancelled && cachedAds.length > 0) {
+          setPreloadedAds(cachedAds);
+        }
+
         const data = await getAds();
         const approved = data.filter((ad) => ad.status === "approved");
+        writeMainAdsCache(approved);
 
-        safeSetProgress(52, "Подготавливаем карточки…");
+        safeSetProgress(48, "Подготавливаем первые карточки…");
         await preloadFirstAdImages(approved, (ratio) => {
-          safeSetProgress(52 + Math.round(ratio * 30), "Подгружаем фото…");
+          safeSetProgress(48 + Math.round(ratio * 24), "Подгружаем фото…");
         });
 
         if (!cancelled) {
           setPreloadedAds(approved);
         }
 
-        safeSetProgress(86, "Проверяем продавцов…");
-        const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];
-        const verifiedIds = await Promise.all(
-          sellerIds.slice(0, 40).map(async (sellerId) => {
-            try {
-              const profile = await getUserProfile(sellerId);
-              return profile?.isVerified ? sellerId : null;
-            } catch {
-              return null;
-            }
-          })
-        );
+        safeSetProgress(74, "Подготавливаем разделы…");
+
+        const sellerIds = [...new Set(approved.slice(0, 40).map((ad) => String(ad.userId || "")).filter(Boolean))];
+
+        const bootTasks = [
+          Promise.all(
+            sellerIds.map(async (sellerId) => {
+              try {
+                const profile = await getUserProfile(sellerId);
+                return profile?.isVerified ? sellerId : null;
+              } catch {
+                return null;
+              }
+            })
+          ),
+        ];
+
+        if (user?.id) {
+          bootTasks.push(getUserProfileBundle(user));
+          bootTasks.push(getNotificationSettings(user.id));
+          bootTasks.push(getUserChatsOnce(user.id, 10));
+        }
+
+        const results = await Promise.allSettled(bootTasks);
+        const verifiedIds = results[0]?.status === "fulfilled" ? results[0].value.filter(Boolean) : [];
 
         if (!cancelled) {
-          setPreloadedVerifiedSellerIds(verifiedIds.filter(Boolean));
+          setPreloadedVerifiedSellerIds(verifiedIds);
         }
 
         if (user?.id) {
-          safeSetProgress(94, "Обновляем профиль…");
-          getUserProfileBundle(user)
-            .then((data) => {
-              if (!cancelled) setProfileCache(data);
-            })
-            .catch((error) => console.warn("Не удалось заранее загрузить профиль:", error));
+          const profileResult = results[1];
+          const notificationResult = results[2];
+          const chatsResult = results[3];
+
+          if (profileResult?.status === "fulfilled") {
+            setProfileCache(profileResult.value);
+          }
+
+          writeUserBootCache(user.id, {
+            profile: profileResult?.status === "fulfilled" ? profileResult.value : null,
+            notifications: notificationResult?.status === "fulfilled" ? notificationResult.value : null,
+            chats: chatsResult?.status === "fulfilled" ? chatsResult.value : null,
+          });
         }
 
         safeSetProgress(100, "Готово");

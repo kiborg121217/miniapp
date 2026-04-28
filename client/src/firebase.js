@@ -201,21 +201,53 @@ export async function getUserProfileBundle(user) {
     profile = await getUserProfile(user.id);
   }
 
-  const [activeAds, archivedAds, pendingAds, rejectedAds, favoriteAds] = await Promise.all([
-    getUserAds(user.id, "approved"),
-    getUserAds(user.id, "archived"),
-    getUserAds(user.id, "pending"),
-    getUserAds(user.id, "rejected"),
-    getUserFavoriteAds(user.id),
+  const [allUserAds, favoriteIds] = await Promise.all([
+    getUserAds(user.id),
+    getUserFavoriteIds(user.id),
   ]);
 
+  const activeAds = allUserAds.filter((ad) => ad.status === "approved");
+  const archivedAds = allUserAds.filter((ad) => ad.status === "archived");
+  const pendingAds = allUserAds.filter((ad) => ad.status === "pending");
+  const rejectedAds = allUserAds.filter((ad) => ad.status === "rejected");
+
+  const favoriteAds = favoriteIds.length > 0
+    ? await getUserFavoriteAds(user.id, 60, favoriteIds)
+    : [];
+
+  const profileCounters = {
+    active: activeAds.length,
+    archived: archivedAds.length,
+    pending: pendingAds.length,
+    rejected: rejectedAds.length,
+    favorites: favoriteIds.length,
+    updatedAt: Date.now(),
+  };
+
+  try {
+    await setDoc(
+      doc(db, "users", String(user.id)),
+      { profileCounters, updatedAt: Date.now() },
+      { merge: true }
+    );
+  } catch (error) {
+    console.warn("Не удалось обновить быстрые счётчики профиля:", error);
+  }
+
+  const profileWithCounters = {
+    ...(profile || {}),
+    profileCounters,
+  };
+
   return {
-    profile,
+    profile: profileWithCounters,
     activeAds,
     archivedAds,
     pendingAds,
     rejectedAds,
     favoriteAds,
+    favoriteIds,
+    profileCounters,
     loadedAt: Date.now(),
   };
 }
@@ -276,15 +308,19 @@ export async function toggleFavoriteAd(userId, adId) {
   return true;
 }
 
-export async function getUserFavoriteAds(userId) {
+export async function getUserFavoriteAds(userId, maxItems = 80, knownFavoriteIds = null) {
   if (!userId) return [];
 
-  const favoriteIds = await getUserFavoriteIds(userId);
+  const favoriteIds = Array.isArray(knownFavoriteIds)
+    ? knownFavoriteIds
+    : await getUserFavoriteIds(userId);
 
   if (favoriteIds.length === 0) return [];
 
+  const limitedIds = favoriteIds.slice(0, Math.max(1, maxItems));
+
   const ads = await Promise.all(
-    favoriteIds.map(async (adId) => {
+    limitedIds.map(async (adId) => {
       try {
         return await getAdById(adId);
       } catch {
@@ -434,6 +470,23 @@ export function listenUserChats(userId, callback, onError) {
       onError?.(error);
     }
   );
+}
+
+
+export async function getUserChatsOnce(userId, maxItems = 10) {
+  if (!userId) return [];
+
+  const q = query(
+    collection(db, "chats"),
+    where("participants", "array-contains", toId(userId))
+  );
+
+  const snap = await getDocs(q);
+
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.updatedAt || b.lastMessageAt || 0) - (a.updatedAt || a.lastMessageAt || 0))
+    .slice(0, maxItems);
 }
 
 export function listenChatMessages(chatId, callback, onError) {

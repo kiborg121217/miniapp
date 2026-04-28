@@ -25,6 +25,31 @@ function formatChatTime(value) {
   return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
 
+const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
+
+function readChatCache(userId) {
+  if (!userId || typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(`${CHAT_CACHE_PREFIX}_${userId}`);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed?.chats) ? parsed.chats : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeChatCache(userId, chats) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      `${CHAT_CACHE_PREFIX}_${userId}`,
+      JSON.stringify({ chats: Array.isArray(chats) ? chats.slice(0, 10) : [], cachedAt: Date.now() })
+    );
+  } catch {
+    // ignore cache errors
+  }
+}
+
 function getUnreadCount(chat, userId) {
   if (!chat || !userId) return 0;
   const normalizedUserId = String(userId);
@@ -249,17 +274,23 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
 }
 
 export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackToList, onOpenAd }) {
-  const [chats, setChats] = useState([]);
+  const [chats, setChats] = useState(() => readChatCache(user?.id));
   const [fallbackChat, setFallbackChat] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user?.id) return undefined;
 
+    const cached = readChatCache(user.id);
+    if (cached.length > 0) {
+      setChats(cached);
+    }
+
     const unsubscribe = listenUserChats(
       user.id,
       (items) => {
         setChats(items);
+        writeChatCache(user.id, items);
         setError("");
       },
       () => setError("Не удалось загрузить чаты")
@@ -313,7 +344,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
       <section className="chat-list-card">
         {chats.length === 0 ? (
           <div className="chat-empty-state">
-            <div className="chat-empty-icon">✉️</div>
+            <div className="chat-empty-icon"><ChatMessageIcon /></div>
             <h3>Диалогов пока нет</h3>
             <p>Откройте объявление и нажмите «Написать», чтобы начать переписку с продавцом.</p>
           </div>

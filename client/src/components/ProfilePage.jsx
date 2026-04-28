@@ -125,6 +125,13 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
     loadProfile();
   }, [user?.id]);
 
+  const profileCounters = profile?.profileCounters || {};
+  const activeCount = Number(profileCounters.active ?? activeAds.length);
+  const archivedCount = Number(profileCounters.archived ?? archivedAds.length);
+  const pendingCount = Number(profileCounters.pending ?? pendingAds.length);
+  const rejectedCount = Number(profileCounters.rejected ?? rejectedAds.length);
+  const favoriteCount = Number(profileCounters.favorites ?? favoriteAds.length);
+
   const totalViews = useMemo(() => {
     return [...activeAds, ...archivedAds, ...pendingAds, ...rejectedAds].reduce(
       (sum, ad) => sum + (ad.views || 0),
@@ -382,7 +389,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           <span className="profile-menu-icon"><ProfileTileIcon type="favorite" /></span>
           <span className="profile-menu-copy">
             <strong>Избранное</strong>
-            <span>{favoriteAds.length} сохранённых объявлений</span>
+            <span>{favoriteCount} сохранённых объявлений</span>
           </span>
           <span className="profile-menu-arrow">›</span>
         </button>
@@ -395,7 +402,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           <span className="profile-menu-icon"><ProfileTileIcon type="active" /></span>
           <span className="profile-menu-copy">
             <strong>Активные</strong>
-            <span>{activeAds.length} объявлений опубликовано</span>
+            <span>{activeCount} объявлений опубликовано</span>
           </span>
           <span className="profile-menu-arrow">›</span>
         </button>
@@ -404,7 +411,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           <span className="profile-menu-icon"><ProfileTileIcon type="pending" /></span>
           <span className="profile-menu-copy">
             <strong>На модерации</strong>
-            <span>{pendingAds.length} ожидают проверки</span>
+            <span>{pendingCount} ожидают проверки</span>
           </span>
           <span className="profile-menu-arrow">›</span>
         </button>
@@ -413,7 +420,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           <span className="profile-menu-icon"><ProfileTileIcon type="archive" /></span>
           <span className="profile-menu-copy">
             <strong>Архив</strong>
-            <span>{archivedAds.length} объявлений в архиве</span>
+            <span>{archivedCount} объявлений в архиве</span>
           </span>
           <span className="profile-menu-arrow">›</span>
         </button>
