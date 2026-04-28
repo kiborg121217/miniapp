@@ -136,15 +136,17 @@ function SettingsRow({ icon, accent = "cyan", title, subtitle, right, onClick })
 }
 
 
-function NotificationSwitch({ title, subtitle, checked, disabled, onChange }) {
+function NotificationSwitch({ icon, title, subtitle, checked, disabled, onChange }) {
   return (
     <button
       type="button"
-      className="notification-switch-row"
+      className={`notification-switch-row ${checked ? "is-on" : "is-off"}`}
       disabled={disabled}
+      aria-pressed={checked}
       onClick={() => onChange?.(!checked)}
     >
-      <span>
+      <span className="notification-row-icon" aria-hidden="true">{icon}</span>
+      <span className="notification-row-copy">
         <strong>{title}</strong>
         <small>{subtitle}</small>
       </span>
@@ -248,24 +250,28 @@ function NotificationsPage({ user, onBack }) {
         ) : (
           <div className="notification-list">
             <NotificationSwitch
+              icon="💬"
               title="Сообщения по объявлениям"
               subtitle="Уведомлять о новых сообщениях в чатах"
               checked={settings.chatMessages}
               onChange={(value) => savePatch({ chatMessages: value })}
             />
             <NotificationSwitch
+              icon="✅"
               title="Модерация объявлений"
               subtitle="Одобрено или отклонено"
               checked={settings.moderation}
               onChange={(value) => savePatch({ moderation: value })}
             />
             <NotificationSwitch
+              icon="🚀"
               title="Продвижение"
               subtitle="Окончание VIP, Турбо или закрепа"
               checked={settings.promotion}
               onChange={(value) => savePatch({ promotion: value })}
             />
             <NotificationSwitch
+              icon="★"
               title="Избранное"
               subtitle="Позже: изменение цены или снятие объявления"
               checked={settings.favorites}

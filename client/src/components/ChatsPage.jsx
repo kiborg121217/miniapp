@@ -91,6 +91,7 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [openingAd, setOpeningAd] = useState(false);
   const [error, setError] = useState("");
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
@@ -147,6 +148,21 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
     }
   };
 
+  const handleOpenAd = async () => {
+    if (!chat?.adId || openingAd) return;
+
+    try {
+      setOpeningAd(true);
+      setError("");
+      await onOpenAd?.(chat.adId);
+    } catch (err) {
+      console.error("Ошибка открытия объявления из чата:", err);
+      setError(err.message || "Не удалось открыть объявление");
+    } finally {
+      setOpeningAd(false);
+    }
+  };
+
   return (
     <div className="chat-dialog-page page-enter" role="region" aria-label="Диалог по объявлению">
       <section className="chat-dialog-header">
@@ -166,8 +182,8 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
         </div>
 
         {chat?.adId && (
-          <button type="button" className="chat-open-ad-btn" onClick={() => onOpenAd?.(chat.adId)}>
-            Объявление
+          <button type="button" className="chat-open-ad-btn" onClick={handleOpenAd} disabled={openingAd}>
+            {openingAd ? "Открываем…" : "Объявление"}
           </button>
         )}
       </section>

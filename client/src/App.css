@@ -11683,3 +11683,267 @@ input {
     padding: 9px 11px !important;
   }
 }
+
+/* ======================================================================
+   PATCH 2026-04-28: iPhone safe-area nav, chat->ad UX, notification UI.
+   ====================================================================== */
+:root {
+  --nav-bottom-lift-fixed: max(18px, calc(var(--app-safe-bottom, 0px) + 12px));
+}
+
+.bottom-nav {
+  bottom: var(--nav-bottom-lift-fixed) !important;
+  width: min(calc(100vw - 34px), 520px) !important;
+  max-width: calc(100vw - 34px) !important;
+  border-radius: 28px !important;
+  box-sizing: border-box !important;
+}
+
+html[data-tg-fullscreen-safe="true"] .bottom-nav {
+  bottom: max(22px, calc(var(--app-safe-bottom, 0px) + 14px)) !important;
+  width: min(calc(100vw - 38px), 520px) !important;
+  max-width: calc(100vw - 38px) !important;
+}
+
+@media (max-width: 390px) {
+  .bottom-nav {
+    width: min(calc(100vw - 30px), 520px) !important;
+    max-width: calc(100vw - 30px) !important;
+  }
+}
+
+.ad-opening-page {
+  width: min(100%, 760px) !important;
+  min-height: var(--app-stable-height, 100dvh) !important;
+  margin: 0 auto !important;
+  padding: calc(72px + var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px)) 16px 28px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.ad-opening-card {
+  width: min(100%, 420px) !important;
+  padding: 24px !important;
+  border-radius: 30px !important;
+  text-align: center !important;
+  background: rgba(255,255,255,0.075) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.24) !important;
+}
+
+[data-theme="light"] .ad-opening-card {
+  color: #0f172a !important;
+  background: rgba(255,255,255,0.92) !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  box-shadow: 0 20px 60px rgba(15,23,42,0.10) !important;
+}
+
+.ad-opening-card h2 {
+  margin: 14px 0 6px !important;
+  font-size: 22px !important;
+}
+
+.ad-opening-card p {
+  margin: 0 !important;
+  color: var(--muted) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.ad-opening-spinner {
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 auto !important;
+  border-radius: 50% !important;
+  border: 3px solid rgba(56,189,248,0.22) !important;
+  border-top-color: #38bdf8 !important;
+  animation: spin 0.8s linear infinite !important;
+}
+
+.chat-open-ad-btn:disabled {
+  opacity: 0.72 !important;
+  cursor: progress !important;
+}
+
+.notifications-card {
+  width: min(100%, 720px) !important;
+  margin: 0 auto !important;
+  padding: 18px !important;
+  border-radius: 32px !important;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(56,189,248,0.16), transparent 30%),
+    rgba(255,255,255,0.075) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+.notifications-card .settings-soon-icon {
+  color: #06131b !important;
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8) !important;
+  box-shadow: 0 14px 36px rgba(56,189,248,0.22) !important;
+}
+
+.notification-list {
+  gap: 12px !important;
+}
+
+.notification-switch-row {
+  display: grid !important;
+  grid-template-columns: 46px minmax(0, 1fr) 58px !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 78px !important;
+  padding: 12px !important;
+  border-radius: 24px !important;
+  color: var(--text) !important;
+  background: rgba(8, 13, 24, 0.62) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+.notification-switch-row:disabled {
+  opacity: 0.65 !important;
+}
+
+.notification-row-icon {
+  width: 46px !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 18px !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  color: #06131b !important;
+  background: linear-gradient(135deg, #e0f2fe, #7dd3fc) !important;
+  box-shadow: 0 10px 26px rgba(56,189,248,0.16) !important;
+}
+
+.notification-row-copy {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.notification-switch-row strong {
+  color: var(--text) !important;
+  font-size: 15.5px !important;
+  line-height: 1.16 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.notification-switch-row small {
+  margin-top: 5px !important;
+  color: rgba(226,232,240,0.78) !important;
+  font-size: 12.8px !important;
+  line-height: 1.35 !important;
+}
+
+.notification-switch {
+  justify-self: end !important;
+  width: 54px !important;
+  height: 32px !important;
+  padding: 3px !important;
+  background: rgba(148,163,184,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.22) !important;
+}
+
+.notification-switch span {
+  width: 24px !important;
+  height: 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22) !important;
+}
+
+.notification-switch.checked {
+  background: linear-gradient(135deg, #22c55e, #38bdf8) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+.notification-switch.checked span {
+  transform: translateX(22px) !important;
+}
+
+.notification-access-btn {
+  border-radius: 22px !important;
+  min-height: 52px !important;
+  color: #082f49 !important;
+  background: linear-gradient(135deg, #fef3c7, #fbbf24) !important;
+  box-shadow: 0 14px 34px rgba(251,191,36,0.18) !important;
+}
+
+.notification-status,
+.notification-loading {
+  color: #fef9c3 !important;
+  background: rgba(245,158,11,0.13) !important;
+  border: 1px solid rgba(245,158,11,0.24) !important;
+}
+
+[data-theme="light"] .notifications-card {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(14,165,233,0.13), transparent 30%),
+    rgba(255,255,255,0.96) !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  box-shadow: 0 22px 60px rgba(15,23,42,0.10) !important;
+}
+
+[data-theme="light"] .notifications-card h2,
+[data-theme="light"] .notification-switch-row strong {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .notifications-card p,
+[data-theme="light"] .notification-switch-row small {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .notification-switch-row {
+  background: #ffffff !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  box-shadow: 0 10px 28px rgba(15,23,42,0.07) !important;
+}
+
+[data-theme="light"] .notification-row-icon {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important;
+  box-shadow: 0 10px 22px rgba(14,165,233,0.14) !important;
+}
+
+[data-theme="light"] .notification-switch {
+  background: #dbe3ee !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  box-shadow: inset 0 2px 5px rgba(15,23,42,0.12) !important;
+}
+
+[data-theme="light"] .notification-status,
+[data-theme="light"] .notification-loading {
+  color: #92400e !important;
+  background: #fff7ed !important;
+  border-color: #fed7aa !important;
+}
+
+@media (max-width: 430px) {
+  .notifications-card {
+    padding: 14px !important;
+    border-radius: 28px !important;
+  }
+
+  .notification-switch-row {
+    grid-template-columns: 42px minmax(0, 1fr) 52px !important;
+    min-height: 74px !important;
+    gap: 10px !important;
+  }
+
+  .notification-row-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 16px !important;
+    font-size: 20px !important;
+  }
+
+  .notification-switch-row strong {
+    font-size: 14.5px !important;
+  }
+
+  .notification-switch-row small {
+    font-size: 12.2px !important;
+  }
+}

@@ -122,6 +122,19 @@ function LoadingScreen({ progress = 12, subtitle = "Подготавливаем
   );
 }
 
+function AdOpeningScreen({ onBack }) {
+  return (
+    <div className="page-enter ad-opening-page">
+      <PageBackButton onClick={onBack} />
+      <section className="ad-opening-card">
+        <div className="ad-opening-spinner" aria-hidden="true" />
+        <h2>Открываем объявление</h2>
+        <p>Загружаем карточку товара из Firestore…</p>
+      </section>
+    </div>
+  );
+}
+
 function getStartAdIdFromLaunch() {
   const tg = window.Telegram?.WebApp;
 
@@ -257,6 +270,12 @@ export default function App() {
     () => sessionStorage.getItem("seller_back_target") || "list"
   );
 
+  const [viewBackTarget, setViewBackTarget] = useState(
+    () => sessionStorage.getItem("view_back_target") || "list"
+  );
+
+  const [viewLoading, setViewLoading] = useState(false);
+
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
   const [bootLoading, setBootLoading] = useState(true);
@@ -310,6 +329,14 @@ export default function App() {
       sessionStorage.removeItem("seller_back_target");
     }
   }, [sellerBackTarget]);
+
+  useEffect(() => {
+    if (viewBackTarget) {
+      sessionStorage.setItem("view_back_target", viewBackTarget);
+    } else {
+      sessionStorage.removeItem("view_back_target");
+    }
+  }, [viewBackTarget]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -490,12 +517,15 @@ export default function App() {
       setSelectedAd(null);
       setSelectedChatId(null);
       setSellerBackTarget("list");
+      setViewBackTarget("list");
+      setViewLoading(false);
 
       sessionStorage.removeItem("selected_seller_id");
       sessionStorage.removeItem("profile_status_page");
       sessionStorage.removeItem("selected_ad");
       sessionStorage.removeItem("selected_chat_id");
       sessionStorage.removeItem("seller_back_target");
+      sessionStorage.removeItem("view_back_target");
     }
 
     if (nextPage !== "chats") {
@@ -503,6 +533,49 @@ export default function App() {
     }
 
     window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const backFromAd = () => {
+    setViewLoading(false);
+
+    if (viewBackTarget === "chat") {
+      setPage("chats");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+
+    if (viewBackTarget === "profileAds") {
+      setPage("profileAds");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+
+    if (viewBackTarget === "seller") {
+      setPage("seller");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+
+    goToPage("list");
+  };
+
+  const handleOpenAdFromChat = async (adId) => {
+    setViewBackTarget("chat");
+    setViewLoading(true);
+    setSelectedAd(null);
+    setPage("view");
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    try {
+      const ad = await getAdById(adId, { includeInactive: true });
+      if (!ad) throw new Error("Объявление не найдено или было удалено");
+      setSelectedAd(ad);
+    } catch (error) {
+      alert(error.message || "Не удалось открыть объявление");
+      setPage("chats");
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const handleStartChat = async (ad) => {
@@ -555,6 +628,8 @@ export default function App() {
           initialVerifiedSellerIds={preloadedVerifiedSellerIds}
           currentUser={tgUser}
           onOpen={(ad) => {
+            setSelectedChatId(null);
+            setViewBackTarget("list");
             setSelectedAd(ad);
             setPage("view");
             window.scrollTo({ top: 0, behavior: "auto" });
@@ -601,14 +676,7 @@ export default function App() {
             selectedChatId={selectedChatId}
             onSelectChat={(chatId) => setSelectedChatId(chatId)}
             onBackToList={() => setSelectedChatId(null)}
-            onOpenAd={async (adId) => {
-              const ad = await getAdById(adId);
-              if (ad) {
-                setSelectedAd(ad);
-                setPage("view");
-                window.scrollTo({ top: 0, behavior: "auto" });
-              }
-            }}
+            onOpenAd={handleOpenAdFromChat}
           />
         ) : (
           <LoginPage
@@ -624,6 +692,8 @@ export default function App() {
           status={profileStatusPage}
           onBack={() => goToPage("profile")}
           onOpenAd={(ad) => {
+            setSelectedChatId(null);
+            setViewBackTarget("profileAds");
             setSelectedAd(ad);
             setPage("view");
             window.scrollTo({ top: 0, behavior: "auto" });
@@ -663,6 +733,8 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
           onOpenAd={(ad) => {
+            setSelectedChatId(null);
+            setViewBackTarget("seller");
             setSelectedAd(ad);
             setSellerBackTarget("seller");
             setPage("view");
@@ -671,15 +743,15 @@ export default function App() {
         />
       )}
 
-      {page === "view" && (
+      {page === "view" && viewLoading && <AdOpeningScreen onBack={backFromAd} />}
+
+      {page === "view" && !viewLoading && selectedAd && (
         <AdPage
           ad={selectedAd}
           currentUser={tgUser}
-          onBack={() => {
-            setPage("list");
-            window.scrollTo({ top: 0, behavior: "auto" });
-          }}
+          onBack={backFromAd}
           onOpenSeller={(sellerId) => {
+            setSelectedChatId(null);
             setSelectedSellerId(String(sellerId));
             setSellerBackTarget("view");
             setPage("seller");

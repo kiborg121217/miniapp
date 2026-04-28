@@ -50,7 +50,7 @@ export async function getAds() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function getAdById(adId) {
+export async function getAdById(adId, options = {}) {
   if (!adId) return null;
 
   const ref = doc(db, "ads", String(adId));
@@ -59,8 +59,9 @@ export async function getAdById(adId) {
   if (!snap.exists()) return null;
 
   const data = snap.data();
+  const includeInactive = options?.includeInactive === true;
 
-  if (data.status !== "approved") {
+  if (!includeInactive && data.status !== "approved") {
     return null;
   }
 
@@ -536,6 +537,10 @@ export async function updateNotificationSettings(userId, patch) {
   if (!userId) throw new Error("Нужно войти через Telegram");
 
   const ref = doc(db, "users", toId(userId));
+  const snap = await getDoc(ref);
+  const current = snap.exists() ? snap.data() : {};
+  const currentNotifications = current.notifications || {};
+  const nextNotifications = { ...currentNotifications };
   const data = {
     updatedAt: Date.now(),
   };
@@ -546,8 +551,12 @@ export async function updateNotificationSettings(userId, patch) {
 
   for (const key of ["chatMessages", "moderation", "promotion", "favorites"]) {
     if (Object.prototype.hasOwnProperty.call(patch, key)) {
-      data[`notifications.${key}`] = !!patch[key];
+      nextNotifications[key] = !!patch[key];
     }
+  }
+
+  if (Object.keys(nextNotifications).length > 0) {
+    data.notifications = nextNotifications;
   }
 
   await setDoc(ref, data, { merge: true });
