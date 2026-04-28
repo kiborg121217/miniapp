@@ -6,7 +6,6 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../firebase";
-import PageBackButton from "./PageBackButton";
 
 function formatChatTime(value) {
   if (!value) return "";
@@ -34,9 +33,9 @@ function getUnreadCount(chat, userId) {
   return 0;
 }
 
-function ChatPlaceholderImage() {
+function ChatPlaceholderImage({ compact = false }) {
   return (
-    <div className="chat-list-image chat-list-image-placeholder" aria-hidden="true">
+    <div className={`chat-list-image chat-list-image-placeholder ${compact ? "compact" : ""}`} aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none">
         <rect x="4" y="5" width="16" height="14" rx="3" />
         <path d="M7.5 15L10.2 12.4L12.7 14.5L14.4 12.8L17 15.5" />
@@ -71,12 +70,30 @@ function ChatListItem({ chat, userId, onClick }) {
   );
 }
 
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4.5 11.2L19.1 4.8C19.9 4.45 20.72 5.28 20.36 6.08L13.86 20.6C13.5 21.4 12.34 21.32 12.1 20.48L10.48 14.8L4.82 13.12C4 12.88 3.7 11.55 4.5 11.2Z" />
+      <path d="M10.7 14.45L14.7 10.45" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M15.5 5.5L9 12L15.5 18.5" />
+    </svg>
+  );
+}
+
 function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef(null);
+  const messagesRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -86,7 +103,6 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
       chatId,
       (items) => {
         setMessages(items);
-        window.setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 40);
       },
       () => setError("Не удалось загрузить сообщения")
     );
@@ -95,9 +111,22 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
   }, [chatId]);
 
   useEffect(() => {
+    const node = messagesRef.current;
+    if (!node) return;
+    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+  }, [messages.length]);
+
+  useEffect(() => {
     if (!chatId || !user?.id) return;
     markChatRead(chatId, user.id).catch(() => {});
   }, [chatId, user?.id, messages.length]);
+
+  useEffect(() => {
+    const node = textareaRef.current;
+    if (!node) return;
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, 118)}px`;
+  }, [text]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -119,29 +148,33 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
   };
 
   return (
-    <div className="chat-dialog-page page-enter">
-      <PageBackButton onClick={onBack} />
-
+    <div className="chat-dialog-page page-enter" role="region" aria-label="Диалог по объявлению">
       <section className="chat-dialog-header">
+        <button type="button" className="chat-header-back" onClick={onBack} aria-label="Назад к списку чатов">
+          <BackIcon />
+        </button>
+
         {chat?.adImage ? (
-          <img src={chat.adImage} alt="" />
+          <img className="chat-header-image" src={chat.adImage} alt="" />
         ) : (
-          <ChatPlaceholderImage />
+          <ChatPlaceholderImage compact />
         )}
-        <div>
+
+        <div className="chat-header-text">
           <h2>{chat?.adTitle || "Диалог"}</h2>
-          <p>Сообщения хранятся внутри приложения</p>
+          <p>Внутренний чат по объявлению</p>
         </div>
+
         {chat?.adId && (
-          <button type="button" onClick={() => onOpenAd?.(chat.adId)}>
+          <button type="button" className="chat-open-ad-btn" onClick={() => onOpenAd?.(chat.adId)}>
             Объявление
           </button>
         )}
       </section>
 
-      <section className="chat-messages-card">
+      <section className="chat-messages-card" ref={messagesRef}>
         {messages.length === 0 ? (
-          <div className="chat-empty-state">
+          <div className="chat-empty-state chat-empty-state-dialog">
             <div className="chat-empty-icon">💬</div>
             <h3>Сообщений пока нет</h3>
             <p>Напишите первое сообщение по объявлению.</p>
@@ -159,30 +192,32 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
                 </div>
               );
             })}
-            <div ref={bottomRef} />
           </div>
         )}
       </section>
 
-      {error && <div className="chat-error">{error}</div>}
-
       <form className="chat-compose" onSubmit={handleSubmit}>
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Написать сообщение..."
-          rows={1}
-          maxLength={1200}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              handleSubmit(event);
-            }
-          }}
-        />
-        <button type="submit" disabled={!text.trim() || sending}>
-          {sending ? "..." : "Отправить"}
-        </button>
+        {error && <div className="chat-error chat-compose-error">{error}</div>}
+        <div className="chat-compose-row">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder="Написать сообщение..."
+            rows={1}
+            maxLength={1200}
+            enterKeyHint="send"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                handleSubmit(event);
+              }
+            }}
+          />
+          <button type="submit" aria-label="Отправить сообщение" disabled={!text.trim() || sending}>
+            {sending ? "…" : <SendIcon />}
+          </button>
+        </div>
       </form>
     </div>
   );

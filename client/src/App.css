@@ -11119,3 +11119,567 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
   background: rgba(15,23,42,0.06);
   border-color: rgba(15,23,42,0.06);
 }
+
+/* ======================================================================
+   FINAL CHAT/RESPONSIVE UX FIX
+   - Чат открывается как отдельный viewport-экран Mini App.
+   - Поле ввода не конфликтует с нижней навигацией и safe-area/fullscreen.
+   - Навигация всегда держит 4 пункта в один ряд на телефоне и desktop.
+   ====================================================================== */
+:root {
+  --app-viewport-height: var(--tg-viewport-height, 100dvh);
+  --app-stable-height: var(--tg-stable-viewport-height, 100dvh);
+  --bottom-ui-gap: max(8px, env(safe-area-inset-bottom, 0px));
+  --nav-height-final: 70px;
+  --chat-side-pad: clamp(10px, 3.8vw, 18px);
+  --chat-max-width: 760px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+button,
+textarea,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Надёжная нижняя навигация: 4 пункта, без переноса и налезания. */
+.bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: calc(var(--bottom-ui-gap) + var(--tg-content-safe-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  width: min(calc(100vw - 24px), 520px) !important;
+  max-width: 520px !important;
+  height: var(--nav-height-final) !important;
+  min-height: var(--nav-height-final) !important;
+  padding: 6px !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+
+.nav-item,
+.bottom-nav .nav-item {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 3px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.nav-icon,
+.bottom-nav .nav-icon {
+  width: 24px !important;
+  height: 24px !important;
+  flex: 0 0 24px !important;
+}
+
+.nav-icon svg,
+.bottom-nav .nav-icon svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.nav-label,
+.bottom-nav .nav-label {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(9.5px, 2.75vw, 11px) !important;
+  line-height: 1 !important;
+}
+
+@media (min-width: 760px) {
+  .bottom-nav {
+    width: min(540px, calc(100vw - 48px)) !important;
+    height: 72px !important;
+    min-height: 72px !important;
+    padding: 7px !important;
+  }
+
+  .nav-label,
+  .bottom-nav .nav-label {
+    font-size: 11.5px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .bottom-nav {
+    width: min(460px, calc(100vw - 28px)) !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 5px !important;
+  }
+
+  .nav-item,
+  .bottom-nav .nav-item {
+    flex-direction: row !important;
+    gap: 6px !important;
+  }
+
+  .nav-icon,
+  .bottom-nav .nav-icon,
+  .nav-icon svg,
+  .bottom-nav .nav-icon svg {
+    width: 21px !important;
+    height: 21px !important;
+    flex-basis: 21px !important;
+  }
+}
+
+.app.chat-open {
+  min-height: var(--app-viewport-height) !important;
+  height: var(--app-viewport-height) !important;
+  overflow: hidden !important;
+}
+
+/* Список чатов: нормальная ширина на телефоне и компьютере. */
+.chats-page {
+  width: min(100%, 880px) !important;
+  margin: 0 auto !important;
+  min-height: var(--app-stable-height) !important;
+  padding:
+    calc(18px + var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px))
+    var(--chat-side-pad)
+    calc(var(--nav-height-final) + 30px + var(--tg-safe-bottom, 0px) + var(--tg-content-safe-bottom, 0px)) !important;
+}
+
+.chats-hero,
+.chat-list-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.chat-list-card {
+  margin-top: 14px !important;
+  max-height: none !important;
+}
+
+.chat-list-item {
+  min-height: 82px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 13px !important;
+  gap: 11px !important;
+  box-shadow: none !important;
+}
+
+.chat-list-image {
+  width: clamp(50px, 13vw, 62px) !important;
+  height: clamp(50px, 13vw, 62px) !important;
+  border-radius: 18px !important;
+}
+
+.chat-list-body,
+.chat-list-topline,
+.chat-list-subline,
+.chat-list-title,
+.chat-list-message {
+  min-width: 0 !important;
+}
+
+.chat-list-time,
+.chat-unread-badge {
+  flex: 0 0 auto !important;
+}
+
+@media (min-width: 900px) {
+  .chats-page {
+    padding-top: 34px !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .chat-list-card {
+    border-radius: 30px !important;
+  }
+}
+
+/* Диалог: фиксированный экран, а не обычная страница под нижней навигацией. */
+.chat-dialog-page {
+  position: fixed !important;
+  z-index: 1400 !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  width: min(100vw, var(--chat-max-width)) !important;
+  height: var(--app-viewport-height) !important;
+  min-height: 0 !important;
+  max-height: var(--app-viewport-height) !important;
+  margin: 0 !important;
+  padding:
+    calc(8px + var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px))
+    var(--chat-side-pad)
+    calc(8px + var(--tg-safe-bottom, 0px) + var(--tg-content-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px)) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(91, 140, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 86% 10%, rgba(124, 92, 255, 0.14), transparent 22%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%) !important;
+}
+
+[data-theme="light"] .chat-dialog-page {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(91, 140, 255, 0.12), transparent 26%),
+    radial-gradient(circle at 86% 10%, rgba(124, 92, 255, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8fbff 0%, #edf3fa 100%) !important;
+}
+
+.chat-dialog-page .back-btn,
+.chat-dialog-page .premium-back-btn {
+  display: none !important;
+}
+
+.chat-dialog-header {
+  margin-top: 0 !important;
+  min-height: 68px !important;
+  width: 100% !important;
+  padding: 10px !important;
+  display: grid !important;
+  grid-template-columns: 42px 48px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 9px !important;
+  border-radius: 24px !important;
+  flex: none !important;
+  overflow: hidden !important;
+}
+
+.chat-header-back,
+.chat-open-ad-btn,
+.chat-compose button {
+  width: auto !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.chat-header-back {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(255, 255, 255, 0.075) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+
+.chat-header-back svg {
+  width: 24px !important;
+  height: 24px !important;
+  stroke: currentColor !important;
+  stroke-width: 2.4 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.chat-header-image,
+.chat-dialog-header > img,
+.chat-dialog-header > .chat-list-image-placeholder,
+.chat-list-image-placeholder.compact {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  border-radius: 16px !important;
+  object-fit: cover !important;
+}
+
+.chat-header-text {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.chat-dialog-header h2 {
+  margin: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(15px, 4.2vw, 19px) !important;
+  line-height: 1.1 !important;
+}
+
+.chat-dialog-header p {
+  margin: 3px 0 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: 12px !important;
+}
+
+.chat-open-ad-btn {
+  max-width: 116px !important;
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  border-radius: 15px !important;
+  font-size: 12.5px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+.chat-messages-card {
+  min-height: 0 !important;
+  max-height: none !important;
+  height: 100% !important;
+  margin-top: 0 !important;
+  padding: 12px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-padding-bottom: 16px !important;
+  border-radius: 24px !important;
+}
+
+.chat-messages-list {
+  min-height: 100% !important;
+  align-content: end !important;
+  display: grid !important;
+  gap: 9px !important;
+}
+
+.chat-message-row {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.chat-message-bubble {
+  max-width: min(82%, 460px) !important;
+  min-width: 0 !important;
+  padding: 10px 12px 8px !important;
+  border-radius: 19px !important;
+}
+
+.chat-message-row.own .chat-message-bubble {
+  border-bottom-right-radius: 8px !important;
+}
+
+.chat-message-row.other .chat-message-bubble {
+  border-bottom-left-radius: 8px !important;
+}
+
+.chat-message-bubble p {
+  font-size: 14.5px !important;
+  line-height: 1.38 !important;
+}
+
+.chat-compose {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.chat-compose-row {
+  width: 100% !important;
+  min-height: 54px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 48px !important;
+  gap: 8px !important;
+  align-items: end !important;
+  padding: 7px !important;
+  border-radius: 24px !important;
+  background: rgba(13, 18, 30, 0.92) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: 0 18px 38px rgba(0,0,0,0.28) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+
+.chat-compose textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  height: 40px;
+  max-height: 118px !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  resize: none !important;
+  overflow-y: auto !important;
+  border-radius: 17px !important;
+  line-height: 1.3 !important;
+  font-size: 15px !important;
+}
+
+.chat-compose button {
+  width: 48px !important;
+  height: 40px !important;
+  min-width: 48px !important;
+  padding: 0 !important;
+  border-radius: 17px !important;
+  display: grid !important;
+  place-items: center !important;
+  box-shadow: 0 8px 18px rgba(56,189,248,0.18) !important;
+}
+
+.chat-compose button svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.chat-compose-error {
+  margin: 0 !important;
+  padding: 9px 12px !important;
+  border-radius: 16px !important;
+  font-size: 12.5px !important;
+}
+
+.chat-empty-state-dialog {
+  min-height: 100% !important;
+  display: grid !important;
+  align-content: center !important;
+  justify-items: center !important;
+}
+
+[data-theme="light"] .chat-header-back {
+  background: rgba(15,23,42,0.055) !important;
+  border-color: rgba(15,23,42,0.08) !important;
+}
+
+[data-theme="light"] .chat-compose-row {
+  background: rgba(255,255,255,0.94) !important;
+  border-color: rgba(15,23,42,0.10) !important;
+  box-shadow: 0 18px 38px rgba(15,23,42,0.10) !important;
+}
+
+@media (max-width: 374px) {
+  .chat-dialog-header {
+    grid-template-columns: 40px 44px minmax(0, 1fr) auto !important;
+    gap: 7px !important;
+    padding: 8px !important;
+  }
+
+  .chat-header-back {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .chat-header-image,
+  .chat-dialog-header > img,
+  .chat-dialog-header > .chat-list-image-placeholder,
+  .chat-list-image-placeholder.compact {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .chat-open-ad-btn {
+    max-width: 92px !important;
+    padding: 0 9px !important;
+    font-size: 11.5px !important;
+  }
+
+  .chat-message-bubble {
+    max-width: 88% !important;
+  }
+}
+
+@media (min-width: 800px) {
+  .chat-dialog-page {
+    --chat-side-pad: 18px;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .chat-dialog-header,
+  .chat-messages-card,
+  .chat-compose-row {
+    border-radius: 28px !important;
+  }
+
+  .chat-message-bubble {
+    max-width: min(68%, 520px) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .chat-dialog-page {
+    --chat-side-pad: 10px;
+    gap: 7px !important;
+    padding-top: calc(6px + var(--tg-safe-top, 0px) + var(--tg-content-safe-top, 0px)) !important;
+    padding-bottom: calc(6px + var(--tg-safe-bottom, 0px) + var(--tg-content-safe-bottom, 0px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .chat-dialog-header {
+    min-height: 58px !important;
+    grid-template-columns: 38px 42px minmax(0, 1fr) auto !important;
+    border-radius: 20px !important;
+  }
+
+  .chat-header-back,
+  .chat-compose button {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+
+  .chat-header-image,
+  .chat-dialog-header > img,
+  .chat-dialog-header > .chat-list-image-placeholder,
+  .chat-list-image-placeholder.compact {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+  }
+
+  .chat-dialog-header p {
+    display: none !important;
+  }
+
+  .chat-messages-card {
+    padding: 9px !important;
+    border-radius: 20px !important;
+  }
+
+  .chat-compose-row {
+    min-height: 48px !important;
+    padding: 5px !important;
+    border-radius: 20px !important;
+  }
+
+  .chat-compose textarea {
+    min-height: 38px !important;
+    height: 38px;
+    padding: 9px 11px !important;
+  }
+}

@@ -546,7 +546,7 @@ export default function App() {
   }
 
   return (
-    <div className="app theme-animate">
+    <div className={`app theme-animate ${page === "chats" && selectedChatId ? "chat-open" : ""}`}>
       {page === "list" && (
         <AdList
           onOpenSettings={() => goToPage("settings")}
@@ -689,7 +689,7 @@ export default function App() {
         />
       )}
 
-      {page !== "view" && !(page === "add" && tgUser) && (
+      {page !== "view" && !(page === "add" && tgUser) && !(page === "chats" && selectedChatId) && (
         <div className="bottom-nav">
           <button
             className={`nav-item ${page === "list" ? "active" : ""}`}
