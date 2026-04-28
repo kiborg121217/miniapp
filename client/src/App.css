@@ -12247,3 +12247,207 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
   height: 28px;
   display: block;
 }
+
+
+/* === v7 layout fix: create page, desktop width, neutral profile cards === */
+
+/* Экран создания не должен получать большой общий отступ для страниц с back-кнопкой */
+.create-premium-page {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+}
+
+.create-premium-topbar {
+  margin-top: 0 !important;
+}
+
+/* На планшетах и ПК приложение больше не зажимается в 430px */
+@media (min-width: 760px) {
+  html,
+  body,
+  #root,
+  .app {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .app {
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    box-shadow: none !important;
+  }
+
+  .market-home,
+  .profile-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page,
+  .legal-page,
+  .create-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap,
+  .profile-ads-premium-page,
+  .chats-page {
+    width: min(100%, 1180px) !important;
+    max-width: 1180px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: clamp(22px, 4vw, 56px) !important;
+    padding-right: clamp(22px, 4vw, 56px) !important;
+    box-sizing: border-box !important;
+  }
+
+  .create-premium-page {
+    padding-top: 26px !important;
+  }
+
+  .settings-detail-page,
+  .help-page,
+  .legal-page,
+  .ad-page-wrap {
+    max-width: 980px !important;
+  }
+
+  .create-premium-page {
+    max-width: 980px !important;
+  }
+
+  .profile-ads-premium-page {
+    max-width: 1280px !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: clamp(14px, 1.6vw, 22px) !important;
+  }
+
+  .profile-ads-premium-panel,
+  .profile-ads-premium-hero,
+  .settings-ios-list,
+  .settings-about-card,
+  .chat-list-card,
+  .chats-hero {
+    max-width: none !important;
+  }
+
+  .bottom-nav {
+    width: min(560px, calc(100vw - 48px)) !important;
+    max-width: 560px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+/* Большие широкие экраны: красивый контейнер, без обрезания карточек/кнопок */
+@media (min-width: 1180px) {
+  .market-home,
+  .profile-premium-page,
+  .seller-premium-page,
+  .profile-ads-premium-page,
+  .chats-page {
+    max-width: 1360px !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+  }
+
+  .profile-ad-premium-main {
+    grid-template-columns: 124px minmax(0, 1fr) !important;
+  }
+
+  .profile-ad-premium-image-wrap {
+    width: 124px !important;
+    min-height: 124px !important;
+  }
+
+  .profile-ad-premium-image,
+  .profile-ad-premium-placeholder {
+    min-height: 124px !important;
+  }
+}
+
+/* Очень широкие экраны */
+@media (min-width: 1500px) {
+  .market-home,
+  .profile-premium-page,
+  .seller-premium-page,
+  .profile-ads-premium-page,
+  .chats-page {
+    max-width: 1480px !important;
+  }
+}
+
+/* Нейтральные карточки в разделах профиля: без синей/бирюзовой подсветки внутри окон */
+.profile-ad-premium-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.070), rgba(255,255,255,0.030)),
+    rgba(15, 18, 24, 0.74) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  box-shadow:
+    0 18px 42px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+.profile-ad-premium-image-wrap {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.030)),
+    rgba(255,255,255,0.045) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+
+.profile-ad-premium-placeholder {
+  color: rgba(235, 242, 255, 0.72) !important;
+}
+
+.profile-ad-premium-price {
+  color: var(--text, #ffffff) !important;
+}
+
+.profile-ads-premium-panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.022)),
+    rgba(8, 12, 18, 0.50) !important;
+}
+
+/* Кнопки под карточкой: отдельный визуальный блок, не впритык к основной карточке */
+.profile-ad-premium-actions {
+  margin: 12px 12px 14px !important;
+  padding: 12px !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,0.035) !important;
+  border: 1px solid rgba(255,255,255,0.075) !important;
+}
+
+[data-theme="light"] .profile-ad-premium-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.90)),
+    #ffffff !important;
+  border-color: rgba(15,23,42,0.08) !important;
+  box-shadow:
+    0 18px 42px rgba(15,23,42,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+
+[data-theme="light"] .profile-ad-premium-image-wrap {
+  background:
+    linear-gradient(180deg, rgba(248,250,252,0.95), rgba(241,245,249,0.88)),
+    #f8fafc !important;
+  border-color: rgba(15,23,42,0.08) !important;
+}
+
+[data-theme="light"] .profile-ads-premium-panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.82)),
+    rgba(255,255,255,0.88) !important;
+}
+
+[data-theme="light"] .profile-ad-premium-actions {
+  background: rgba(248,250,252,0.88) !important;
+  border-color: rgba(15,23,42,0.08) !important;
+}
