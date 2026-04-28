@@ -370,8 +370,52 @@ function FavoriteHeartIcon({ active }) {
   );
 }
 
+function isImageAlreadyPreloaded(src) {
+  if (!src || typeof window === "undefined") return false;
+  return Boolean(window.__PRELOADED_AD_IMAGES?.has(src));
+}
+
 function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
   const image = getAdImage(ad);
+  const [imageReady, setImageReady] = useState(() => isImageAlreadyPreloaded(image));
+
+  useEffect(() => {
+    if (!image) {
+      setImageReady(false);
+      return;
+    }
+
+    if (isImageAlreadyPreloaded(image)) {
+      setImageReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = "async";
+
+    img.onload = async () => {
+      try {
+        if (img.decode) await img.decode();
+      } catch {
+        // decode optional
+      }
+      if (cancelled) return;
+      if (!window.__PRELOADED_AD_IMAGES) window.__PRELOADED_AD_IMAGES = new Set();
+      window.__PRELOADED_AD_IMAGES.add(image);
+      setImageReady(true);
+    };
+
+    img.onerror = () => {
+      if (!cancelled) setImageReady(false);
+    };
+
+    img.src = image;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [image]);
 
   return (
     <button
@@ -403,7 +447,28 @@ function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
         </span>
 
         {image ? (
-          <img src={image} alt={ad.title} className="market-card-image" />
+          <>
+            {!imageReady && (
+              <div className="market-card-loading" aria-hidden="true">
+                <span className="market-card-loading-shimmer" />
+              </div>
+            )}
+            <img
+              src={image}
+              alt={ad.title}
+              className={`market-card-image ${imageReady ? "is-visible" : "is-hidden"}`}
+              loading="eager"
+              fetchPriority={index < 4 ? "high" : "auto"}
+              decoding="async"
+              onLoad={(e) => {
+                const src = e.currentTarget.currentSrc || image;
+                if (!window.__PRELOADED_AD_IMAGES) window.__PRELOADED_AD_IMAGES = new Set();
+                window.__PRELOADED_AD_IMAGES.add(src);
+                window.__PRELOADED_AD_IMAGES.add(image);
+                setImageReady(true);
+              }}
+            />
+          </>
         ) : (
           <div className="market-card-placeholder" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">

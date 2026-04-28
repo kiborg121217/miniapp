@@ -192,6 +192,12 @@ function getAdPreviewImage(ad) {
   return ad?.imageUrl || "";
 }
 
+function markImagePreloaded(src) {
+  if (!src || typeof window === "undefined") return;
+  if (!window.__PRELOADED_AD_IMAGES) window.__PRELOADED_AD_IMAGES = new Set();
+  window.__PRELOADED_AD_IMAGES.add(src);
+}
+
 function preloadImage(src, timeoutMs = 2800) {
   if (!src) return Promise.resolve(false);
 
@@ -214,6 +220,7 @@ function preloadImage(src, timeoutMs = 2800) {
       } catch {
         // decode не критичен, onload уже сработал
       }
+      markImagePreloaded(src);
       finish(true);
     };
 
@@ -444,14 +451,14 @@ export default function App() {
         const data = await getAds();
         const approved = data.filter((ad) => ad.status === "approved");
 
-        if (!cancelled) {
-          setPreloadedAds(approved);
-        }
-
         safeSetProgress(52, "Подготавливаем карточки…");
         await preloadFirstAdImages(approved, (ratio) => {
           safeSetProgress(52 + Math.round(ratio * 30), "Подгружаем фото…");
         });
+
+        if (!cancelled) {
+          setPreloadedAds(approved);
+        }
 
         safeSetProgress(86, "Проверяем продавцов…");
         const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];

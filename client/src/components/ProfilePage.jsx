@@ -350,17 +350,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
 
       <section className="profile-menu-section">
         <div className="profile-menu-label">МОЙ РАЗДЕЛ</div>
-
-        <button className="profile-menu-tile accent-cyan" onClick={onOpenChats}>
-          <span className="profile-menu-icon"><ProfileTileIcon type="chat" /></span>
-          <span className="profile-menu-copy">
-            <strong>Сообщения</strong>
-            <span>Чаты с покупателями и продавцами</span>
-          </span>
-          <span className="profile-menu-arrow">›</span>
-        </button>
-
-        <button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
+<button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
           <span className="profile-menu-icon"><ProfileTileIcon type="favorite" /></span>
           <span className="profile-menu-copy">
             <strong>Избранное</strong>
