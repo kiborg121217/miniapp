@@ -52,6 +52,39 @@ app.get("/", (req, res) => {
   res.send("Server is working 🚀");
 });
 
+async function sendUserNotification(userId, text, notificationKey = "chatMessages", options = {}) {
+  if (!userId || !BOT_TOKEN) return { ok: false, skipped: true, reason: "missing_user_or_bot" };
+
+  const userRef = db.collection("users").doc(String(userId));
+  const userSnap = await userRef.get();
+  const profile = userSnap.exists ? userSnap.data() : {};
+  const notifications = profile?.notifications || {};
+
+  if (notifications[notificationKey] === false) {
+    return { ok: false, skipped: true, reason: "disabled" };
+  }
+
+  if (profile?.botCanMessage === false) {
+    return { ok: false, skipped: true, reason: "no_write_access" };
+  }
+
+  try {
+    await bot.sendMessage(String(userId), text, options);
+    return { ok: true };
+  } catch (error) {
+    console.error("sendUserNotification error:", error.message);
+    if (String(error.message || "").includes("bot can't initiate conversation")) {
+      await userRef.set({ botCanMessage: false, updatedAt: Date.now() }, { merge: true }).catch(() => {});
+    }
+    return { ok: false, error: error.message };
+  }
+}
+
+function buildMiniAppChatUrl(chatId) {
+  return `${WEB_APP_URL}?chat=${encodeURIComponent(String(chatId))}`;
+}
+
+
 function timingSafeEqualHex(a, b) {
   if (!a || !b) return false;
   const left = Buffer.from(String(a), "hex");
@@ -676,6 +709,51 @@ async function downloadImageToBuffer(url) {
   return Buffer.from(arrayBuffer);
 }
 
+
+app.post("/notify-chat-message", async (req, res) => {
+  try {
+    const { chatId, messageId } = req.body || {};
+
+    if (!chatId || !messageId) {
+      return res.status(400).json({ ok: false, error: "Не хватает chatId или messageId" });
+    }
+
+    const chatRef = db.collection("chats").doc(String(chatId));
+    const [chatSnap, messageSnap] = await Promise.all([
+      chatRef.get(),
+      chatRef.collection("messages").doc(String(messageId)).get(),
+    ]);
+
+    if (!chatSnap.exists || !messageSnap.exists) {
+      return res.status(404).json({ ok: false, error: "Диалог или сообщение не найдено" });
+    }
+
+    const chat = chatSnap.data();
+    const message = messageSnap.data();
+    const senderId = String(message.senderId || "");
+    const buyerId = String(chat.buyerId || "");
+    const sellerId = String(chat.sellerId || "");
+    const recipientId = senderId === buyerId ? sellerId : buyerId;
+
+    if (!recipientId || recipientId === senderId) {
+      return res.json({ ok: true, skipped: true });
+    }
+
+    const preview = String(message.text || "").slice(0, 500);
+    const text = `💬 Новое сообщение по объявлению\n\n📌 ${chat.adTitle || "Объявление"}\n\n${preview}`;
+    const result = await sendUserNotification(recipientId, text, "chatMessages", {
+      reply_markup: {
+        inline_keyboard: [[{ text: "Открыть чат", web_app: { url: buildMiniAppChatUrl(chatId) } }]],
+      },
+    });
+
+    return res.json({ ok: true, notification: result });
+  } catch (error) {
+    console.error("/notify-chat-message error:", error);
+    return res.status(500).json({ ok: false, error: error.message || "Не удалось отправить уведомление" });
+  }
+});
+
 app.post("/new-ad", async (req, res) => {
   try {
     const ad = req.body;
@@ -894,9 +972,10 @@ bot.on("callback_query", async (query) => {
       const ad = (await db.collection("ads").doc(id).get()).data();
 
       if (ad?.userId) {
-        await bot.sendMessage(
+        await sendUserNotification(
           ad.userId,
-          `✅ Ваше объявление "${ad.title}" опубликовано!`
+          `✅ Ваше объявление "${ad.title}" опубликовано!`,
+          "moderation"
         );
       }
     }
@@ -913,9 +992,10 @@ bot.on("callback_query", async (query) => {
       const ad = (await db.collection("ads").doc(id).get()).data();
 
       if (ad?.userId) {
-        await bot.sendMessage(
+        await sendUserNotification(
           ad.userId,
-          `❌ Ваше объявление "${ad.title}" отклонено.`
+          `❌ Ваше объявление "${ad.title}" отклонено.`,
+          "moderation"
         );
       }
     }

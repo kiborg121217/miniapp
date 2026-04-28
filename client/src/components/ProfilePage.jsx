@@ -62,6 +62,16 @@ function ProfileTileIcon({ type }) {
     );
   }
 
+  if (type === "chat") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 6.8C5 5.25 6.25 4 7.8 4H16.2C17.75 4 19 5.25 19 6.8V12.2C19 13.75 17.75 15 16.2 15H11L7 18.5V15H7.8C6.25 15 5 13.75 5 12.2V6.8Z" />
+        <path d="M8.5 8.5H15.5" />
+        <path d="M8.5 11.2H13.5" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="7" />
@@ -71,7 +81,7 @@ function ProfileTileIcon({ type }) {
   );
 }
 
-export default function ProfilePage({ user, onOpenSection, initialProfileData, onProfileDataLoaded }) {
+export default function ProfilePage({ user, onOpenSection, onOpenChats, initialProfileData, onProfileDataLoaded }) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [activeAds, setActiveAds] = useState([]);
@@ -340,6 +350,15 @@ export default function ProfilePage({ user, onOpenSection, initialProfileData, o
 
       <section className="profile-menu-section">
         <div className="profile-menu-label">МОЙ РАЗДЕЛ</div>
+
+        <button className="profile-menu-tile accent-cyan" onClick={onOpenChats}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="chat" /></span>
+          <span className="profile-menu-copy">
+            <strong>Сообщения</strong>
+            <span>Чаты с покупателями и продавцами</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
+        </button>
 
         <button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
           <span className="profile-menu-icon"><ProfileTileIcon type="favorite" /></span>

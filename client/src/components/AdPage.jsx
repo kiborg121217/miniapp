@@ -25,7 +25,7 @@ function FavoriteHeartIcon() {
   );
 }
 
-export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
+export default function AdPage({ ad, onBack, onOpenSeller, onWrite, currentUser }) {
   const [modalImage, setModalImage] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
   const [sellerProfile, setSellerProfile] = useState(null);
@@ -375,30 +375,12 @@ export default function AdPage({ ad, onBack, onOpenSeller, currentUser }) {
             </div>
           </div>
 
-          {(ad.username || ad.userId) && (
+          {ad.userId && (
             <button
               className="contact-btn"
-              onClick={() => {
-                const tg = window.Telegram?.WebApp;
-
-                if (ad.username) {
-                  const url = `https://t.me/${ad.username}`;
-                  if (tg) {
-                    tg.openTelegramLink(url);
-                  } else {
-                    window.open(url, "_blank");
-                  }
-                  return;
-                }
-
-                if (ad.userId) {
-                  alert(
-                    "У этого пользователя нет username. Следующим шагом сделаем связь через бота."
-                  );
-                }
-              }}
+              onClick={() => onWrite?.(ad)}
             >
-              Написать
+              {currentUser?.id ? "Написать" : "Войти, чтобы написать"}
             </button>
           )}
         </div>

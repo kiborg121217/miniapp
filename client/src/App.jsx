@@ -5,6 +5,7 @@ import AdPage from "./components/AdPage";
 import ProfilePage from "./components/ProfilePage";
 import ProfileAdsPage from "./components/ProfileAdsPage";
 import SettingsPage from "./components/SettingsPage";
+import ChatsPage from "./components/ChatsPage";
 import SellerPage from "./components/SellerPage";
 import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
@@ -13,7 +14,7 @@ import AuthCallbackPage from "./components/AuthCallbackPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
-import { getAdById, getAds, getUserProfile, getUserProfileBundle } from "./firebase";
+import { getAdById, getAds, getUserProfile, getUserProfileBundle, startChatForAd } from "./firebase";
 import {
   authenticateMiniAppInitData,
   getTelegramInitData,
@@ -69,9 +70,8 @@ function HelpPage({ onBack }) {
       <div className="help-card">
         <div className="help-card-title">Как написать продавцу</div>
         <p>
-          Если у продавца указан username Telegram, кнопка «Написать» откроет
-          его профиль в Telegram. Для пользователей без username в будущем может
-          использоваться связь через бота-посредника.
+          Кнопка «Написать» создаёт внутренний диалог по объявлению. Чат работает
+          прямо внутри Mini App, поэтому продавцу можно написать даже без Telegram username.
         </p>
       </div>
 
@@ -157,6 +157,23 @@ function getStartSellerIdFromLaunch() {
   return null;
 }
 
+function getStartChatIdFromLaunch() {
+  const tg = window.Telegram?.WebApp;
+
+  const startParam =
+    tg?.initDataUnsafe?.start_param ||
+    new URLSearchParams(window.location.search).get("tgWebAppStartParam");
+
+  if (startParam && startParam.startsWith("chat_")) {
+    return startParam.replace("chat_", "");
+  }
+
+  const queryChat = new URLSearchParams(window.location.search).get("chat");
+  if (queryChat) return queryChat;
+
+  return null;
+}
+
 function getAdPreviewImage(ad) {
   if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
   return ad?.imageUrl || "";
@@ -232,6 +249,10 @@ export default function App() {
     () => sessionStorage.getItem("profile_status_page") || null
   );
 
+  const [selectedChatId, setSelectedChatId] = useState(
+    () => sessionStorage.getItem("selected_chat_id") || null
+  );
+
   const [sellerBackTarget, setSellerBackTarget] = useState(
     () => sessionStorage.getItem("seller_back_target") || "list"
   );
@@ -265,6 +286,14 @@ export default function App() {
       sessionStorage.removeItem("profile_status_page");
     }
   }, [profileStatusPage]);
+
+  useEffect(() => {
+    if (selectedChatId) {
+      sessionStorage.setItem("selected_chat_id", selectedChatId);
+    } else {
+      sessionStorage.removeItem("selected_chat_id");
+    }
+  }, [selectedChatId]);
 
   useEffect(() => {
     if (selectedAd) {
@@ -340,6 +369,7 @@ export default function App() {
 
       const startAdId = getStartAdIdFromLaunch();
       const startSellerId = getStartSellerIdFromLaunch();
+      const startChatId = getStartChatIdFromLaunch();
 
       try {
         safeSetProgress(18, "Подключаем Telegram…");
@@ -351,6 +381,18 @@ export default function App() {
             setSelectedSellerId(String(startSellerId));
             setSellerBackTarget("list");
             setPage("seller");
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
+          }
+        }
+
+        if (startChatId) {
+          safeSetProgress(42, "Открываем чат…");
+
+          if (!cancelled) {
+            setSelectedChatId(String(startChatId));
+            setPage("chats");
             safeSetProgress(100, "Готово");
             setBootLoading(false);
             return;
@@ -446,15 +488,39 @@ export default function App() {
       setSelectedSellerId(null);
       setProfileStatusPage(null);
       setSelectedAd(null);
+      setSelectedChatId(null);
       setSellerBackTarget("list");
 
       sessionStorage.removeItem("selected_seller_id");
       sessionStorage.removeItem("profile_status_page");
       sessionStorage.removeItem("selected_ad");
+      sessionStorage.removeItem("selected_chat_id");
       sessionStorage.removeItem("seller_back_target");
     }
 
+    if (nextPage !== "chats") {
+      setSelectedChatId(null);
+    }
+
     window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const handleStartChat = async (ad) => {
+    if (!tgUser?.id) {
+      setSelectedAd(ad || null);
+      setPage("chats");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+
+    try {
+      const chat = await startChatForAd(ad, tgUser);
+      setSelectedChatId(chat.id);
+      setPage("chats");
+      window.scrollTo({ top: 0, behavior: "auto" });
+    } catch (error) {
+      alert(error.message || "Не удалось открыть чат");
+    }
   };
 
   if (window.location.pathname === "/auth/callback") {
@@ -467,7 +533,8 @@ export default function App() {
         }}
         onDone={(user, profile, returnPage) => {
           handleAuthSuccess(user, profile);
-          setPage(returnPage === "add" ? "add" : "profile");
+          const allowedReturnPages = ["add", "profile", "chats"];
+          setPage(allowedReturnPages.includes(returnPage) ? returnPage : "profile");
           setBootLoading(false);
         }}
       />
@@ -517,10 +584,35 @@ export default function App() {
               setPage("profileAds");
               window.scrollTo({ top: 0, behavior: "auto" });
             }}
+            onOpenChats={() => goToPage("chats")}
           />
         ) : (
           <LoginPage
             returnPage="profile"
+            onBack={() => goToPage("list")}
+          />
+        )
+      )}
+
+      {page === "chats" && (
+        tgUser ? (
+          <ChatsPage
+            user={tgUser}
+            selectedChatId={selectedChatId}
+            onSelectChat={(chatId) => setSelectedChatId(chatId)}
+            onBackToList={() => setSelectedChatId(null)}
+            onOpenAd={async (adId) => {
+              const ad = await getAdById(adId);
+              if (ad) {
+                setSelectedAd(ad);
+                setPage("view");
+                window.scrollTo({ top: 0, behavior: "auto" });
+              }
+            }}
+          />
+        ) : (
+          <LoginPage
+            returnPage="chats"
             onBack={() => goToPage("list")}
           />
         )
@@ -541,6 +633,7 @@ export default function App() {
 
       {page === "settings" && (
         <SettingsPage
+          user={tgUser}
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onBack={() => goToPage("list")}
@@ -592,6 +685,7 @@ export default function App() {
             setPage("seller");
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
+          onWrite={handleStartChat}
         />
       )}
 
@@ -624,6 +718,20 @@ export default function App() {
               </svg>
             </span>
             <span className="nav-label">Создать</span>
+          </button>
+
+          <button
+            className={`nav-item ${page === "chats" ? "active" : ""}`}
+            onClick={() => goToPage("chats")}
+          >
+            <span className="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 6.8C5 5.25 6.25 4 7.8 4H16.2C17.75 4 19 5.25 19 6.8V12.2C19 13.75 17.75 15 16.2 15H11L7 18.5V15H7.8C6.25 15 5 13.75 5 12.2V6.8Z" />
+                <path d="M8.5 8.5H15.5" />
+                <path d="M8.5 11.2H13.5" />
+              </svg>
+            </span>
+            <span className="nav-label">Чаты</span>
           </button>
 
           <button

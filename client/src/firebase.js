@@ -13,6 +13,8 @@ import {
   query,
   where,
   increment,
+  onSnapshot,
+  orderBy,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -26,6 +28,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_SERVER_URL ||
+  "https://miniapp-1wzi.onrender.com";
 
 /* -------------------- ADS -------------------- */
 
@@ -315,6 +322,235 @@ export async function incrementAdViewsForUser(adId, userId) {
   });
 
   return true;
+}
+
+
+/* -------------------- CHATS -------------------- */
+
+function toId(value) {
+  return String(value || "").trim();
+}
+
+function getAdImage(ad) {
+  if (Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
+  return ad?.imageUrl || "";
+}
+
+export function getChatDocId(adId, buyerId, sellerId) {
+  return `${toId(adId)}_${toId(buyerId)}_${toId(sellerId)}`;
+}
+
+async function notifyChatMessage(chatId, messageId) {
+  try {
+    await fetch(`${API_BASE}/notify-chat-message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, messageId }),
+    });
+  } catch (error) {
+    console.warn("Не удалось отправить Telegram-уведомление о сообщении:", error);
+  }
+}
+
+export async function startChatForAd(ad, buyer) {
+  if (!ad?.id || !ad?.userId) {
+    throw new Error("Не удалось определить продавца объявления");
+  }
+
+  if (!buyer?.id) {
+    throw new Error("Чтобы написать продавцу, нужно войти через Telegram");
+  }
+
+  const adId = toId(ad.id);
+  const buyerId = toId(buyer.id);
+  const sellerId = toId(ad.userId);
+
+  if (buyerId === sellerId) {
+    throw new Error("Нельзя открыть чат со своим объявлением");
+  }
+
+  const chatId = getChatDocId(adId, buyerId, sellerId);
+  const chatRef = doc(db, "chats", chatId);
+  const snap = await getDoc(chatRef);
+  const now = Date.now();
+
+  const payload = {
+    adId,
+    adTitle: ad.title || "Объявление",
+    adImage: getAdImage(ad),
+    buyerId,
+    sellerId,
+    participants: [buyerId, sellerId],
+    updatedAt: now,
+  };
+
+  if (snap.exists()) {
+    await setDoc(chatRef, payload, { merge: true });
+    return { id: chatId, ...snap.data(), ...payload };
+  }
+
+  const newChat = {
+    ...payload,
+    lastMessage: "",
+    lastMessageAt: now,
+    unreadByBuyer: 0,
+    unreadBySeller: 0,
+    createdAt: now,
+  };
+
+  await setDoc(chatRef, newChat);
+  return { id: chatId, ...newChat };
+}
+
+export async function getChatById(chatId) {
+  if (!chatId) return null;
+  const ref = doc(db, "chats", String(chatId));
+  const snap = await getDoc(ref);
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export function listenUserChats(userId, callback, onError) {
+  if (!userId) {
+    callback?.([]);
+    return () => {};
+  }
+
+  const q = query(
+    collection(db, "chats"),
+    where("participants", "array-contains", toId(userId))
+  );
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      const chats = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.updatedAt || b.lastMessageAt || 0) - (a.updatedAt || a.lastMessageAt || 0));
+      callback?.(chats);
+    },
+    (error) => {
+      console.error("Ошибка подписки на чаты:", error);
+      onError?.(error);
+    }
+  );
+}
+
+export function listenChatMessages(chatId, callback, onError) {
+  if (!chatId) {
+    callback?.([]);
+    return () => {};
+  }
+
+  const q = query(
+    collection(db, "chats", String(chatId), "messages"),
+    orderBy("createdAt", "asc")
+  );
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback?.(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    },
+    (error) => {
+      console.error("Ошибка подписки на сообщения:", error);
+      onError?.(error);
+    }
+  );
+}
+
+export async function sendChatMessage(chatId, senderId, text) {
+  const cleanText = String(text || "").trim();
+  if (!chatId || !senderId || !cleanText) return null;
+
+  const chatRef = doc(db, "chats", String(chatId));
+  const chatSnap = await getDoc(chatRef);
+
+  if (!chatSnap.exists()) {
+    throw new Error("Диалог не найден");
+  }
+
+  const chat = chatSnap.data();
+  const normalizedSenderId = toId(senderId);
+  const participants = Array.isArray(chat.participants) ? chat.participants.map(toId) : [];
+
+  if (!participants.includes(normalizedSenderId)) {
+    throw new Error("Вы не являетесь участником этого диалога");
+  }
+
+  const now = Date.now();
+  const messageRef = await addDoc(collection(db, "chats", String(chatId), "messages"), {
+    senderId: normalizedSenderId,
+    text: cleanText,
+    createdAt: now,
+    read: false,
+  });
+
+  const unreadField = normalizedSenderId === toId(chat.buyerId) ? "unreadBySeller" : "unreadByBuyer";
+
+  await updateDoc(chatRef, {
+    lastMessage: cleanText,
+    lastMessageAt: now,
+    updatedAt: now,
+    [unreadField]: increment(1),
+  });
+
+  notifyChatMessage(String(chatId), messageRef.id);
+
+  return messageRef.id;
+}
+
+export async function markChatRead(chatId, userId) {
+  if (!chatId || !userId) return;
+
+  const chatRef = doc(db, "chats", String(chatId));
+  const snap = await getDoc(chatRef);
+  if (!snap.exists()) return;
+
+  const chat = snap.data();
+  const normalizedUserId = toId(userId);
+  const patch = {};
+
+  if (normalizedUserId === toId(chat.buyerId)) patch.unreadByBuyer = 0;
+  if (normalizedUserId === toId(chat.sellerId)) patch.unreadBySeller = 0;
+
+  if (Object.keys(patch).length > 0) {
+    patch.updatedAt = Date.now();
+    await updateDoc(chatRef, patch);
+  }
+}
+
+export async function getNotificationSettings(userId) {
+  const profile = await getUserProfile(userId);
+  const notifications = profile?.notifications || {};
+
+  return {
+    chatMessages: notifications.chatMessages !== false,
+    moderation: notifications.moderation !== false,
+    promotion: notifications.promotion !== false,
+    favorites: notifications.favorites === true,
+    botCanMessage: profile?.botCanMessage === true,
+  };
+}
+
+export async function updateNotificationSettings(userId, patch) {
+  if (!userId) throw new Error("Нужно войти через Telegram");
+
+  const ref = doc(db, "users", toId(userId));
+  const data = {
+    updatedAt: Date.now(),
+  };
+
+  if (Object.prototype.hasOwnProperty.call(patch, "botCanMessage")) {
+    data.botCanMessage = !!patch.botCanMessage;
+  }
+
+  for (const key of ["chatMessages", "moderation", "promotion", "favorites"]) {
+    if (Object.prototype.hasOwnProperty.call(patch, key)) {
+      data[`notifications.${key}`] = !!patch[key];
+    }
+  }
+
+  await setDoc(ref, data, { merge: true });
 }
 
 /* -------------------- UPLOAD IMAGE -------------------- */

@@ -37,3 +37,25 @@ export function getUser() {
 
   return tg.initDataUnsafe.user;
 }
+export function requestBotWriteAccess() {
+  const tg = getTelegram();
+
+  return new Promise((resolve, reject) => {
+    if (!tg?.requestWriteAccess) {
+      resolve(false);
+      return;
+    }
+
+    try {
+      const result = tg.requestWriteAccess((allowed) => {
+        resolve(Boolean(allowed));
+      });
+
+      if (result && typeof result.then === "function") {
+        result.then((allowed) => resolve(Boolean(allowed))).catch(reject);
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+}

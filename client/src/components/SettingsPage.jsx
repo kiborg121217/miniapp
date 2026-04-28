@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageBackButton from "./PageBackButton";
+import { getNotificationSettings, updateNotificationSettings } from "../firebase";
+import { requestBotWriteAccess } from "../telegram";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -133,6 +135,155 @@ function SettingsRow({ icon, accent = "cyan", title, subtitle, right, onClick })
   );
 }
 
+
+function NotificationSwitch({ title, subtitle, checked, disabled, onChange }) {
+  return (
+    <button
+      type="button"
+      className="notification-switch-row"
+      disabled={disabled}
+      onClick={() => onChange?.(!checked)}
+    >
+      <span>
+        <strong>{title}</strong>
+        <small>{subtitle}</small>
+      </span>
+      <span className={`notification-switch ${checked ? "checked" : ""}`} aria-hidden="true">
+        <span />
+      </span>
+    </button>
+  );
+}
+
+function NotificationsPage({ user, onBack }) {
+  const [settings, setSettings] = useState({
+    chatMessages: true,
+    moderation: true,
+    promotion: true,
+    favorites: false,
+    botCanMessage: false,
+  });
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user?.id) {
+      setLoading(false);
+      return undefined;
+    }
+
+    getNotificationSettings(user.id)
+      .then((data) => {
+        if (!cancelled) setSettings(data);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("Не удалось загрузить настройки уведомлений");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const savePatch = async (patch) => {
+    if (!user?.id) {
+      setStatus("Войдите через Telegram, чтобы управлять уведомлениями");
+      return;
+    }
+
+    const previous = settings;
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    setStatus("Сохраняем...");
+
+    try {
+      await updateNotificationSettings(user.id, patch);
+      setStatus("Настройки сохранены");
+    } catch (error) {
+      console.error("Ошибка настроек уведомлений:", error);
+      setSettings(previous);
+      setStatus(error.message || "Не удалось сохранить настройки");
+    }
+  };
+
+  const handleRequestAccess = async () => {
+    if (!user?.id) {
+      setStatus("Войдите через Telegram, чтобы включить уведомления");
+      return;
+    }
+
+    setStatus("Запрашиваем разрешение Telegram...");
+
+    try {
+      const allowed = await requestBotWriteAccess();
+      await savePatch({ botCanMessage: allowed });
+      setStatus(
+        allowed
+          ? "Разрешение получено. Бот сможет присылать уведомления."
+          : "Telegram не дал разрешение. Можно попробовать ещё раз позже."
+      );
+    } catch (error) {
+      console.error("requestWriteAccess error:", error);
+      setStatus(error.message || "Не удалось запросить разрешение Telegram");
+    }
+  };
+
+  return (
+    <div className="settings-detail-page page-enter">
+      <PageBackButton onClick={onBack} />
+      <section className="settings-about-card notifications-card">
+        <div className="settings-soon-icon"><TileIcon type="bell" /></div>
+        <h2>Уведомления</h2>
+        <p>
+          Управляйте сообщениями от бота. Чаты работают через Firestore, а Telegram нужен только для пуш-уведомлений.
+        </p>
+
+        {loading ? (
+          <div className="notification-loading">Загружаем настройки...</div>
+        ) : (
+          <div className="notification-list">
+            <NotificationSwitch
+              title="Сообщения по объявлениям"
+              subtitle="Уведомлять о новых сообщениях в чатах"
+              checked={settings.chatMessages}
+              onChange={(value) => savePatch({ chatMessages: value })}
+            />
+            <NotificationSwitch
+              title="Модерация объявлений"
+              subtitle="Одобрено или отклонено"
+              checked={settings.moderation}
+              onChange={(value) => savePatch({ moderation: value })}
+            />
+            <NotificationSwitch
+              title="Продвижение"
+              subtitle="Окончание VIP, Турбо или закрепа"
+              checked={settings.promotion}
+              onChange={(value) => savePatch({ promotion: value })}
+            />
+            <NotificationSwitch
+              title="Избранное"
+              subtitle="Позже: изменение цены или снятие объявления"
+              checked={settings.favorites}
+              onChange={(value) => savePatch({ favorites: value })}
+            />
+          </div>
+        )}
+
+        <button type="button" className="notification-access-btn" onClick={handleRequestAccess}>
+          {settings.botCanMessage ? "Разрешение Telegram получено" : "Разрешить уведомления от бота"}
+        </button>
+
+        {status && <div className="notification-status">{status}</div>}
+      </section>
+    </div>
+  );
+}
+
 function ComingSoonPage({ type, onBack }) {
   const title = type === "security" ? "Безопасность" : "Уведомления";
   const text =
@@ -175,10 +326,14 @@ function AboutPage({ onBack }) {
   );
 }
 
-export default function SettingsPage({ onOpenHelp, onOpenLegal, onBack, theme, onToggleTheme }) {
+export default function SettingsPage({ user, onOpenHelp, onOpenLegal, onBack, theme, onToggleTheme }) {
   const [innerPage, setInnerPage] = useState(null);
 
-  if (innerPage === "notifications" || innerPage === "security") {
+  if (innerPage === "notifications") {
+    return <NotificationsPage user={user} onBack={() => setInnerPage(null)} />;
+  }
+
+  if (innerPage === "security") {
     return <ComingSoonPage type={innerPage} onBack={() => setInnerPage(null)} />;
   }
 
