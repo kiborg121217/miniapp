@@ -81,6 +81,27 @@ function ProfileTileIcon({ type }) {
   );
 }
 
+const PROFILE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
+
+function readProfileCache(userId) {
+  if (!userId || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(`${PROFILE_CACHE_PREFIX}_${userId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileCache(userId, value) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${PROFILE_CACHE_PREFIX}_${userId}`, JSON.stringify(value));
+  } catch {
+    // ignore cache errors
+  }
+}
+
 export default function ProfilePage({ user, onOpenSection, onOpenChats, initialProfileData, onProfileDataLoaded }) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
@@ -135,11 +156,18 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
   const loadProfile = async () => {
     if (!user?.id) return;
 
-    setIsProfileLoading(!initialProfileData?.profile);
+    const cached = readProfileCache(user.id);
+    if (cached && !initialProfileData?.profile) {
+      applyProfileData(cached);
+      setIsProfileLoading(false);
+    } else {
+      setIsProfileLoading(!initialProfileData?.profile);
+    }
 
     try {
       const data = await getUserProfileBundle(user);
       applyProfileData(data);
+      writeProfileCache(user.id, data);
       onProfileDataLoaded?.(data);
     } catch (error) {
       console.error("Ошибка загрузки профиля:", error);

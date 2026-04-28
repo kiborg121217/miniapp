@@ -33,6 +33,15 @@ function getUnreadCount(chat, userId) {
   return 0;
 }
 
+function ChatMessageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <rect x="3.5" y="5" width="17" height="13" rx="2.8" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M4.8 6.6L12 12.1L19.2 6.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function ChatPlaceholderImage({ compact = false }) {
   return (
     <div className={`chat-list-image chat-list-image-placeholder ${compact ? "compact" : ""}`} aria-hidden="true">
@@ -178,7 +187,7 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
 
         <div className="chat-header-text">
           <h2>{chat?.adTitle || "Диалог"}</h2>
-          <p>Внутренний чат по объявлению</p>
+          <p>Чат по объявлению</p>
         </div>
 
         {chat?.adId && (
@@ -191,7 +200,7 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
       <section className="chat-messages-card" ref={messagesRef}>
         {messages.length === 0 ? (
           <div className="chat-empty-state chat-empty-state-dialog">
-            <div className="chat-empty-icon">💬</div>
+            <div className="chat-empty-icon"><ChatMessageIcon /></div>
             <h3>Сообщений пока нет</h3>
             <p>Напишите первое сообщение по объявлению.</p>
           </div>
@@ -292,7 +301,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   return (
     <div className="chats-page page-enter">
       <section className="chats-hero">
-        <div className="chats-hero-icon">💬</div>
+        <div className="chats-hero-icon"><ChatMessageIcon /></div>
         <div>
           <h1>Чаты</h1>
           <p>Переписка по объявлениям внутри приложения</p>

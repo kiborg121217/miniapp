@@ -12180,3 +12180,42 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
     transform: translateX(100%);
   }
 }
+
+
+/* === final v5 tweaks === */
+:root {
+  --nav-bottom-lift-fixed: max(3px, calc(var(--app-safe-bottom, 0px) + 1px));
+}
+
+.bottom-nav {
+  bottom: var(--nav-bottom-lift-fixed) !important;
+}
+
+html[data-tg-fullscreen-safe="true"] .bottom-nav {
+  bottom: max(4px, calc(var(--app-safe-bottom, 0px) + 1px)) !important;
+}
+
+.notification-row-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+  display: block !important;
+}
+
+.notification-row-icon-favorites svg {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.chat-empty-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.notification-loading-hero small {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+[data-theme="light"] .notification-loading-hero small {
+  color: #64748b !important;
+}

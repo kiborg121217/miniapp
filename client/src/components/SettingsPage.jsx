@@ -137,12 +137,14 @@ function SettingsRow({ icon, accent = "cyan", title, subtitle, right, onClick })
 
 
 
+
+
 function NotificationIcon({ type }) {
   if (type === "chat") {
     return (
-      <svg viewBox="0 0 128 128" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M116.73,31.83a3,3,0,0,0-4.2-.61L64.14,67.34a1,1,0,0,1-1.2,0L15.5,31.06a3,3,0,1,0-3.64,4.77L49.16,64.36,12.27,92.16A3,3,0,1,0,15.88,97L54.11,68.14l5.18,4a7,7,0,0,0,8.43.06l5.44-4.06L111.84,97a3,3,0,1,0,3.59-4.81L78.17,64.35,116.12,36A3,3,0,0,0,116.73,31.83Z" />
-        <path fill="currentColor" d="M113,19H15A15,15,0,0,0,0,34V94a15,15,0,0,0,15,15h98a15,15,0,0,0,15-15V34A15,15,0,0,0,113,19Zm9,75a9,9,0,0,1-9,9H15a9,9,0,0,1-9-9V34a9,9,0,0,1,9-9h98a9,9,0,0,1,9,9Z" />
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <rect x="3.5" y="5" width="17" height="13" rx="2.8" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M4.8 6.6L12 12.1L19.2 6.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
@@ -150,33 +152,36 @@ function NotificationIcon({ type }) {
   if (type === "moderation") {
     return (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-        <path d="M16.2802 9.78034C16.5731 9.48746 16.5731 9.01258 16.2802 8.71968C15.9873 8.42678 15.5125 8.42677 15.2196 8.71966L10.7499 13.1891L9.27642 11.7157C8.98353 11.4228 8.50865 11.4228 8.21576 11.7157C7.92287 12.0085 7.92287 12.4834 8.21576 12.7763L10.2196 14.7801C10.5124 15.073 10.9873 15.073 11.2802 14.7801L16.2802 9.78034ZM6.25 3C4.45507 3 3 4.45507 3 6.25V17.75C3 19.5449 4.45507 21 6.25 21H17.75C19.5449 21 21 19.5449 21 17.75V6.25C21 4.45507 19.5449 3 17.75 3H6.25ZM4.5 6.25C4.5 5.2835 5.2835 4.5 6.25 4.5H17.75C18.7165 4.5 19.5 5.2835 19.5 6.25V17.75C19.5 18.7165 18.7165 19.5 17.75 19.5H6.25C5.2835 19.5 4.5 18.7165 4.5 17.75V6.25Z" fill="currentColor" />
+        <rect x="4.2" y="4.2" width="15.6" height="15.6" rx="3" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8.6 12.2L10.8 14.4L15.7 9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
 
   if (type === "promotion") {
     return (
-      <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M118.75,157a4.87,4.87,0,0,1-.66,0,5,5,0,0,1-3.67-2.46l-11.73-20.32L91,132.41A27.58,27.58,0,0,1,67.59,109l-1.73-11.7L45.54,85.58a5,5,0,0,1-2.46-3.67,5,5,0,0,1,1.42-4.19L62.18,60a5,5,0,0,1,3.53-1.46H99l24.76-24.77a32.31,32.31,0,0,1,26-9.35l19.46,1.83a5,5,0,0,1,4.51,4.51l1.83,19.46a32.3,32.3,0,0,1-9.35,26L141.42,101v33.29a5,5,0,0,1-1.46,3.53L122.28,155.5A5,5,0,0,1,118.75,157ZM56.18,80.18,73,89.86a5,5,0,0,1,2.45,3.6l2.08,14.09a17.65,17.65,0,0,0,15,15l14.09,2.08a5,5,0,0,1,3.6,2.45l9.68,16.77,11.6-11.61V98.93a5,5,0,0,1,1.47-3.53l26.23-26.23a22.39,22.39,0,0,0,6.47-18l-1.45-15.34L148.8,34.41a22.41,22.41,0,0,0-18,6.47L104.6,67.11a5,5,0,0,1-3.53,1.47H67.79Z" />
-        <path fill="currentColor" d="M29.31,175.69a5,5,0,0,1-3.53-8.54l35.33-35.33a5,5,0,1,1,7.07,7.07L32.85,174.22A5,5,0,0,1,29.31,175.69Z" />
-        <path fill="currentColor" d="M28.91,135.13a5,5,0,0,1-3.54-8.53l21.09-21.1a5,5,0,1,1,7.08,7.07l-21.1,21.1A5,5,0,0,1,28.91,135.13Z" />
-        <path fill="currentColor" d="M69.46,175.69a5,5,0,0,1-3.53-8.54L87,146.06a5,5,0,1,1,7.07,7.07L73,174.22A5,5,0,0,1,69.46,175.69Z" />
-        <path fill="currentColor" d="M141,73a14,14,0,1,1,14-14A14,14,0,0,1,141,73Zm0-18a4,4,0,1,0,4,4A4,4,0,0,0,141,55Z" />
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path d="M14.2 4.2C12.8 4.7 11.3 5.7 10.15 6.85C8.3 8.7 7.33 10.92 7.12 13.2L4.65 15.67C4.3 16.02 4.3 16.58 4.65 16.93L7.07 19.35C7.42 19.7 7.98 19.7 8.33 19.35L10.8 16.88C13.08 16.67 15.3 15.7 17.15 13.85C18.3 12.7 19.3 11.2 19.8 9.8L20.34 8.26C20.61 7.47 20.41 6.59 19.82 6C19.23 5.41 18.35 5.21 17.56 5.48L16.02 6.02L14.2 4.2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" />
+        <path d="M5.7 18.3L8.4 15.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     );
   }
 
   if (type === "favorites") {
     return (
-      <svg viewBox="0 0 491.115 491.115" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M475.624,177.416l-154.417-13.033l-60.067-142.8c-2.55-6.233-8.783-10.483-15.583-10.483s-13.033,3.967-15.583,10.483l-60.067,142.8L15.491,177.416c-6.8,0.567-12.75,5.1-14.733,11.617s0,13.6,5.1,18.133l117.017,101.15L87.741,459.049c-1.417,6.8,1.133,13.6,6.517,17.567c5.667,3.967,13.033,4.25,18.7,0.85l132.6-80.183l132.6,80.183c2.833,1.7,5.667,2.55,8.783,2.55c3.4,0,7.083-1.133,9.917-3.117c5.667-3.967,8.217-11.05,6.517-17.567l-35.133-150.733l117.017-101.15c5.1-4.533,7.083-11.617,5.1-18.133C488.374,182.516,482.424,177.983,475.624,177.416z M338.208,289.616c-4.817,4.25-6.8,10.483-5.383,16.717l28.333,121.55l-106.817-64.6c-2.833-1.7-5.667-2.55-8.783-2.55c-3.117,0-6.233,0.85-8.783,2.55l-106.817,64.6l28.333-121.55c1.417-6.233-0.567-12.467-5.383-16.717l-94.35-81.6l124.383-10.483c6.233-0.567,11.9-4.533,14.167-10.2l48.45-115.317l48.45,115.033c2.55,5.95,7.933,9.917,14.167,10.2l124.383,10.483L338.208,289.616z" />
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path
+          d="M12 20.6C10.25 19.13 8.78 17.82 7.59 16.68C6.39 15.53 5.43 14.45 4.7 13.43C3.97 12.4 3.6 11.34 3.6 10.23C3.6 8.82 4.07 7.62 5.01 6.65C5.96 5.68 7.13 5.2 8.54 5.2C9.36 5.2 10.16 5.38 10.94 5.73C11.72 6.09 12.4 6.59 13 7.24C13.6 6.59 14.28 6.09 15.06 5.73C15.84 5.38 16.64 5.2 17.46 5.2C18.87 5.2 20.04 5.68 20.99 6.65C21.93 7.62 22.4 8.82 22.4 10.23C22.4 11.34 22.03 12.4 21.3 13.43C20.57 14.45 19.61 15.53 18.41 16.68C17.22 17.82 15.75 19.13 14 20.6L13 21.4L12 20.6Z"
+          fill="currentColor"
+        />
       </svg>
     );
   }
 
   return null;
 }
+
 
 function NotificationLoading() {
   return (
@@ -185,7 +190,7 @@ function NotificationLoading() {
         <span className="notification-loading-pulse" />
         <div>
           <strong>Загружаем уведомления</strong>
-          <small>Подтягиваем ваши настройки из Firestore</small>
+          <small>Подготавливаем ваши настройки</small>
         </div>
       </div>
 
@@ -224,6 +229,27 @@ function NotificationSwitch({ icon, title, subtitle, checked, disabled, onChange
       </span>
     </button>
   );
+}
+
+const NOTIFICATION_CACHE_KEY = "baraholka_notification_settings_v1";
+
+function readNotificationCache(userId) {
+  if (!userId || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(`${NOTIFICATION_CACHE_KEY}_${userId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeNotificationCache(userId, value) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${NOTIFICATION_CACHE_KEY}_${userId}`, JSON.stringify(value));
+  } catch {
+    // ignore cache errors
+  }
 }
 
 function NotificationsPage({ user, onBack }) {
@@ -274,6 +300,7 @@ function NotificationsPage({ user, onBack }) {
 
     try {
       await updateNotificationSettings(user.id, patch);
+      writeNotificationCache(user.id, next);
       setStatus("Настройки сохранены");
     } catch (error) {
       console.error("Ошибка настроек уведомлений:", error);
@@ -311,7 +338,7 @@ function NotificationsPage({ user, onBack }) {
         <div className="settings-soon-icon"><TileIcon type="bell" /></div>
         <h2>Уведомления</h2>
         <p>
-          Управляйте сообщениями от бота. Чаты работают через Firestore, а Telegram нужен только для пуш-уведомлений.
+          Настройте уведомления так, как удобно вам. Общение происходит прямо внутри приложения, а важные уведомления могут приходить в Telegram.
         </p>
 
         {loading ? (
@@ -340,7 +367,7 @@ function NotificationsPage({ user, onBack }) {
               onChange={(value) => savePatch({ promotion: value })}
             />
             <NotificationSwitch
-              icon="★"
+              icon="favorites"
               title="Избранное"
               subtitle="Позже: изменение цены или снятие объявления"
               checked={settings.favorites}
@@ -349,9 +376,11 @@ function NotificationsPage({ user, onBack }) {
           </div>
         )}
 
-        <button type="button" className="notification-access-btn" onClick={handleRequestAccess}>
-          {settings.botCanMessage ? "Разрешение Telegram получено" : "Разрешить уведомления от бота"}
-        </button>
+        {!(settings.botCanMessage || user?.botCanMessage) && (
+          <button type="button" className="notification-access-btn" onClick={handleRequestAccess}>
+            Разрешить уведомления от бота
+          </button>
+        )}
 
         {status && <div className="notification-status">{status}</div>}
       </section>

@@ -529,7 +529,7 @@ export async function getNotificationSettings(userId) {
     moderation: notifications.moderation !== false,
     promotion: notifications.promotion !== false,
     favorites: notifications.favorites === true,
-    botCanMessage: profile?.botCanMessage === true,
+    botCanMessage: profile?.botCanMessage === true || notifications.botCanMessage === true,
   };
 }
 
@@ -547,6 +547,7 @@ export async function updateNotificationSettings(userId, patch) {
 
   if (Object.prototype.hasOwnProperty.call(patch, "botCanMessage")) {
     data.botCanMessage = !!patch.botCanMessage;
+    nextNotifications.botCanMessage = !!patch.botCanMessage;
   }
 
   for (const key of ["chatMessages", "moderation", "promotion", "favorites"]) {

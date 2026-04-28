@@ -129,7 +129,7 @@ function AdOpeningScreen({ onBack }) {
       <section className="ad-opening-card">
         <div className="ad-opening-spinner" aria-hidden="true" />
         <h2>Открываем объявление</h2>
-        <p>Загружаем карточку товара из Firestore…</p>
+        <p>Подготавливаем объявление…</p>
       </section>
     </div>
   );
