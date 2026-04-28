@@ -193,53 +193,6 @@ const PROFILE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
 const NOTIFICATION_CACHE_KEY = "baraholka_notification_settings_v1";
 const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
 
-function readSafeStorageValue(storage, key, fallback = null) {
-  try {
-    return storage?.getItem(key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeSafeStorageValue(storage, key, value) {
-  try {
-    storage?.setItem(key, value);
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function readInitialPage() {
-  const allowedPages = new Set(["list", "add", "profile", "chats", "settings", "help", "legal"]);
-  const saved = readSafeStorageValue(sessionStorage, "app_page", "list");
-  return allowedPages.has(saved) ? saved : "list";
-}
-
-function shouldShowBootScreen() {
-  try {
-    return sessionStorage.getItem("baraholka_boot_shown_v12") !== "1";
-  } catch {
-    return false;
-  }
-}
-
-function markBootScreenShown() {
-  try {
-    sessionStorage.setItem("baraholka_boot_shown_v12", "1");
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function withTimeout(promise, timeoutMs, fallback = null) {
-  let timerId;
-  const timeout = new Promise((resolve) => {
-    timerId = window.setTimeout(() => resolve(fallback), timeoutMs);
-  });
-
-  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timerId));
-}
-
 function readJsonCache(key) {
   if (!key || typeof window === "undefined") return null;
   try {
@@ -343,57 +296,52 @@ async function preloadFirstAdImages(ads, onStep) {
 
 export default function App() {
   useTelegramViewport();
-  const [page, setPage] = useState(readInitialPage);
+  const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
 
   const [selectedAd, setSelectedAd] = useState(() => {
-    try {
-      const saved = readSafeStorageValue(sessionStorage, "selected_ad", null);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      sessionStorage.removeItem("selected_ad");
-      return null;
-    }
+    const saved = sessionStorage.getItem("selected_ad");
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [selectedSellerId, setSelectedSellerId] = useState(
-    () => readSafeStorageValue(sessionStorage, "selected_seller_id", null)
+    () => sessionStorage.getItem("selected_seller_id") || null
   );
 
   const [profileStatusPage, setProfileStatusPage] = useState(
-    () => readSafeStorageValue(sessionStorage, "profile_status_page", null)
+    () => sessionStorage.getItem("profile_status_page") || null
   );
 
   const [selectedChatId, setSelectedChatId] = useState(
-    () => readSafeStorageValue(sessionStorage, "selected_chat_id", null)
+    () => sessionStorage.getItem("selected_chat_id") || null
   );
 
   const [sellerBackTarget, setSellerBackTarget] = useState(
-    () => readSafeStorageValue(sessionStorage, "seller_back_target", "list") || "list"
+    () => sessionStorage.getItem("seller_back_target") || "list"
   );
 
   const [viewBackTarget, setViewBackTarget] = useState(
-    () => readSafeStorageValue(sessionStorage, "view_back_target", "list") || "list"
+    () => sessionStorage.getItem("view_back_target") || "list"
   );
 
   const [viewLoading, setViewLoading] = useState(false);
 
   const [legalType, setLegalType] = useState("agreement");
   const [tgUser, setTgUser] = useState(null);
-  const [bootLoading, setBootLoading] = useState(() => shouldShowBootScreen());
+  const [bootLoading, setBootLoading] = useState(true);
   const [bootProgress, setBootProgress] = useState(10);
   const [bootSubtitle, setBootSubtitle] = useState("Подготавливаем витрину…");
   const [preloadedAds, setPreloadedAds] = useState(() => readMainAdsCache());
   const [preloadedVerifiedSellerIds, setPreloadedVerifiedSellerIds] = useState([]);
   const [profileCache, setProfileCache] = useState(null);
-  const [theme, setTheme] = useState(() => readSafeStorageValue(localStorage, "theme", "dark") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
-    writeSafeStorageValue(sessionStorage, "app_page", page);
+    sessionStorage.setItem("app_page", page);
   }, [page]);
 
   useEffect(() => {
     if (selectedSellerId) {
-      writeSafeStorageValue(sessionStorage, "selected_seller_id", String(selectedSellerId));
+      sessionStorage.setItem("selected_seller_id", String(selectedSellerId));
     } else {
       sessionStorage.removeItem("selected_seller_id");
     }
@@ -401,7 +349,7 @@ export default function App() {
 
   useEffect(() => {
     if (profileStatusPage) {
-      writeSafeStorageValue(sessionStorage, "profile_status_page", profileStatusPage);
+      sessionStorage.setItem("profile_status_page", profileStatusPage);
     } else {
       sessionStorage.removeItem("profile_status_page");
     }
@@ -409,7 +357,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedChatId) {
-      writeSafeStorageValue(sessionStorage, "selected_chat_id", selectedChatId);
+      sessionStorage.setItem("selected_chat_id", selectedChatId);
     } else {
       sessionStorage.removeItem("selected_chat_id");
     }
@@ -417,7 +365,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedAd) {
-      writeSafeStorageValue(sessionStorage, "selected_ad", JSON.stringify(selectedAd));
+      sessionStorage.setItem("selected_ad", JSON.stringify(selectedAd));
     } else {
       sessionStorage.removeItem("selected_ad");
     }
@@ -425,7 +373,7 @@ export default function App() {
 
   useEffect(() => {
     if (sellerBackTarget) {
-      writeSafeStorageValue(sessionStorage, "seller_back_target", sellerBackTarget);
+      sessionStorage.setItem("seller_back_target", sellerBackTarget);
     } else {
       sessionStorage.removeItem("seller_back_target");
     }
@@ -433,7 +381,7 @@ export default function App() {
 
   useEffect(() => {
     if (viewBackTarget) {
-      writeSafeStorageValue(sessionStorage, "view_back_target", viewBackTarget);
+      sessionStorage.setItem("view_back_target", viewBackTarget);
     } else {
       sessionStorage.removeItem("view_back_target");
     }
@@ -441,212 +389,192 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    writeSafeStorageValue(localStorage, "theme", theme);
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
   useEffect(() => {
     let cancelled = false;
-    let closeTimer = null;
-    let hardStopTimer = null;
-
-    markBootScreenShown();
+    let timeoutId;
 
     const safeSetProgress = (value, text) => {
       if (cancelled) return;
-      setBootProgress(Math.max(8, Math.min(100, value)));
+      setBootProgress(value);
       if (text) setBootSubtitle(text);
     };
 
-    const finishBoot = () => {
-      if (cancelled) return;
+    const boot = async () => {
+      initTelegram();
 
-      safeSetProgress(100, "Готово");
+      if (window.location.pathname === "/auth/callback") {
+        safeSetProgress(100, "Завершаем Telegram-вход…");
+        setBootLoading(false);
+        return;
+      }
 
-      if (closeTimer) window.clearTimeout(closeTimer);
-      closeTimer = window.setTimeout(() => {
-        if (!cancelled) setBootLoading(false);
-      }, 180);
-    };
+      const tg = window.Telegram?.WebApp;
+      let user = null;
 
-    const forceHome = () => {
-      setSelectedAd(null);
-      setSelectedSellerId(null);
-      setProfileStatusPage(null);
-      setSelectedChatId(null);
-      setViewLoading(false);
-      setPage("list");
-      sessionStorage.removeItem("app_page");
-      sessionStorage.removeItem("selected_seller_id");
-      sessionStorage.removeItem("profile_status_page");
-      sessionStorage.removeItem("selected_ad");
-      sessionStorage.removeItem("selected_chat_id");
-      sessionStorage.removeItem("seller_back_target");
-      sessionStorage.removeItem("view_back_target");
-    };
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
 
-    const refreshAfterOpen = async (user) => {
       try {
-        const data = await withTimeout(getAds(), 5000, readMainAdsCache());
-        const approved = Array.isArray(data) ? data.filter((ad) => ad.status === "approved") : [];
+        const initData = getTelegramInitData();
 
-        if (approved.length > 0) {
-          writeMainAdsCache(approved);
-          if (!cancelled) setPreloadedAds(approved);
-          preloadFirstAdImages(approved).catch(() => {});
-        }
-
-        if (user?.id) {
-          Promise.allSettled([
-            getUserProfileBundle(user),
-            getNotificationSettings(user.id),
-            getUserChatsOnce(user.id, 10),
-          ]).then((results) => {
-            if (cancelled) return;
-
-            const profileResult = results[0];
-            const notificationResult = results[1];
-            const chatsResult = results[2];
-
-            if (profileResult?.status === "fulfilled") {
-              setProfileCache(profileResult.value);
-            }
-
-            writeUserBootCache(user.id, {
-              profile: profileResult?.status === "fulfilled" ? profileResult.value : null,
-              notifications: notificationResult?.status === "fulfilled" ? notificationResult.value : null,
-              chats: chatsResult?.status === "fulfilled" ? chatsResult.value : null,
-            });
-          });
+        if (initData) {
+          safeSetProgress(16, "Проверяем Telegram-вход…");
+          const auth = await authenticateMiniAppInitData(initData);
+          user = auth?.user || null;
+        } else {
+          safeSetProgress(16, "Проверяем сессию…");
+          const session = await restoreAuthSession().catch(() => null);
+          user = session?.user || null;
         }
       } catch (error) {
-        console.warn("Фоновое обновление данных не выполнено:", error);
+        console.warn("Серверная авторизация недоступна, используем данные Telegram WebApp:", error);
       }
-    };
 
-    hardStopTimer = window.setTimeout(() => {
+      if (!user) {
+        user = getTelegramUnsafeUser();
+      }
+
       if (!cancelled) {
-        console.warn("Стартовая загрузка остановлена принудительно, открываем главную.");
-        forceHome();
-        setBootLoading(false);
+        setTgUser(user);
       }
-    }, 1800);
 
-    const boot = async () => {
+      const startAdId = getStartAdIdFromLaunch();
+      const startSellerId = getStartSellerIdFromLaunch();
+      const startChatId = getStartChatIdFromLaunch();
+
       try {
-        initTelegram();
+        safeSetProgress(18, "Подключаем Telegram…");
 
-        if (window.location.pathname === "/auth/callback") {
-          safeSetProgress(100, "Завершаем Telegram-вход…");
-          setBootLoading(false);
-          return;
+        if (startSellerId) {
+          safeSetProgress(42, "Открываем профиль продавца…");
+
+          if (!cancelled) {
+            setSelectedSellerId(String(startSellerId));
+            setSellerBackTarget("list");
+            setPage("seller");
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
+          }
         }
 
-        const tg = window.Telegram?.WebApp;
+        if (startChatId) {
+          safeSetProgress(42, "Открываем чат…");
 
-        try {
-          tg?.ready?.();
-          tg?.expand?.();
-        } catch {
-          // ignore old Telegram clients
+          if (!cancelled) {
+            setSelectedChatId(String(startChatId));
+            setPage("chats");
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
+          }
         }
 
+        if (startAdId) {
+          safeSetProgress(34, "Открываем объявление…");
+          const ad = await getAdById(startAdId);
+
+          if (!cancelled && ad) {
+            setSelectedAd(ad);
+            setPage("view");
+            await preloadImage(getAdPreviewImage(ad), 2200);
+            safeSetProgress(100, "Готово");
+            setBootLoading(false);
+            return;
+          }
+        }
+
+        safeSetProgress(30, "Загружаем объявления…");
         const cachedAds = readMainAdsCache();
+
         if (!cancelled && cachedAds.length > 0) {
           setPreloadedAds(cachedAds);
         }
 
-        safeSetProgress(18, "Подключаем Telegram…");
+        const data = await getAds();
+        const approved = data.filter((ad) => ad.status === "approved");
+        writeMainAdsCache(approved);
 
-        let user = null;
-
-        try {
-          const initData = getTelegramInitData();
-
-          if (initData) {
-            safeSetProgress(32, "Проверяем вход…");
-            const auth = await withTimeout(authenticateMiniAppInitData(initData), 900, null);
-            user = auth?.user || null;
-          } else {
-            safeSetProgress(32, "Проверяем сессию…");
-            const session = await withTimeout(restoreAuthSession().catch(() => null), 700, null);
-            user = session?.user || null;
-          }
-        } catch (error) {
-          console.warn("Авторизация недоступна, используем данные Telegram:", error);
-        }
-
-        if (!user) {
-          user = getTelegramUnsafeUser();
-        }
+        safeSetProgress(48, "Подготавливаем первые карточки…");
+        await preloadFirstAdImages(approved, (ratio) => {
+          safeSetProgress(48 + Math.round(ratio * 24), "Подгружаем фото…");
+        });
 
         if (!cancelled) {
-          setTgUser(user);
+          setPreloadedAds(approved);
         }
 
-        safeSetProgress(62, cachedAds.length > 0 ? "Открываем сохранённые данные…" : "Открываем витрину…");
+        safeSetProgress(74, "Подготавливаем разделы…");
 
-        const startAdId = getStartAdIdFromLaunch();
-        const startSellerId = getStartSellerIdFromLaunch();
-        const startChatId = getStartChatIdFromLaunch();
+        const sellerIds = [...new Set(approved.slice(0, 40).map((ad) => String(ad.userId || "")).filter(Boolean))];
 
-        if (startSellerId) {
-          setSelectedSellerId(String(startSellerId));
-          setSellerBackTarget("list");
-          setPage("seller");
-        } else if (startChatId) {
-          setSelectedChatId(String(startChatId));
-          setPage("chats");
-        } else if (startAdId) {
-          const ad = await withTimeout(getAdById(startAdId), 900, null);
-          if (ad) {
-            setSelectedAd(ad);
-            setPage("view");
-          } else {
-            setPage("list");
+        const bootTasks = [
+          Promise.all(
+            sellerIds.map(async (sellerId) => {
+              try {
+                const profile = await getUserProfile(sellerId);
+                return profile?.isVerified ? sellerId : null;
+              } catch {
+                return null;
+              }
+            })
+          ),
+        ];
+
+        if (user?.id) {
+          bootTasks.push(getUserProfileBundle(user));
+          bootTasks.push(getNotificationSettings(user.id));
+          bootTasks.push(getUserChatsOnce(user.id, 10));
+        }
+
+        const results = await Promise.allSettled(bootTasks);
+        const verifiedIds = results[0]?.status === "fulfilled" ? results[0].value.filter(Boolean) : [];
+
+        if (!cancelled) {
+          setPreloadedVerifiedSellerIds(verifiedIds);
+        }
+
+        if (user?.id) {
+          const profileResult = results[1];
+          const notificationResult = results[2];
+          const chatsResult = results[3];
+
+          if (profileResult?.status === "fulfilled") {
+            setProfileCache(profileResult.value);
           }
-        } else {
-          const safePages = new Set(["list", "add", "profile", "chats", "settings", "help", "legal"]);
-          setPage((current) => (safePages.has(current) ? current : "list"));
+
+          writeUserBootCache(user.id, {
+            profile: profileResult?.status === "fulfilled" ? profileResult.value : null,
+            notifications: notificationResult?.status === "fulfilled" ? notificationResult.value : null,
+            chats: chatsResult?.status === "fulfilled" ? chatsResult.value : null,
+          });
         }
 
-        if (hardStopTimer) window.clearTimeout(hardStopTimer);
-        finishBoot();
-        refreshAfterOpen(user);
+        safeSetProgress(100, "Готово");
       } catch (error) {
         console.error("Ошибка стартовой загрузки:", error);
-        forceHome();
-        if (hardStopTimer) window.clearTimeout(hardStopTimer);
-        finishBoot();
+        safeSetProgress(100, "Открываем приложение…");
       }
+
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setBootLoading(false);
+        }
+      }, 250);
     };
 
     boot();
 
     return () => {
       cancelled = true;
-      if (closeTimer) window.clearTimeout(closeTimer);
-      if (hardStopTimer) window.clearTimeout(hardStopTimer);
+      clearTimeout(timeoutId);
     };
   }, []);
-
-  useEffect(() => {
-    if (bootLoading) return;
-
-    if (page === "view" && !viewLoading && !selectedAd) {
-      setSelectedAd(null);
-      setPage("list");
-      return;
-    }
-
-    if (page === "seller" && !selectedSellerId) {
-      setPage("list");
-      return;
-    }
-
-    if (page === "profileAds" && !profileStatusPage) {
-      setPage(tgUser ? "profile" : "list");
-    }
-  }, [bootLoading, page, profileStatusPage, selectedAd, selectedSellerId, tgUser, viewLoading]);
 
   const handleAuthSuccess = (user, profile = null) => {
     setTgUser(user || null);
@@ -906,23 +834,6 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: "auto" });
           }}
           onWrite={handleStartChat}
-        />
-      )}
-
-      {page === "view" && !viewLoading && !selectedAd && (
-        <AdList
-          onOpenSettings={() => goToPage("settings")}
-          onCreate={() => goToPage("add")}
-          initialAds={preloadedAds}
-          initialVerifiedSellerIds={preloadedVerifiedSellerIds}
-          currentUser={tgUser}
-          onOpen={(ad) => {
-            setSelectedChatId(null);
-            setViewBackTarget("list");
-            setSelectedAd(ad);
-            setPage("view");
-            window.scrollTo({ top: 0, behavior: "auto" });
-          }}
         />
       )}
 
