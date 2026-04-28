@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  BOT_USERNAME,
-  authenticateTelegramLogin,
-} from "../auth";
+import { useEffect, useState } from "react";
+import { BOT_USERNAME, startTelegramOidcLogin } from "../auth";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -37,48 +34,25 @@ function openChannel() {
   window.open(CHANNEL_URL, "_blank", "noopener,noreferrer");
 }
 
-export default function LoginPage({ onAuthSuccess, onBack }) {
+export default function LoginPage({ onBack, returnPage = "profile" }) {
   const [status, setStatus] = useState("");
-  const widgetRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
-    const callbackName = "onBaraholkaTelegramAuth";
-
-    window[callbackName] = async (telegramUser) => {
-      try {
-        setStatus("Проверяем Telegram-вход...");
-        const result = await authenticateTelegramLogin(telegramUser);
-        setStatus("Готово. Профиль подключён.");
-        onAuthSuccess?.(result.user, result.profile);
-      } catch (error) {
-        console.error("Telegram login error:", error);
-        setStatus(error.message || "Не удалось войти через Telegram");
-      }
-    };
-
-    if (widgetRef.current) {
-      widgetRef.current.innerHTML = "";
-      const script = document.createElement("script");
-      script.src = "https://telegram.org/js/telegram-widget.js?22";
-      script.async = true;
-      script.setAttribute("data-telegram-login", BOT_USERNAME);
-      script.setAttribute("data-size", "large");
-      script.setAttribute("data-radius", "18");
-      script.setAttribute("data-request-access", "write");
-      script.setAttribute("data-onauth", `${callbackName}(user)`);
-      widgetRef.current.appendChild(script);
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true);
+      setStatus("Открываем Telegram OpenID Connect...");
+      await startTelegramOidcLogin(returnPage);
+    } catch (error) {
+      console.error("Telegram OIDC login start error:", error);
+      setIsLoading(false);
+      setStatus(error.message || "Не удалось открыть вход через Telegram");
     }
-
-    return () => {
-      try {
-        delete window[callbackName];
-      } catch {
-        window[callbackName] = undefined;
-      }
-    };
-  }, [onAuthSuccess]);
+  };
 
   return (
     <div className="login-page page-enter">
@@ -97,9 +71,22 @@ export default function LoginPage({ onAuthSuccess, onBack }) {
           чаты работали одинаково в Mini App и на сайте.
         </p>
 
-        <div className="login-widget-wrap" ref={widgetRef} />
+        <button
+          type="button"
+          className="telegram-oidc-login-btn"
+          onClick={handleLogin}
+          disabled={isLoading}
+        >
+          <TelegramIcon />
+          <span>{isLoading ? "Открываем Telegram..." : "Войти через Telegram"}</span>
+        </button>
 
         {status && <div className="login-status">{status}</div>}
+
+        <div className="login-note">
+          Вход на сайте работает через новый Telegram OpenID Connect. В Mini App
+          внутри Telegram авторизация по-прежнему происходит автоматически.
+        </div>
 
         <div className="login-actions">
           <button type="button" className="login-secondary-btn" onClick={openTelegramBot}>

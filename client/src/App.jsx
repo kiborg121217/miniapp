@@ -9,6 +9,7 @@ import SellerPage from "./components/SellerPage";
 import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import LoginPage from "./components/LoginPage";
+import AuthCallbackPage from "./components/AuthCallbackPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
@@ -299,6 +300,12 @@ export default function App() {
     const boot = async () => {
       initTelegram();
 
+      if (window.location.pathname === "/auth/callback") {
+        safeSetProgress(100, "Завершаем Telegram-вход…");
+        setBootLoading(false);
+        return;
+      }
+
       const tg = window.Telegram?.WebApp;
       let user = null;
 
@@ -450,6 +457,23 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
+  if (window.location.pathname === "/auth/callback") {
+    return (
+      <AuthCallbackPage
+        onBack={() => {
+          window.history.replaceState({}, "", "/");
+          setPage("list");
+          setBootLoading(false);
+        }}
+        onDone={(user, profile, returnPage) => {
+          handleAuthSuccess(user, profile);
+          setPage(returnPage === "add" ? "add" : "profile");
+          setBootLoading(false);
+        }}
+      />
+    );
+  }
+
   if (bootLoading) {
     return <LoadingScreen progress={bootProgress} subtitle={bootSubtitle} />;
   }
@@ -476,11 +500,8 @@ export default function App() {
           <AddAd user={tgUser} onBack={() => goToPage("list")} />
         ) : (
           <LoginPage
+            returnPage="add"
             onBack={() => goToPage("list")}
-            onAuthSuccess={(user, profile) => {
-              handleAuthSuccess(user, profile);
-              setPage("add");
-            }}
           />
         )
       )}
@@ -499,11 +520,8 @@ export default function App() {
           />
         ) : (
           <LoginPage
+            returnPage="profile"
             onBack={() => goToPage("list")}
-            onAuthSuccess={(user, profile) => {
-              handleAuthSuccess(user, profile);
-              setPage("profile");
-            }}
           />
         )
       )}

@@ -10042,3 +10042,93 @@ html[data-tg-fullscreen-safe="true"] .seller-premium-hero {
     max-width: 560px;
   }
 }
+
+/* ===== Telegram OpenID Connect login ===== */
+.telegram-oidc-login-btn {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 18px;
+  border: 1px solid rgba(96, 239, 255, 0.34);
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #f8fdff;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(116, 255, 234, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(35, 218, 220, 0.34), rgba(21, 34, 48, 0.84));
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.28),
+    0 0 26px rgba(62, 241, 231, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  cursor: pointer;
+  transition: transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.telegram-oidc-login-btn svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.telegram-oidc-login-btn svg path {
+  fill: currentColor;
+  stroke: none;
+}
+
+.telegram-oidc-login-btn:active {
+  transform: scale(0.98);
+}
+
+.telegram-oidc-login-btn:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.login-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  color: rgba(230, 244, 248, 0.76);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.login-status-error {
+  color: #ffd3d3 !important;
+  background: rgba(255, 70, 70, 0.12) !important;
+  border-color: rgba(255, 120, 120, 0.25) !important;
+}
+
+[data-theme="light"] .telegram-oidc-login-btn {
+  color: #082126;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(44, 231, 214, 0.34), transparent 42%),
+    linear-gradient(135deg, rgba(145, 255, 238, 0.88), rgba(230, 250, 236, 0.94));
+  border-color: rgba(20, 154, 153, 0.26);
+  box-shadow:
+    0 18px 42px rgba(15, 88, 100, 0.12),
+    0 0 22px rgba(53, 221, 210, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="light"] .login-note {
+  color: rgba(15, 23, 42, 0.68);
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .login-status-error {
+  color: #9f1239 !important;
+  background: rgba(255, 228, 230, 0.78) !important;
+  border-color: rgba(225, 29, 72, 0.16) !important;
+}

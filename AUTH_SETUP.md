@@ -1,59 +1,82 @@
-# Авторизация через Telegram: что нужно настроить
+# Telegram OpenID Connect: настройка авторизации сайта
 
-## 1. Render / сервер
+Внутри Telegram Mini App авторизация продолжает работать через `Telegram.WebApp.initData`.
+Для обычного сайта в браузере теперь используется новый Telegram OpenID Connect.
 
-Добавь или проверь переменные окружения:
+## 1. BotFather
 
-```text
-BOT_TOKEN=токен_бота
+Открой `@BotFather` → твой бот → `Bot Settings` → `Web Login`.
+
+Добавь:
+
+### Redirect URIs
+
+```txt
+https://miniapp-9vf5.vercel.app/auth/callback
+```
+
+### Trusted Origins
+
+```txt
+https://miniapp-9vf5.vercel.app
+```
+
+С этого же экрана скопируй:
+
+- `Client ID`
+- `Client Secret`
+
+`Client Secret` никому не отправляй и не добавляй во frontend/Vercel.
+
+## 2. Render: переменные backend
+
+В Render → backend service → `Environment` добавь:
+
+```env
+BOT_TOKEN=твой_токен_бота
 BOT_USERNAME=baraholka_miniapp_bot
-WEB_APP_URL=https://твой-домен.vercel.app
+WEB_APP_URL=https://miniapp-9vf5.vercel.app
+TELEGRAM_OIDC_CLIENT_ID=твой_Client_ID_из_BotFather
+TELEGRAM_OIDC_CLIENT_SECRET=твой_Client_Secret_из_BotFather
+TELEGRAM_OIDC_REDIRECT_URI=https://miniapp-9vf5.vercel.app/auth/callback
 AUTH_SESSION_TTL_MS=2592000000
 AUTH_MAX_AGE_SECONDS=604800
 ```
 
-`AUTH_SESSION_TTL_MS` — срок сайта-сессии, по умолчанию 30 дней.  
-`AUTH_MAX_AGE_SECONDS` — максимальный возраст Telegram-подписи, по умолчанию 7 дней.
+Если `BOT_TOKEN`, `ADMIN_ID`, `FIREBASE_KEY` уже есть — не удаляй их.
 
-## 2. Vercel / клиент
+После добавления переменных сделай `Manual Deploy → Deploy latest commit`.
 
-Добавь переменные окружения:
+## 3. Vercel: переменные frontend
 
-```text
-VITE_API_BASE_URL=https://твой-render-сервер.onrender.com
+В Vercel → Project → Settings → Environment Variables добавь:
+
+```env
+VITE_API_BASE_URL=https://miniapp-1wz1.onrender.com
 VITE_BOT_USERNAME=baraholka_miniapp_bot
 ```
 
-После изменения переменных нужно заново задеплоить проект.
+`VITE_API_BASE_URL` замени на реальный адрес твоего Render backend.
 
-## 3. BotFather для входа на сайте
+Для этих двух переменных `Sensitive` можно оставить выключенным: это не секреты.
 
-Для Telegram Login Widget обязательно привяжи домен сайта к боту:
+После изменения переменных сделай redeploy проекта Vercel.
 
-```text
-/setdomain
-```
+## 4. Как проверить
 
-Выбери бота и укажи домен Vercel без `https://`, например:
+1. Открой сайт в обычном браузере: `https://miniapp-9vf5.vercel.app`.
+2. Нажми `Профиль` или `Создать`.
+3. Нажми `Войти через Telegram`.
+4. Telegram должен открыть OpenID Connect вход и вернуть пользователя на `/auth/callback`.
+5. После успешной проверки сервер создаст сессию и откроет профиль.
 
-```text
-miniapp-9vf5.vercel.app
-```
+## 5. Если вход не работает
 
-Если будет свой домен, потом нужно заменить на него.
+Проверь:
 
-## 4. Что появилось в проекте
+- Redirect URI в BotFather строго равен `https://miniapp-9vf5.vercel.app/auth/callback`.
+- Trusted Origin в BotFather строго равен `https://miniapp-9vf5.vercel.app`.
+- `TELEGRAM_OIDC_CLIENT_SECRET` добавлен только в Render.
+- `TELEGRAM_OIDC_CLIENT_ID` в Render совпадает с BotFather.
+- После переменных был redeploy Render и Vercel.
 
-- Mini App теперь отправляет `Telegram.WebApp.initData` на сервер.
-- Сервер проверяет подпись Telegram и только после этого создаёт/обновляет `users/{telegramId}`.
-- Если пользователь открывает сайт вне Telegram, появляется экран входа через Telegram Login Widget.
-- После входа сайт сохраняет сессию в `localStorage` и при следующем открытии восстанавливает профиль.
-- Все аккаунты Mini App и сайта сходятся в один документ `users/{telegramId}`.
-
-## 5. Новые коллекции Firestore
-
-```text
-user_sessions
-```
-
-В ней хранятся хэши сессий сайта. Сами токены в Firestore не сохраняются в открытом виде.

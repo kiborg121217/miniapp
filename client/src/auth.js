@@ -7,16 +7,17 @@ export const BOT_USERNAME =
   import.meta.env.VITE_BOT_USERNAME || "baraholka_miniapp_bot";
 
 const SESSION_KEY = "baraholka_auth_session_v1";
+const OIDC_RETURN_PAGE_KEY = "baraholka_oidc_return_page_v1";
 
 function normalizeUser(user) {
   if (!user) return null;
 
   return {
     id: Number(user.id),
-    first_name: user.first_name || user.firstName || "",
+    first_name: user.first_name || user.firstName || user.name || "",
     last_name: user.last_name || user.lastName || "",
-    username: user.username || "",
-    photo_url: user.photo_url || user.photoUrl || user.telegramAvatarUrl || "",
+    username: user.username || user.preferred_username || "",
+    photo_url: user.photo_url || user.photoUrl || user.telegramAvatarUrl || user.picture || "",
   };
 }
 
@@ -46,7 +47,17 @@ export function clearStoredAuthSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-async function postJson(path, body, timeoutMs = 8000) {
+export function getOidcReturnPage() {
+  return sessionStorage.getItem(OIDC_RETURN_PAGE_KEY) || "profile";
+}
+
+export function consumeOidcReturnPage() {
+  const page = getOidcReturnPage();
+  sessionStorage.removeItem(OIDC_RETURN_PAGE_KEY);
+  return page;
+}
+
+async function postJson(path, body, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -103,6 +114,54 @@ export async function authenticateTelegramLogin(telegramUser) {
   }
 
   const data = await postJson("/auth/telegram-login", { user: telegramUser });
+  saveSession(data);
+
+  return {
+    ...data,
+    user: normalizeUser(data.user),
+  };
+}
+
+export async function startTelegramOidcLogin(returnPage = "profile") {
+  sessionStorage.setItem(OIDC_RETURN_PAGE_KEY, returnPage || "profile");
+
+  const data = await postJson(
+    "/auth/oidc/start",
+    {
+      returnTo: returnPage || "profile",
+      // Минимальный набор прав: профиль. Телефон и bot_access можно добавить позже в уведомлениях.
+      scope: "openid profile",
+    },
+    8000
+  );
+
+  if (!data?.authUrl) {
+    throw new Error("Сервер не вернул ссылку Telegram OpenID Connect");
+  }
+
+  window.location.assign(data.authUrl);
+}
+
+export async function completeTelegramOidcLogin({ code, state }) {
+  if (!code || !state) {
+    throw new Error("Telegram не вернул данные для завершения входа");
+  }
+
+  const data = await postJson("/auth/oidc/callback", { code, state }, 14000);
+  saveSession(data);
+
+  return {
+    ...data,
+    user: normalizeUser(data.user),
+  };
+}
+
+export async function authenticateTelegramOidcToken(idToken) {
+  if (!idToken) {
+    throw new Error("Telegram не передал id_token");
+  }
+
+  const data = await postJson("/auth/oidc/token", { idToken }, 10000);
   saveSession(data);
 
   return {
