@@ -193,6 +193,31 @@ const PROFILE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
 const NOTIFICATION_CACHE_KEY = "baraholka_notification_settings_v1";
 const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
 
+function readSafeStorageValue(storage, key, fallback = null) {
+  try {
+    return storage?.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeSafeStorageValue(storage, key, value) {
+  try {
+    storage?.setItem(key, value);
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function withTimeout(promise, timeoutMs, fallback = null) {
+  let timerId;
+  const timeout = new Promise((resolve) => {
+    timerId = window.setTimeout(() => resolve(fallback), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timerId));
+}
+
 function readJsonCache(key) {
   if (!key || typeof window === "undefined") return null;
   try {
@@ -299,8 +324,13 @@ export default function App() {
   const [page, setPage] = useState(() => sessionStorage.getItem("app_page") || "list");
 
   const [selectedAd, setSelectedAd] = useState(() => {
-    const saved = sessionStorage.getItem("selected_ad");
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = sessionStorage.getItem("selected_ad");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      sessionStorage.removeItem("selected_ad");
+      return null;
+    }
   });
 
   const [selectedSellerId, setSelectedSellerId] = useState(
@@ -333,7 +363,7 @@ export default function App() {
   const [preloadedAds, setPreloadedAds] = useState(() => readMainAdsCache());
   const [preloadedVerifiedSellerIds, setPreloadedVerifiedSellerIds] = useState([]);
   const [profileCache, setProfileCache] = useState(null);
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => readSafeStorageValue(localStorage, "theme", "dark") || "dark");
 
   useEffect(() => {
     sessionStorage.setItem("app_page", page);
@@ -389,18 +419,55 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    writeSafeStorageValue(localStorage, "theme", theme);
   }, [theme]);
+
+
+  useEffect(() => {
+    const isZoomAllowed = (target) => {
+      if (!target || typeof target.closest !== "function") return false;
+      return Boolean(target.closest('[data-allow-zoom="true"], .photo-modal, .image-modal, .modal'));
+    };
+
+    const preventPageZoom = (event) => {
+      if (isZoomAllowed(event.target)) return;
+      if (event.touches?.length > 1 || event.scale !== undefined || event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("gesturestart", preventPageZoom, { passive: false });
+    document.addEventListener("gesturechange", preventPageZoom, { passive: false });
+    document.addEventListener("touchmove", preventPageZoom, { passive: false });
+    document.addEventListener("wheel", preventPageZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener("gesturestart", preventPageZoom);
+      document.removeEventListener("gesturechange", preventPageZoom);
+      document.removeEventListener("touchmove", preventPageZoom);
+      document.removeEventListener("wheel", preventPageZoom);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     let timeoutId;
+    let bootFailSafeId;
 
     const safeSetProgress = (value, text) => {
       if (cancelled) return;
       setBootProgress(value);
       if (text) setBootSubtitle(text);
     };
+
+    bootFailSafeId = window.setTimeout(() => {
+      if (!cancelled) {
+        console.warn("Стартовая загрузка заняла слишком много времени, открываем приложение из локальных данных.");
+        setBootProgress(100);
+        setBootSubtitle("Открываем приложение…");
+        setBootLoading(false);
+      }
+    }, 6500);
 
     const boot = async () => {
       initTelegram();
@@ -477,7 +544,7 @@ export default function App() {
 
         if (startAdId) {
           safeSetProgress(34, "Открываем объявление…");
-          const ad = await getAdById(startAdId);
+          const ad = await withTimeout(getAdById(startAdId), 4200, null);
 
           if (!cancelled && ad) {
             setSelectedAd(ad);
@@ -496,7 +563,7 @@ export default function App() {
           setPreloadedAds(cachedAds);
         }
 
-        const data = await getAds();
+        const data = await withTimeout(getAds(), 4500, cachedAds);
         const approved = data.filter((ad) => ad.status === "approved");
         writeMainAdsCache(approved);
 
@@ -532,7 +599,7 @@ export default function App() {
           bootTasks.push(getUserChatsOnce(user.id, 10));
         }
 
-        const results = await Promise.allSettled(bootTasks);
+        const results = await withTimeout(Promise.allSettled(bootTasks), 4200, []);
         const verifiedIds = results[0]?.status === "fulfilled" ? results[0].value.filter(Boolean) : [];
 
         if (!cancelled) {
@@ -563,6 +630,7 @@ export default function App() {
 
       timeoutId = setTimeout(() => {
         if (!cancelled) {
+          window.clearTimeout(bootFailSafeId);
           setBootLoading(false);
         }
       }, 250);
@@ -573,6 +641,7 @@ export default function App() {
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
+      clearTimeout(bootFailSafeId);
     };
   }, []);
 
