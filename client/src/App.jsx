@@ -8,10 +8,17 @@ import SettingsPage from "./components/SettingsPage";
 import SellerPage from "./components/SellerPage";
 import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
+import LoginPage from "./components/LoginPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
 import { getAdById, getAds, getUserProfile, getUserProfileBundle } from "./firebase";
+import {
+  authenticateMiniAppInitData,
+  getTelegramInitData,
+  getTelegramUnsafeUser,
+  restoreAuthSession,
+} from "./auth";
 
 function HelpPage({ onBack }) {
   useEffect(() => {
@@ -298,10 +305,30 @@ export default function App() {
       if (tg) {
         tg.ready();
         tg.expand();
-        user = tg.initDataUnsafe?.user || null;
-        if (!cancelled) {
-          setTgUser(user);
+      }
+
+      try {
+        const initData = getTelegramInitData();
+
+        if (initData) {
+          safeSetProgress(16, "Проверяем Telegram-вход…");
+          const auth = await authenticateMiniAppInitData(initData);
+          user = auth?.user || null;
+        } else {
+          safeSetProgress(16, "Проверяем сессию…");
+          const session = await restoreAuthSession().catch(() => null);
+          user = session?.user || null;
         }
+      } catch (error) {
+        console.warn("Серверная авторизация недоступна, используем данные Telegram WebApp:", error);
+      }
+
+      if (!user) {
+        user = getTelegramUnsafeUser();
+      }
+
+      if (!cancelled) {
+        setTgUser(user);
       }
 
       const startAdId = getStartAdIdFromLaunch();
@@ -397,6 +424,14 @@ export default function App() {
     };
   }, []);
 
+  const handleAuthSuccess = (user, profile = null) => {
+    setTgUser(user || null);
+
+    setProfileCache(null);
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
   const goToPage = (nextPage) => {
     setPage(nextPage);
 
@@ -436,19 +471,41 @@ export default function App() {
         />
       )}
 
-      {page === "add" && <AddAd user={tgUser} onBack={() => goToPage("list")} />}
+      {page === "add" && (
+        tgUser ? (
+          <AddAd user={tgUser} onBack={() => goToPage("list")} />
+        ) : (
+          <LoginPage
+            onBack={() => goToPage("list")}
+            onAuthSuccess={(user, profile) => {
+              handleAuthSuccess(user, profile);
+              setPage("add");
+            }}
+          />
+        )
+      )}
 
       {page === "profile" && (
-        <ProfilePage
-          user={tgUser}
-          initialProfileData={profileCache}
-          onProfileDataLoaded={setProfileCache}
-          onOpenSection={(status) => {
-            setProfileStatusPage(status);
-            setPage("profileAds");
-            window.scrollTo({ top: 0, behavior: "auto" });
-          }}
-        />
+        tgUser ? (
+          <ProfilePage
+            user={tgUser}
+            initialProfileData={profileCache}
+            onProfileDataLoaded={setProfileCache}
+            onOpenSection={(status) => {
+              setProfileStatusPage(status);
+              setPage("profileAds");
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }}
+          />
+        ) : (
+          <LoginPage
+            onBack={() => goToPage("list")}
+            onAuthSuccess={(user, profile) => {
+              handleAuthSuccess(user, profile);
+              setPage("profile");
+            }}
+          />
+        )
       )}
 
       {page === "profileAds" && (
