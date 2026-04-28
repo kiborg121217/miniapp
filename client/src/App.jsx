@@ -429,236 +429,200 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    const isZoomAllowed = (target) => {
-      if (!target || typeof target.closest !== "function") return false;
-      return Boolean(target.closest('[data-allow-zoom="true"], .photo-modal, .image-modal, .modal'));
-    };
-
-    const preventPageGestureZoom = (event) => {
-      if (isZoomAllowed(event.target)) return;
-      event.preventDefault();
-    };
-
-    const preventMultiTouchZoom = (event) => {
-      if (isZoomAllowed(event.target)) return;
-      if (event.touches && event.touches.length > 1) {
-        event.preventDefault();
-      }
-    };
-
-    const preventCtrlWheelZoom = (event) => {
-      if (isZoomAllowed(event.target)) return;
-      if (event.ctrlKey) {
-        event.preventDefault();
-      }
-    };
-
-    document.addEventListener("gesturestart", preventPageGestureZoom, { passive: false });
-    document.addEventListener("gesturechange", preventPageGestureZoom, { passive: false });
-    document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false });
-    document.addEventListener("wheel", preventCtrlWheelZoom, { passive: false });
-
-    return () => {
-      document.removeEventListener("gesturestart", preventPageGestureZoom);
-      document.removeEventListener("gesturechange", preventPageGestureZoom);
-      document.removeEventListener("touchmove", preventMultiTouchZoom);
-      document.removeEventListener("wheel", preventCtrlWheelZoom);
-    };
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
-    let timeoutId;
-    let bootFailSafeId;
+    let progressTimer = null;
+    let closeTimer = null;
 
-    const safeSetProgress = (value, text) => {
+    const setSmoothProgress = (target, text) => {
       if (cancelled) return;
-      setBootProgress(value);
       if (text) setBootSubtitle(text);
+
+      setBootProgress((current) => {
+        const start = Number.isFinite(current) ? current : 8;
+        const nextTarget = Math.max(start, Math.min(100, target));
+
+        if (progressTimer) {
+          window.clearInterval(progressTimer);
+        }
+
+        progressTimer = window.setInterval(() => {
+          setBootProgress((value) => {
+            const diff = nextTarget - value;
+            if (Math.abs(diff) <= 1) {
+              window.clearInterval(progressTimer);
+              progressTimer = null;
+              return nextTarget;
+            }
+            return value + diff * 0.14;
+          });
+        }, 16);
+
+        return start;
+      });
     };
 
-    bootFailSafeId = window.setTimeout(() => {
-      if (!cancelled) {
-        console.warn("Стартовая загрузка заняла слишком много времени, открываем приложение из локальных данных.");
-        setBootProgress(100);
-        setBootSubtitle("Открываем приложение…");
-        setBootLoading(false);
-      }
-    }, 6500);
+    const finishBoot = () => {
+      if (cancelled) return;
 
-    const boot = async () => {
-      initTelegram();
+      setSmoothProgress(100, "Открываем приложение…");
 
-      if (window.location.pathname === "/auth/callback") {
-        safeSetProgress(100, "Завершаем Telegram-вход…");
-        setBootLoading(false);
-        return;
+      if (closeTimer) {
+        window.clearTimeout(closeTimer);
       }
 
-      const tg = window.Telegram?.WebApp;
-      let user = null;
+      closeTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          setBootProgress(100);
+          setBootLoading(false);
+        }
+      }, 420);
+    };
 
-      if (tg) {
-        tg.ready();
-        tg.expand();
-      }
-
+    const refreshAfterOpen = async (user) => {
       try {
-        const initData = getTelegramInitData();
+        const data = await withTimeout(getAds(), 5000, readMainAdsCache());
+        const approved = Array.isArray(data) ? data.filter((ad) => ad.status === "approved") : [];
 
-        if (initData) {
-          safeSetProgress(16, "Проверяем Telegram-вход…");
-          const auth = await authenticateMiniAppInitData(initData);
-          user = auth?.user || null;
-        } else {
-          safeSetProgress(16, "Проверяем сессию…");
-          const session = await restoreAuthSession().catch(() => null);
-          user = session?.user || null;
+        if (approved.length > 0) {
+          writeMainAdsCache(approved);
+          if (!cancelled) setPreloadedAds(approved);
+          preloadFirstAdImages(approved).catch(() => {});
+        }
+
+        const sellerIds = [...new Set(approved.slice(0, 24).map((ad) => String(ad.userId || "")).filter(Boolean))];
+        Promise.all(
+          sellerIds.map(async (sellerId) => {
+            try {
+              const profile = await getUserProfile(sellerId);
+              return profile?.isVerified ? sellerId : null;
+            } catch {
+              return null;
+            }
+          })
+        )
+          .then((ids) => {
+            if (!cancelled) setPreloadedVerifiedSellerIds(ids.filter(Boolean));
+          })
+          .catch(() => {});
+
+        if (user?.id) {
+          Promise.allSettled([
+            getUserProfileBundle(user),
+            getNotificationSettings(user.id),
+            getUserChatsOnce(user.id, 10),
+          ]).then((results) => {
+            if (cancelled) return;
+
+            const profileResult = results[0];
+            const notificationResult = results[1];
+            const chatsResult = results[2];
+
+            if (profileResult?.status === "fulfilled") {
+              setProfileCache(profileResult.value);
+            }
+
+            writeUserBootCache(user.id, {
+              profile: profileResult?.status === "fulfilled" ? profileResult.value : null,
+              notifications: notificationResult?.status === "fulfilled" ? notificationResult.value : null,
+              chats: chatsResult?.status === "fulfilled" ? chatsResult.value : null,
+            });
+          });
         }
       } catch (error) {
-        console.warn("Серверная авторизация недоступна, используем данные Telegram WebApp:", error);
+        console.warn("Фоновое обновление данных не выполнено:", error);
       }
+    };
 
-      if (!user) {
-        user = getTelegramUnsafeUser();
-      }
-
-      if (!cancelled) {
-        setTgUser(user);
-      }
-
-      const startAdId = getStartAdIdFromLaunch();
-      const startSellerId = getStartSellerIdFromLaunch();
-      const startChatId = getStartChatIdFromLaunch();
-
+    const boot = async () => {
       try {
-        safeSetProgress(18, "Подключаем Telegram…");
+        initTelegram();
 
-        if (startSellerId) {
-          safeSetProgress(42, "Открываем профиль продавца…");
-
-          if (!cancelled) {
-            setSelectedSellerId(String(startSellerId));
-            setSellerBackTarget("list");
-            setPage("seller");
-            safeSetProgress(100, "Готово");
-            setBootLoading(false);
-            return;
-          }
+        if (window.location.pathname === "/auth/callback") {
+          setSmoothProgress(100, "Завершаем Telegram-вход…");
+          setBootLoading(false);
+          return;
         }
 
-        if (startChatId) {
-          safeSetProgress(42, "Открываем чат…");
+        const tg = window.Telegram?.WebApp;
+        let user = null;
 
-          if (!cancelled) {
-            setSelectedChatId(String(startChatId));
-            setPage("chats");
-            safeSetProgress(100, "Готово");
-            setBootLoading(false);
-            return;
-          }
+        try {
+          tg?.ready?.();
+          tg?.expand?.();
+        } catch {
+          // ignore old Telegram clients
         }
 
-        if (startAdId) {
-          safeSetProgress(34, "Открываем объявление…");
-          const ad = await withTimeout(getAdById(startAdId), 4200, null);
-
-          if (!cancelled && ad) {
-            setSelectedAd(ad);
-            setPage("view");
-            await preloadImage(getAdPreviewImage(ad), 2200);
-            safeSetProgress(100, "Готово");
-            setBootLoading(false);
-            return;
-          }
-        }
-
-        safeSetProgress(30, "Загружаем объявления…");
         const cachedAds = readMainAdsCache();
-
         if (!cancelled && cachedAds.length > 0) {
           setPreloadedAds(cachedAds);
         }
 
-        const data = await withTimeout(getAds(), 4500, cachedAds);
-        const approved = data.filter((ad) => ad.status === "approved");
-        writeMainAdsCache(approved);
+        setSmoothProgress(18, "Подключаем Telegram…");
 
-        safeSetProgress(48, "Подготавливаем первые карточки…");
-        await preloadFirstAdImages(approved, (ratio) => {
-          safeSetProgress(48 + Math.round(ratio * 24), "Подгружаем фото…");
-        });
+        try {
+          const initData = getTelegramInitData();
 
-        if (!cancelled) {
-          setPreloadedAds(approved);
-        }
-
-        safeSetProgress(74, "Подготавливаем разделы…");
-
-        const sellerIds = [...new Set(approved.slice(0, 40).map((ad) => String(ad.userId || "")).filter(Boolean))];
-
-        const bootTasks = [
-          Promise.all(
-            sellerIds.map(async (sellerId) => {
-              try {
-                const profile = await getUserProfile(sellerId);
-                return profile?.isVerified ? sellerId : null;
-              } catch {
-                return null;
-              }
-            })
-          ),
-        ];
-
-        if (user?.id) {
-          bootTasks.push(getUserProfileBundle(user));
-          bootTasks.push(getNotificationSettings(user.id));
-          bootTasks.push(getUserChatsOnce(user.id, 10));
-        }
-
-        const results = await withTimeout(Promise.allSettled(bootTasks), 4200, []);
-        const verifiedIds = results[0]?.status === "fulfilled" ? results[0].value.filter(Boolean) : [];
-
-        if (!cancelled) {
-          setPreloadedVerifiedSellerIds(verifiedIds);
-        }
-
-        if (user?.id) {
-          const profileResult = results[1];
-          const notificationResult = results[2];
-          const chatsResult = results[3];
-
-          if (profileResult?.status === "fulfilled") {
-            setProfileCache(profileResult.value);
+          if (initData) {
+            setSmoothProgress(32, "Проверяем вход…");
+            const auth = await withTimeout(authenticateMiniAppInitData(initData), 2200, null);
+            user = auth?.user || null;
+          } else {
+            setSmoothProgress(32, "Проверяем сессию…");
+            const session = await withTimeout(restoreAuthSession().catch(() => null), 1800, null);
+            user = session?.user || null;
           }
-
-          writeUserBootCache(user.id, {
-            profile: profileResult?.status === "fulfilled" ? profileResult.value : null,
-            notifications: notificationResult?.status === "fulfilled" ? notificationResult.value : null,
-            chats: chatsResult?.status === "fulfilled" ? chatsResult.value : null,
-          });
+        } catch (error) {
+          console.warn("Авторизация недоступна, используем данные Telegram:", error);
         }
 
-        safeSetProgress(100, "Готово");
+        if (!user) {
+          user = getTelegramUnsafeUser();
+        }
+
+        if (!cancelled) {
+          setTgUser(user);
+        }
+
+        const startAdId = getStartAdIdFromLaunch();
+        const startSellerId = getStartSellerIdFromLaunch();
+        const startChatId = getStartChatIdFromLaunch();
+
+        if (startSellerId) {
+          setSelectedSellerId(String(startSellerId));
+          setSellerBackTarget("list");
+          setPage("seller");
+        } else if (startChatId) {
+          setSelectedChatId(String(startChatId));
+          setPage("chats");
+        } else if (startAdId) {
+          const ad = await withTimeout(getAdById(startAdId), 2200, null);
+          if (ad) {
+            setSelectedAd(ad);
+            setPage("view");
+            preloadImage(getAdPreviewImage(ad), 1600).catch(() => {});
+          } else {
+            setPage("list");
+          }
+        }
+
+        setSmoothProgress(72, cachedAds.length > 0 ? "Открываем сохранённые данные…" : "Открываем витрину…");
+
+        finishBoot();
+        refreshAfterOpen(user);
       } catch (error) {
         console.error("Ошибка стартовой загрузки:", error);
-        safeSetProgress(100, "Открываем приложение…");
+        setPage("list");
+        finishBoot();
       }
-
-      timeoutId = setTimeout(() => {
-        if (!cancelled) {
-          window.clearTimeout(bootFailSafeId);
-          setBootLoading(false);
-        }
-      }, 250);
     };
 
     boot();
 
     return () => {
       cancelled = true;
-      clearTimeout(timeoutId);
-      clearTimeout(bootFailSafeId);
+      if (progressTimer) window.clearInterval(progressTimer);
+      if (closeTimer) window.clearTimeout(closeTimer);
     };
   }, []);
 

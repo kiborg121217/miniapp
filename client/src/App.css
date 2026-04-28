@@ -12832,3 +12832,146 @@ select {
     grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)) !important;
   }
 }
+
+
+/* === v10 stable safe-area/layout reset === */
+/* Убираем накопленные чрезмерные отступы от v8/v9, но сохраняем безопасную зону Telegram fullscreen */
+:root {
+  --page-top-control: clamp(10px, calc(var(--app-safe-top, 0px) + 8px), 46px) !important;
+}
+
+.ad-page-wrap,
+.seller-premium-page,
+.seller-page,
+.profile-ads-page,
+.profile-ads-premium-page,
+.help-page,
+.legal-page,
+.settings-ios-page,
+.settings-page,
+.add-ad-page {
+  padding-top: clamp(18px, calc(var(--app-safe-top, 0px) + 18px), 68px) !important;
+}
+
+.create-premium-page {
+  padding-top: clamp(24px, calc(var(--app-safe-top, 0px) + 12px), 62px) !important;
+}
+
+.create-premium-topbar {
+  margin-top: 0 !important;
+  margin-bottom: 18px !important;
+  position: relative !important;
+  z-index: 40 !important;
+}
+
+.create-top-action {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+/* На обычных телефонах не даём страницам уезжать вниз */
+@media (max-width: 759px) {
+  .market-home {
+    padding-top: clamp(12px, calc(var(--app-safe-top, 0px) + 12px), 42px) !important;
+  }
+
+  .profile-premium-page,
+  .chats-page {
+    padding-top: clamp(14px, calc(var(--app-safe-top, 0px) + 14px), 52px) !important;
+  }
+
+  .create-premium-page {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
+
+/* ПК и большие экраны: используем ширину экрана, без узкой центральной колонки */
+@media (min-width: 760px) {
+  html,
+  body,
+  #root,
+  .app {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  .app {
+    margin: 0 !important;
+    box-shadow: none !important;
+    overflow-x: hidden !important;
+  }
+
+  .market-home,
+  .profile-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .help-page,
+  .legal-page,
+  .create-premium-page,
+  .seller-premium-page,
+  .ad-page-wrap,
+  .profile-ads-premium-page,
+  .chats-page {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: clamp(24px, 4vw, 72px) !important;
+    padding-right: clamp(24px, 4vw, 72px) !important;
+    box-sizing: border-box !important;
+  }
+
+  .market-grid,
+  .seller-premium-grid,
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: clamp(14px, 1.4vw, 24px) !important;
+  }
+
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
+  }
+
+  .profile-ad-premium-main {
+    grid-template-columns: 120px minmax(0, 1fr) !important;
+  }
+
+  .profile-ad-premium-image-wrap {
+    width: 120px !important;
+    min-height: 120px !important;
+  }
+
+  .profile-ad-premium-image,
+  .profile-ad-premium-placeholder {
+    min-height: 120px !important;
+  }
+
+  .bottom-nav {
+    width: min(560px, calc(100vw - 48px)) !important;
+    max-width: 560px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .market-grid,
+  .seller-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  }
+
+  .profile-ads-premium-grid {
+    grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)) !important;
+  }
+}
+
+/* Плавный прогрессбар installbar */
+.loading-progress-fill,
+.loading-bar-fill,
+.install-progress-fill,
+.loading-line-fill {
+  transition: width 0.28s ease, transform 0.28s ease !important;
+}
