@@ -1,11 +1,54 @@
 import { useEffect } from "react";
 
+const FULLSCREEN_REQUEST_KEY = "baraholka_tg_fullscreen_requested_v2";
+
 function readTelegramInset(inset, key) {
-  const value = inset?.[key];
+  const value = Number(inset?.[key]);
   return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
+function safeSessionGetItem(key) {
+  try {
+    return window.sessionStorage?.getItem(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionSetItem(key, value) {
+  try {
+    window.sessionStorage?.setItem(key, value);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function getFallbackViewportHeight() {
+  if (typeof window === "undefined") return 640;
+
+  return Math.max(
+    360,
+    Number(window.innerHeight) || 0,
+    Number(document.documentElement?.clientHeight) || 0,
+    Number(document.body?.clientHeight) || 0
+  );
+}
+
+function getUsableViewportHeight(value, fallback = getFallbackViewportHeight()) {
+  const numeric = Number(value);
+
+  // Telegram/iOS can briefly report 0 or tiny values during fullscreen transitions.
+  // Never expose that value to CSS because it can visually collapse the whole app.
+  if (Number.isFinite(numeric) && numeric >= 320) {
+    return numeric;
+  }
+
+  return Math.max(360, Number(fallback) || 0, getFallbackViewportHeight());
+}
+
 function applyTelegramViewportVars() {
+  if (typeof window === "undefined") return;
+
   const tg = window.Telegram?.WebApp;
   const root = document.documentElement;
 
@@ -14,13 +57,9 @@ function applyTelegramViewportVars() {
   const contentTop = readTelegramInset(tg?.contentSafeAreaInset, "top");
   const contentBottom = readTelegramInset(tg?.contentSafeAreaInset, "bottom");
 
-  const viewportHeight = Number.isFinite(tg?.viewportHeight)
-    ? Math.max(0, tg.viewportHeight)
-    : window.innerHeight;
-
-  const stableViewportHeight = Number.isFinite(tg?.viewportStableHeight)
-    ? Math.max(0, tg.viewportStableHeight)
-    : viewportHeight;
+  const fallbackHeight = getFallbackViewportHeight();
+  const viewportHeight = getUsableViewportHeight(tg?.viewportHeight, fallbackHeight);
+  const stableViewportHeight = getUsableViewportHeight(tg?.viewportStableHeight, viewportHeight);
 
   root.style.setProperty("--tg-safe-top", `${safeTop}px`);
   root.style.setProperty("--tg-safe-bottom", `${safeBottom}px`);
@@ -42,6 +81,34 @@ function applyTelegramViewportVars() {
   }
 }
 
+function requestTelegramFullscreenOnce(tg) {
+  if (!tg?.requestFullscreen) return;
+
+  if (tg.isFullscreen) {
+    safeSessionSetItem(FULLSCREEN_REQUEST_KEY, "1");
+    return;
+  }
+
+  if (window.__BARAHOLKA_TG_FULLSCREEN_REQUESTED) return;
+  if (safeSessionGetItem(FULLSCREEN_REQUEST_KEY) === "1") return;
+
+  window.__BARAHOLKA_TG_FULLSCREEN_REQUESTED = true;
+  safeSessionSetItem(FULLSCREEN_REQUEST_KEY, "1");
+
+  window.setTimeout(() => {
+    try {
+      if (!tg.isFullscreen) {
+        tg.requestFullscreen();
+      }
+    } catch {
+      // Старые/нестабильные клиенты Telegram могут отказать в fullscreen.
+    }
+
+    window.setTimeout(applyTelegramViewportVars, 120);
+    window.setTimeout(applyTelegramViewportVars, 420);
+  }, 350);
+}
+
 export default function useTelegramViewport() {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -49,12 +116,12 @@ export default function useTelegramViewport() {
     try {
       tg?.ready?.();
       tg?.expand?.();
-      tg?.requestFullscreen?.();
     } catch {
-      // Старые клиенты Telegram могут не поддерживать fullscreen API.
+      // Telegram API может быть недоступен в обычном браузере.
     }
 
     applyTelegramViewportVars();
+    requestTelegramFullscreenOnce(tg);
 
     const handleResize = () => applyTelegramViewportVars();
     const handleViewportChanged = () => applyTelegramViewportVars();
@@ -67,7 +134,8 @@ export default function useTelegramViewport() {
     tg?.onEvent?.("contentSafeAreaChanged", handleSafeAreaChanged);
     tg?.onEvent?.("fullscreenChanged", handleSafeAreaChanged);
 
-    const timer = window.setTimeout(applyTelegramViewportVars, 300);
+    const timer1 = window.setTimeout(applyTelegramViewportVars, 300);
+    const timer2 = window.setTimeout(applyTelegramViewportVars, 900);
 
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -76,7 +144,8 @@ export default function useTelegramViewport() {
       tg?.offEvent?.("safeAreaChanged", handleSafeAreaChanged);
       tg?.offEvent?.("contentSafeAreaChanged", handleSafeAreaChanged);
       tg?.offEvent?.("fullscreenChanged", handleSafeAreaChanged);
-      window.clearTimeout(timer);
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
     };
   }, []);
 }

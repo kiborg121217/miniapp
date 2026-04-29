@@ -189,6 +189,7 @@ function getStartChatIdFromLaunch() {
 
 
 const MAIN_CACHE_KEY = "baraholka_main_ads_v2";
+const MAIN_CACHE_ENABLED = false;
 const PROFILE_CACHE_PREFIX = "baraholka_profile_bundle_v1";
 const NOTIFICATION_CACHE_KEY = "baraholka_notification_settings_v1";
 const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
@@ -204,12 +205,20 @@ function writeJsonCache(key, value) {
 }
 
 function readMainAdsCache() {
+  if (!MAIN_CACHE_ENABLED) return [];
   const cached = readJsonCache(MAIN_CACHE_KEY);
   return Array.isArray(cached?.ads) ? cached.ads : [];
 }
 
 function writeMainAdsCache(ads) {
+  if (!MAIN_CACHE_ENABLED) return;
   writeJsonCache(MAIN_CACHE_KEY, { ads: Array.isArray(ads) ? ads : [], cachedAt: Date.now() });
+}
+
+function clearVolatileBootCaches() {
+  safeStorageRemove("localStorage", MAIN_CACHE_KEY);
+  safeStorageRemove("localStorage", "baraholka_main_ads_v1");
+  safeStorageRemove("localStorage", "baraholka_main_ads_v2");
 }
 
 function writeUserBootCache(userId, { profile, notifications, chats } = {}) {
@@ -595,6 +604,7 @@ export default function App() {
     };
 
     const boot = async () => {
+      clearVolatileBootCaches();
       initTelegram();
 
       if (window.location.pathname === "/auth/callback") {

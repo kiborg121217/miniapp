@@ -12257,6 +12257,8 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
    ====================================================================== */
 
 :root {
+  --tg-viewport-height: 100dvh;
+  --tg-stable-viewport-height: 100dvh;
   --safe-top-real: max(var(--tg-safe-top, 0px), env(safe-area-inset-top, 0px));
   --safe-bottom-real: max(var(--tg-safe-bottom, 0px), env(safe-area-inset-bottom, 0px));
   --safe-left-real: max(0px, env(safe-area-inset-left, 0px));
@@ -12270,7 +12272,9 @@ body,
 #root,
 .app,
 .loading-screen {
-  min-height: var(--tg-viewport-height, 100dvh) !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  min-height: max(var(--tg-viewport-height, 100dvh), 100dvh) !important;
 }
 
 body {
