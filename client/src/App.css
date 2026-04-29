@@ -12355,3 +12355,50 @@ body {
   background: linear-gradient(135deg, #62ecff, #ffe08a);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
+
+/* === iOS Telegram stability + no accidental zoom hotfix === */
+html,
+body,
+#root,
+.app {
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  min-height: var(--tg-viewport-height, 100dvh) !important;
+  touch-action: manipulation;
+}
+
+button,
+a,
+.bottom-nav button,
+.chat-list-item,
+.contact-btn,
+.primary-btn,
+.secondary-btn {
+  touch-action: manipulation;
+}
+
+input,
+select,
+textarea,
+button {
+  font-size: max(16px, 1em);
+}
+
+.chat-compose textarea,
+.create-premium-page input,
+.create-premium-page textarea,
+.create-premium-page select,
+.profile-name-control input,
+.settings-ios-page input,
+.settings-ios-page textarea {
+  font-size: 16px !important;
+}
+
+.modal,
+.modal img,
+.photo-modal,
+.image-modal,
+[data-allow-zoom="true"] {
+  touch-action: pinch-zoom pan-x pan-y !important;
+}

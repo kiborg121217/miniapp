@@ -14,6 +14,7 @@ import AuthCallbackPage from "./components/AuthCallbackPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
+import useNoZoom from "./hooks/useNoZoom";
 import { getAdById, getAds, getNotificationSettings, getUserChatsOnce, getUserProfile, getUserProfileBundle, startChatForAd } from "./firebase";
 import {
   authenticateMiniAppInitData,
@@ -432,6 +433,7 @@ function readInitialSessionState() {
 
 export default function App() {
   useTelegramViewport();
+  useNoZoom();
 
   const [initialSession] = useState(readInitialSessionState);
   const [page, setPage] = useState(initialSession.page);

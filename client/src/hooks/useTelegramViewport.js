@@ -121,7 +121,11 @@ export default function useTelegramViewport() {
     }
 
     applyTelegramViewportVars();
-    requestTelegramFullscreenOnce(tg);
+
+    // iOS/Telegram hotfix: do not request fullscreen from React on every Mini App open.
+    // If fullscreen is enabled for the bot, Telegram already opens the WebView in that mode.
+    // Re-requesting fullscreen caused a second viewport recalculation on some iPhones.
+    // requestTelegramFullscreenOnce(tg);
 
     const handleResize = () => applyTelegramViewportVars();
     const handleViewportChanged = () => applyTelegramViewportVars();

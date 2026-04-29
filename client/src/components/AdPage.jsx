@@ -387,7 +387,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, onWrite, currentUser 
       </div>
 
       {modalImage && (
-        <div className="modal" onClick={() => setModalImage(null)}>
+        <div className="modal" data-allow-zoom="true" onClick={() => setModalImage(null)}>
           <button
             className="modal-close"
             onClick={(e) => {

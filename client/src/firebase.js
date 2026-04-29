@@ -411,12 +411,30 @@ export async function startChatForAd(ad, buyer) {
   const snap = await getDoc(chatRef);
   const now = Date.now();
 
+  const buyerName =
+    buyer.displayName ||
+    buyer.first_name ||
+    buyer.firstName ||
+    buyer.username ||
+    "Покупатель";
+
+  const sellerName =
+    ad.sellerDisplayName ||
+    ad.displayName ||
+    ad.firstName ||
+    ad.username ||
+    "Продавец";
+
   const payload = {
     adId,
     adTitle: ad.title || "Объявление",
     adImage: getAdImage(ad),
     buyerId,
     sellerId,
+    buyerName,
+    buyerUsername: buyer.username || "",
+    sellerName,
+    sellerUsername: ad.username || ad.sellerUsername || "",
     participants: [buyerId, sellerId],
     updatedAt: now,
   };

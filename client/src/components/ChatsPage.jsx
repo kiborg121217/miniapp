@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getChatById,
+  getUserProfile,
   listenChatMessages,
   listenUserChats,
   markChatRead,
@@ -50,6 +51,40 @@ function writeChatCache(userId, chats) {
   }
 }
 
+
+function getProfileDisplayName(profile, fallback = "Пользователь") {
+  if (!profile) return fallback;
+  return (
+    profile.displayName ||
+    profile.firstName ||
+    (profile.username ? `@${profile.username}` : "") ||
+    fallback
+  );
+}
+
+function getChatOpponentId(chat, userId) {
+  if (!chat || !userId) return "";
+  const current = String(userId);
+  if (String(chat.buyerId) === current) return String(chat.sellerId || "");
+  if (String(chat.sellerId) === current) return String(chat.buyerId || "");
+  return "";
+}
+
+function getChatDisplayTitle(chat, userId, profiles = {}) {
+  if (!chat || !userId) return "Диалог";
+
+  const current = String(userId);
+  if (String(chat.buyerId) === current) {
+    return chat.sellerName || getProfileDisplayName(profiles[String(chat.sellerId)], "Продавец");
+  }
+
+  if (String(chat.sellerId) === current) {
+    return chat.buyerName || getProfileDisplayName(profiles[String(chat.buyerId)], "Покупатель");
+  }
+
+  return chat.adTitle || "Диалог";
+}
+
 function getUnreadCount(chat, userId) {
   if (!chat || !userId) return 0;
   const normalizedUserId = String(userId);
@@ -79,8 +114,9 @@ function ChatPlaceholderImage({ compact = false }) {
   );
 }
 
-function ChatListItem({ chat, userId, onClick }) {
+function ChatListItem({ chat, userId, participantProfiles, onClick }) {
   const unread = getUnreadCount(chat, userId);
+  const title = getChatDisplayTitle(chat, userId, participantProfiles);
 
   return (
     <button type="button" className="chat-list-item" onClick={onClick}>
@@ -92,7 +128,7 @@ function ChatListItem({ chat, userId, onClick }) {
 
       <span className="chat-list-body">
         <span className="chat-list-topline">
-          <span className="chat-list-title">{chat.adTitle || "Объявление"}</span>
+          <span className="chat-list-title">{title}</span>
           <span className="chat-list-time">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
         </span>
         <span className="chat-list-subline">
@@ -121,7 +157,7 @@ function BackIcon() {
   );
 }
 
-function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
+function ChatDialog({ chatId, chat, user, participantProfiles, onBack, onOpenAd }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -129,6 +165,7 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
   const [error, setError] = useState("");
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
+  const dialogTitle = getChatDisplayTitle(chat, user?.id, participantProfiles);
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -211,8 +248,8 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
         )}
 
         <div className="chat-header-text">
-          <h2>{chat?.adTitle || "Диалог"}</h2>
-          <p>Чат по объявлению</p>
+          <h2>{dialogTitle}</h2>
+          <p>{chat?.adTitle ? chat.adTitle : "Чат по объявлению"}</p>
         </div>
 
         {chat?.adId && (
@@ -276,6 +313,7 @@ function ChatDialog({ chatId, chat, user, onBack, onOpenAd }) {
 export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackToList, onOpenAd }) {
   const [chats, setChats] = useState(() => readChatCache(user?.id));
   const [fallbackChat, setFallbackChat] = useState(null);
+  const [participantProfiles, setParticipantProfiles] = useState({});
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -312,6 +350,48 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
       .catch(() => setFallbackChat(null));
   }, [selectedChatId, chats]);
 
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const activeChats = [...chats, fallbackChat].filter(Boolean);
+    const idsToLoad = [
+      ...new Set(
+        activeChats
+          .map((chat) => getChatOpponentId(chat, user.id))
+          .filter((id) => id && !participantProfiles[id])
+      ),
+    ];
+
+    if (idsToLoad.length === 0) return;
+
+    let cancelled = false;
+
+    Promise.all(
+      idsToLoad.map(async (id) => {
+        try {
+          const profile = await getUserProfile(id);
+          return [id, profile];
+        } catch {
+          return [id, null];
+        }
+      })
+    ).then((items) => {
+      if (cancelled) return;
+      setParticipantProfiles((current) => {
+        const next = { ...current };
+        items.forEach(([id, profile]) => {
+          next[id] = profile || { displayName: String(id) };
+        });
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chats, fallbackChat, user?.id, participantProfiles]);
+
   const activeChat = useMemo(
     () => chats.find((chat) => chat.id === selectedChatId) || fallbackChat,
     [chats, fallbackChat, selectedChatId]
@@ -323,6 +403,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         chatId={selectedChatId}
         chat={activeChat}
         user={user}
+        participantProfiles={participantProfiles}
         onBack={onBackToList}
         onOpenAd={onOpenAd}
       />
@@ -354,6 +435,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
               key={chat.id}
               chat={chat}
               userId={user.id}
+              participantProfiles={participantProfiles}
               onClick={() => onSelectChat?.(chat.id)}
             />
           ))
