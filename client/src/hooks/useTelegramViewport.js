@@ -29,13 +29,13 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--tg-viewport-height", `${viewportHeight}px`);
   root.style.setProperty("--tg-stable-viewport-height", `${stableViewportHeight}px`);
 
-  const totalTop = safeTop + contentTop;
-  const totalBottom = safeBottom + contentBottom;
+  const totalTop = Math.max(safeTop, contentTop);
+  const totalBottom = Math.max(safeBottom, contentBottom);
 
   root.style.setProperty("--app-safe-top", `${totalTop}px`);
   root.style.setProperty("--app-safe-bottom", `${totalBottom}px`);
 
-  if (tg?.isFullscreen || totalTop > 0 || totalBottom > 0) {
+  if (tg?.isFullscreen || safeTop > 0 || safeBottom > 0 || contentTop > 0 || contentBottom > 0) {
     root.dataset.tgFullscreenSafe = "true";
   } else {
     delete root.dataset.tgFullscreenSafe;
@@ -65,6 +65,7 @@ export default function useTelegramViewport() {
     tg?.onEvent?.("viewportChanged", handleViewportChanged);
     tg?.onEvent?.("safeAreaChanged", handleSafeAreaChanged);
     tg?.onEvent?.("contentSafeAreaChanged", handleSafeAreaChanged);
+    tg?.onEvent?.("fullscreenChanged", handleSafeAreaChanged);
 
     const timer = window.setTimeout(applyTelegramViewportVars, 300);
 
@@ -74,6 +75,7 @@ export default function useTelegramViewport() {
       tg?.offEvent?.("viewportChanged", handleViewportChanged);
       tg?.offEvent?.("safeAreaChanged", handleSafeAreaChanged);
       tg?.offEvent?.("contentSafeAreaChanged", handleSafeAreaChanged);
+      tg?.offEvent?.("fullscreenChanged", handleSafeAreaChanged);
       window.clearTimeout(timer);
     };
   }, []);

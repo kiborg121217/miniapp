@@ -375,6 +375,74 @@ function isImageAlreadyPreloaded(src) {
   return Boolean(window.__PRELOADED_AD_IMAGES?.has(src));
 }
 
+function withTimeout(taskOrPromise, timeoutMs, fallbackValue = null) {
+  const promise =
+    typeof taskOrPromise === "function"
+      ? Promise.resolve().then(taskOrPromise)
+      : Promise.resolve(taskOrPromise);
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timerId);
+      resolve(value);
+    };
+
+    const timerId = window.setTimeout(() => finish(fallbackValue), timeoutMs);
+
+    promise
+      .then((value) => finish(value))
+      .catch(() => finish(fallbackValue));
+  });
+}
+
+function runBackgroundTask(task) {
+  const run = () => {
+    Promise.resolve()
+      .then(task)
+      .catch((error) => console.warn("Фоновая задача не выполнена:", error));
+  };
+
+  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(run, { timeout: 1800 });
+  } else if (typeof window !== "undefined") {
+    window.setTimeout(run, 0);
+  }
+}
+
+function safeLocalGetItem(key) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.localStorage?.getItem(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalSetItem(key, value) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage?.setItem(key, value);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function safeLocalRemoveItem(key) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage?.removeItem(key);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
 function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
   const image = getAdImage(ad);
   const [imageReady, setImageReady] = useState(() => isImageAlreadyPreloaded(image));
@@ -387,6 +455,10 @@ function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
 
     if (isImageAlreadyPreloaded(image)) {
       setImageReady(true);
+      return;
+    }
+
+    if (index > 5) {
       return;
     }
 
@@ -415,7 +487,7 @@ function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
     return () => {
       cancelled = true;
     };
-  }, [image]);
+  }, [image, index]);
 
   return (
     <button
@@ -457,8 +529,8 @@ function MarketAdCard({ ad, index, onOpen, isFavorite, onToggleFavorite }) {
               src={image}
               alt={ad.title}
               className={`market-card-image ${imageReady ? "is-visible" : "is-hidden"}`}
-              loading="eager"
-              fetchPriority={index < 4 ? "high" : "auto"}
+              loading={index < 4 ? "eager" : "lazy"}
+              fetchPriority={index < 4 ? "high" : "low"}
               decoding="async"
               onLoad={(e) => {
                 const src = e.currentTarget.currentSrc || image;
@@ -524,7 +596,7 @@ export default function AdList({
   const [ads, setAds] = useState(() => Array.isArray(initialAds) ? initialAds : []);
   const [loading, setLoading] = useState(() => !(Array.isArray(initialAds) && initialAds.length > 0));
   const [selectedCategory, setSelectedCategory] = useState(
-    () => localStorage.getItem("ads_filter_category") || ""
+    () => safeLocalGetItem("ads_filter_category") || ""
   );
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [verifiedSellerIds, setVerifiedSellerIds] = useState(
@@ -534,14 +606,25 @@ export default function AdList({
   const [favoriteMessage, setFavoriteMessage] = useState("");
 
   useEffect(() => {
-    if (Array.isArray(initialAds) && initialAds.length > 0) {
-      setAds(sortAds(initialAds));
-      setLoading(false);
-      return;
+    if (!(Array.isArray(initialAds) && initialAds.length > 0)) {
+      loadAds();
     }
-
-    loadAds();
   }, []);
+
+  useEffect(() => {
+    if (Array.isArray(initialAds) && initialAds.length > 0) {
+      const sorted = sortAds(initialAds);
+      setAds(sorted);
+      setLoading(false);
+      hydrateVerifiedSellers(sorted);
+    }
+  }, [initialAds]);
+
+  useEffect(() => {
+    setVerifiedSellerIds(
+      new Set(Array.isArray(initialVerifiedSellerIds) ? initialVerifiedSellerIds : [])
+    );
+  }, [initialVerifiedSellerIds]);
 
   useEffect(() => {
     loadFavorites();
@@ -603,31 +686,50 @@ export default function AdList({
     }
   };
 
-  const loadAds = async () => {
-    try {
-      const data = await getAds();
-      const approved = data.filter((ad) => ad.status === "approved");
-      setAds(sortAds(approved));
+  const hydrateVerifiedSellers = (approved) => {
+    const list = Array.isArray(approved) ? approved : [];
 
-      const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];
+    runBackgroundTask(async () => {
+      const sellerIds = [
+        ...new Set(list.map((ad) => String(ad.userId || "")).filter(Boolean)),
+      ].slice(0, 48);
+
+      if (sellerIds.length === 0) {
+        setVerifiedSellerIds(new Set());
+        return;
+      }
+
       const profiles = await Promise.all(
         sellerIds.map(async (sellerId) => {
-          try {
-            const profile = await getUserProfile(sellerId);
-            return profile?.isVerified ? sellerId : null;
-          } catch (error) {
-            console.warn("Не удалось проверить профиль продавца:", sellerId, error);
-            return null;
-          }
+          const profile = await withTimeout(() => getUserProfile(sellerId), 2400, null);
+          return profile?.isVerified ? sellerId : null;
         })
       );
 
       setVerifiedSellerIds(new Set(profiles.filter(Boolean)));
+    });
+  };
+
+  const loadAds = async () => {
+    try {
+      if (ads.length === 0) {
+        setLoading(true);
+      }
+
+      const data = await withTimeout(() => getAds(), 7200, null);
+
+      if (!Array.isArray(data)) {
+        throw new Error("Firestore не ответил вовремя");
+      }
+
+      const approved = data.filter((ad) => ad.status === "approved");
+      const sorted = sortAds(approved);
+
+      setAds(sorted);
+      setLoading(false);
+      hydrateVerifiedSellers(sorted);
     } catch (error) {
       console.error("Ошибка загрузки объявлений:", error);
-      setAds([]);
-      setVerifiedSellerIds(new Set());
-    } finally {
       setLoading(false);
     }
   };
@@ -650,9 +752,9 @@ export default function AdList({
     setSelectedCategory(category);
 
     if (category) {
-      localStorage.setItem("ads_filter_category", category);
+      safeLocalSetItem("ads_filter_category", category);
     } else {
-      localStorage.removeItem("ads_filter_category");
+      safeLocalRemoveItem("ads_filter_category");
     }
   };
 
