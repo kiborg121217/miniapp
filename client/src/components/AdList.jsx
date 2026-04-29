@@ -49,6 +49,48 @@ function formatPrice(value) {
   return `${new Intl.NumberFormat("ru-RU").format(numeric)} ₽`;
 }
 
+const MAIN_ADS_CACHE_KEY = "baraholka_main_ads_v2";
+
+function readJsonCache(key) {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJsonCache(key, value) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore cache errors
+  }
+}
+
+function readCachedMainAds() {
+  const cached = readJsonCache(MAIN_ADS_CACHE_KEY);
+  return Array.isArray(cached?.ads) ? sortAds(cached.ads) : [];
+}
+
+function writeCachedMainAds(ads) {
+  writeJsonCache(MAIN_ADS_CACHE_KEY, {
+    ads: Array.isArray(ads) ? ads : [],
+    cachedAt: Date.now(),
+  });
+}
+
+function withTimeout(promise, timeoutMs, fallback = null) {
+  let timerId;
+  const timeout = new Promise((resolve) => {
+    timerId = window.setTimeout(() => resolve(fallback), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timerId));
+}
+
 function getAdImage(ad) {
   if (Array.isArray(ad.imageUrls) && ad.imageUrls.length > 0) return ad.imageUrls[0];
   return ad.imageUrl || "";
@@ -521,8 +563,15 @@ export default function AdList({
   initialVerifiedSellerIds = [],
   currentUser,
 }) {
-  const [ads, setAds] = useState(() => Array.isArray(initialAds) ? initialAds : []);
-  const [loading, setLoading] = useState(() => !(Array.isArray(initialAds) && initialAds.length > 0));
+  const [ads, setAds] = useState(() => {
+    if (Array.isArray(initialAds) && initialAds.length > 0) return sortAds(initialAds);
+    return readCachedMainAds();
+  });
+  const [loading, setLoading] = useState(() => {
+    if (Array.isArray(initialAds) && initialAds.length > 0) return false;
+    return readCachedMainAds().length === 0;
+  });
+  const [loadError, setLoadError] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
     () => localStorage.getItem("ads_filter_category") || ""
   );
@@ -535,12 +584,15 @@ export default function AdList({
 
   useEffect(() => {
     if (Array.isArray(initialAds) && initialAds.length > 0) {
-      setAds(sortAds(initialAds));
+      const sorted = sortAds(initialAds);
+      setAds(sorted);
+      writeCachedMainAds(sorted);
       setLoading(false);
+      loadAds({ silent: true });
       return;
     }
 
-    loadAds();
+    loadAds({ silent: ads.length > 0 });
   }, []);
 
   useEffect(() => {
@@ -603,30 +655,53 @@ export default function AdList({
     }
   };
 
-  const loadAds = async () => {
+  const loadAds = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+
+    const cached = readCachedMainAds();
+
     try {
-      const data = await getAds();
-      const approved = data.filter((ad) => ad.status === "approved");
-      setAds(sortAds(approved));
+      const data = await withTimeout(getAds(), 6500, cached);
+      const approved = Array.isArray(data)
+        ? data.filter((ad) => ad.status === "approved")
+        : [];
 
-      const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))];
-      const profiles = await Promise.all(
-        sellerIds.map(async (sellerId) => {
-          try {
-            const profile = await getUserProfile(sellerId);
-            return profile?.isVerified ? sellerId : null;
-          } catch (error) {
-            console.warn("Не удалось проверить профиль продавца:", sellerId, error);
-            return null;
-          }
-        })
-      );
+      if (approved.length > 0) {
+        const sorted = sortAds(approved);
+        setAds(sorted);
+        writeCachedMainAds(sorted);
+        setLoadError("");
 
-      setVerifiedSellerIds(new Set(profiles.filter(Boolean)));
+        const sellerIds = [...new Set(sorted.slice(0, 40).map((ad) => String(ad.userId || "")).filter(Boolean))];
+        Promise.all(
+          sellerIds.map(async (sellerId) => {
+            try {
+              const profile = await withTimeout(getUserProfile(sellerId), 2200, null);
+              return profile?.isVerified ? sellerId : null;
+            } catch (error) {
+              console.warn("Не удалось проверить профиль продавца:", sellerId, error);
+              return null;
+            }
+          })
+        )
+          .then((profiles) => setVerifiedSellerIds(new Set(profiles.filter(Boolean))))
+          .catch(() => {});
+      } else if (cached.length > 0) {
+        setAds(cached);
+        setLoadError("Показываем сохранённые объявления. Соединение нестабильно.");
+      } else {
+        setAds([]);
+        setLoadError("Не удалось загрузить объявления. Проверьте VPN/прокси или попробуйте обновить позже.");
+      }
     } catch (error) {
       console.error("Ошибка загрузки объявлений:", error);
-      setAds([]);
-      setVerifiedSellerIds(new Set());
+
+      if (cached.length > 0) {
+        setAds(cached);
+        setLoadError("Показываем сохранённые объявления. Соединение нестабильно.");
+      } else {
+        setLoadError("Не удалось загрузить объявления. Проверьте VPN/прокси или попробуйте обновить позже.");
+      }
     } finally {
       setLoading(false);
     }
@@ -674,6 +749,13 @@ export default function AdList({
           <h2>Популярные объявления</h2>
         </div>
 
+        {!!loadError && (
+          <div className="market-network-warning">
+            <span>{loadError}</span>
+            <button type="button" onClick={() => loadAds()}>Повторить</button>
+          </div>
+        )}
+
         <div className="market-grid">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="market-card market-card-skeleton" />
@@ -693,6 +775,8 @@ export default function AdList({
       />
 
       <VerifiedSellersBanner active={verifiedOnly} onToggle={() => setVerifiedOnly((value) => !value)} />
+
+      {!!favoriteMessage && <div className="favorite-toast">{favoriteMessage}</div>}
 
       <div className="market-section-head">
         <h2>
@@ -714,6 +798,13 @@ export default function AdList({
           </button>
         )}
       </div>
+
+      {!!loadError && (
+        <div className="market-network-warning">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => loadAds()}>Повторить</button>
+        </div>
+      )}
 
       {filteredAds.length === 0 ? (
         <div className="market-empty-state">
