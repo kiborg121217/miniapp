@@ -12247,3 +12247,196 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
   height: 28px;
   display: block;
 }
+
+
+/* ======================================================================
+   TELEGRAM FULLSCREEN SAFE-AREA PATCH v6.1
+   Only layout/safe-area. No boot/loading/auth logic changes.
+   This block must stay at the end of App.css.
+   ====================================================================== */
+
+:root {
+  --baraholka-safe-top: max(env(safe-area-inset-top, 0px), var(--app-real-safe-top, var(--app-safe-top, 0px)));
+  --baraholka-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--app-real-safe-bottom, var(--app-safe-bottom, 0px)));
+  --baraholka-page-pad-x: clamp(14px, 4vw, 22px);
+  --baraholka-top-compact: clamp(12px, calc(var(--baraholka-safe-top) + 10px), 52px);
+  --baraholka-top-normal: clamp(18px, calc(var(--baraholka-safe-top) + 12px), 60px);
+  --baraholka-top-with-back: clamp(72px, calc(var(--baraholka-safe-top) + 58px), 112px);
+  --baraholka-bottom-nav-gap: clamp(7px, calc(var(--baraholka-safe-bottom) + 6px), 30px);
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh !important;
+  min-height: var(--tg-viewport-height, 100dvh) !important;
+}
+
+.app {
+  min-height: 100dvh !important;
+  min-height: var(--tg-viewport-height, 100dvh) !important;
+  overflow-x: hidden !important;
+}
+
+/* Главная: не залезает под Dynamic Island, но и не падает вниз */
+.market-home {
+  padding-top: var(--baraholka-top-compact) !important;
+  padding-bottom: calc(112px + var(--baraholka-safe-bottom)) !important;
+}
+
+/* Создание объявления: кнопка назад в верхнем ряду, поэтому нужен умеренный отступ всей страницы */
+.create-premium-page {
+  padding-top: var(--baraholka-top-normal) !important;
+  padding-left: var(--baraholka-page-pad-x) !important;
+  padding-right: var(--baraholka-page-pad-x) !important;
+  padding-bottom: calc(34px + var(--baraholka-safe-bottom)) !important;
+}
+
+.create-premium-topbar {
+  margin-top: 0 !important;
+  margin-bottom: 18px !important;
+  position: relative !important;
+  z-index: 30 !important;
+}
+
+.create-top-action,
+.create-back-action {
+  position: relative !important;
+  z-index: 35 !important;
+}
+
+/* Страницы, где есть отдельная верхняя кнопка назад/поделиться */
+.ad-page-wrap,
+.seller-premium-page,
+.seller-page,
+.profile-ads-page,
+.profile-ads-premium-page,
+.help-page,
+.legal-page,
+.settings-detail-page {
+  padding-top: var(--baraholka-top-with-back) !important;
+  padding-bottom: calc(110px + var(--baraholka-safe-bottom)) !important;
+}
+
+/* Обычные вкладки без фиксированной верхней кнопки */
+.profile-premium-page,
+.settings-ios-page,
+.settings-page,
+.chats-page {
+  padding-top: var(--baraholka-top-normal) !important;
+  padding-bottom: calc(112px + var(--baraholka-safe-bottom)) !important;
+}
+
+/* Верхние фиксированные кнопки: один общий безопасный уровень */
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn,
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  top: clamp(10px, calc(var(--baraholka-safe-top) + 8px), 54px) !important;
+  z-index: 90 !important;
+}
+
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn {
+  left: max(14px, env(safe-area-inset-left, 0px)) !important;
+}
+
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn {
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+}
+
+/* Если кнопка назад находится внутри собственного верхнего ряда — не делаем её fixed/absolute поверх Telegram UI */
+.create-premium-topbar .back-btn,
+.create-premium-topbar .premium-back-btn,
+.create-premium-topbar .create-top-action,
+.settings-ios-topbar .back-btn,
+.settings-ios-topbar .premium-back-btn,
+.page-top-row .back-btn,
+.page-top-row .premium-back-btn {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+}
+
+/* Нижняя навигация: выше home indicator, но не слишком высоко */
+.bottom-nav {
+  bottom: var(--baraholka-bottom-nav-gap) !important;
+  width: min(calc(100vw - 28px), 430px) !important;
+  max-width: calc(100vw - 28px) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Чат: поле ввода учитывает Telegram bottom safe-area */
+.chat-compose {
+  bottom: clamp(8px, calc(var(--baraholka-safe-bottom) + 8px), 36px) !important;
+  left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  right: max(12px, env(safe-area-inset-right, 0px)) !important;
+}
+
+/* Модальное фото: можно безопасно закрыть и не залезает под системные зоны */
+.modal {
+  padding:
+    calc(var(--baraholka-safe-top) + 58px)
+    max(14px, env(safe-area-inset-right, 0px))
+    calc(var(--baraholka-safe-bottom) + 22px)
+    max(14px, env(safe-area-inset-left, 0px)) !important;
+}
+
+.modal-close {
+  top: clamp(10px, calc(var(--baraholka-safe-top) + 10px), 58px) !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+}
+
+.modal .gallery-counter,
+.photo-modal .gallery-counter,
+.image-modal .gallery-counter {
+  top: clamp(10px, calc(var(--baraholka-safe-top) + 10px), 58px) !important;
+}
+
+/* Компактная горизонтальная ориентация: меньше верхние отступы, чтобы не съедать экран */
+@media (orientation: landscape) and (max-height: 560px) {
+  :root {
+    --baraholka-top-compact: clamp(8px, calc(var(--baraholka-safe-top) + 6px), 26px);
+    --baraholka-top-normal: clamp(10px, calc(var(--baraholka-safe-top) + 8px), 34px);
+    --baraholka-top-with-back: clamp(56px, calc(var(--baraholka-safe-top) + 48px), 76px);
+    --baraholka-bottom-nav-gap: clamp(4px, calc(var(--baraholka-safe-bottom) + 4px), 18px);
+  }
+
+  .bottom-nav {
+    height: 62px !important;
+    padding: 6px 0 !important;
+  }
+
+  .modal {
+    padding:
+      calc(var(--baraholka-safe-top) + 46px)
+      70px
+      calc(var(--baraholka-safe-bottom) + 14px) !important;
+  }
+}
+
+/* ПК/планшет: оставляем текущий V6 mobile-shell, но без обрезаний safe-area */
+@media (min-width: 760px) {
+  .bottom-nav {
+    width: min(430px, calc(100vw - 36px)) !important;
+  }
+
+  .chat-compose {
+    width: min(430px, calc(100vw - 32px)) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
