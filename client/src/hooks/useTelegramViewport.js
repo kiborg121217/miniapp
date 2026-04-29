@@ -29,15 +29,11 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--tg-viewport-height", `${viewportHeight}px`);
   root.style.setProperty("--tg-stable-viewport-height", `${stableViewportHeight}px`);
 
-  // В fullscreen Telegram может отдавать safeAreaInset и contentSafeAreaInset одновременно.
-  // Их нельзя складывать: на iPhone это часто даёт двойной отступ и уводит страницы вниз.
-  const totalTop = Math.min(54, Math.max(safeTop, contentTop));
-  const totalBottom = Math.min(34, Math.max(safeBottom, contentBottom));
+  const totalTop = safeTop + contentTop;
+  const totalBottom = safeBottom + contentBottom;
 
   root.style.setProperty("--app-safe-top", `${totalTop}px`);
   root.style.setProperty("--app-safe-bottom", `${totalBottom}px`);
-  root.style.setProperty("--app-real-safe-top", `${totalTop}px`);
-  root.style.setProperty("--app-real-safe-bottom", `${totalBottom}px`);
 
   if (tg?.isFullscreen || totalTop > 0 || totalBottom > 0) {
     root.dataset.tgFullscreenSafe = "true";
