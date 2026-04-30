@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  uploadImage,
   getUserProfile,
   saveUserProfile,
 } from "../firebase";
+import { uploadImagesToCloudinary, getParallelUploadLimit } from "../cloudinary";
+import { logDebugEvent } from "../debugLog";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { CATEGORIES } from "../categories";
@@ -17,6 +18,7 @@ export default function AddAd({ user, onBack }) {
   const [message, setMessage] = useState("");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -32,6 +34,10 @@ export default function AddAd({ user, onBack }) {
   }, [images]);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    logDebugEvent("ad_submit_start", { imageCount: images.length });
+
     const tg = window.Telegram?.WebApp;
     let realUser = user || tg?.initDataUnsafe?.user || null;
 
@@ -43,6 +49,7 @@ export default function AddAd({ user, onBack }) {
 
     if (!realUser) {
       setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
+      setIsSubmitting(false);
       return;
     }
 
@@ -55,6 +62,7 @@ export default function AddAd({ user, onBack }) {
 
     if (missing.length > 0) {
       setMessage("Заполните: " + missing.join(", "));
+      setIsSubmitting(false);
       return;
     }
 
@@ -81,13 +89,22 @@ export default function AddAd({ user, onBack }) {
         profile = await getUserProfile(realUser.id);
       }
 
-      setMessage("Загрузка фото...");
+      const parallelLimit = getParallelUploadLimit();
+      setMessage(`Сжимаем и загружаем фото 0/${images.length}...`);
+      logDebugEvent("ad_submit_images_upload_start", {
+        total: images.length,
+        parallelLimit,
+      });
 
-      const imageUrls = [];
-      for (const file of images) {
-        const uploaded = await uploadImage(file);
-        imageUrls.push(uploaded);
-      }
+      const imageUrls = await uploadImagesToCloudinary(images, {
+        concurrency: parallelLimit,
+        onProgress: ({ completed, total }) => {
+          setMessage(`Загрузка фото ${completed}/${total}...`);
+          logDebugEvent("ad_submit_images_upload_progress", { completed, total });
+        },
+      });
+
+      logDebugEvent("ad_submit_images_upload_success", { total: imageUrls.length });
 
       const sellerDisplayName =
         profile?.displayName ||
@@ -99,6 +116,8 @@ export default function AddAd({ user, onBack }) {
         profile?.avatarUrl ||
         profile?.telegramAvatarUrl ||
         "";
+
+      setMessage("Сохраняем объявление...");
 
       await setDoc(doc(db, "ads", id), {
         id,
@@ -118,43 +137,63 @@ export default function AddAd({ user, onBack }) {
         sellerAvatarUrl,
       });
 
-      const response = await fetch("https://miniapp-1wzi.onrender.com/new-ad", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          title,
-          price,
-          description,
-          category,
-          imageUrls,
-          imageUrl: imageUrls[0],
-          userId: realUser.id,
-        }),
-      });
+      setMessage("✅ Отправлено на модерацию");
+      logDebugEvent("ad_submit_firestore_saved", { id, imageCount: imageUrls.length });
 
-      const text = await response.text();
+      const apiBase =
+        import.meta.env.VITE_API_BASE_URL ||
+        import.meta.env.VITE_SERVER_URL ||
+        "https://miniapp-1wzi.onrender.com";
 
-      let result = {};
-      try {
-        result = JSON.parse(text);
-      } catch {
-        throw new Error("Сервер вернул не JSON: " + text);
-      }
+      const moderationPayload = {
+        id,
+        title,
+        price,
+        description,
+        category,
+        imageUrls,
+        imageUrl: imageUrls[0],
+        userId: realUser.id,
+      };
 
-      if (!response.ok || !result.ok) {
-        throw new Error(result.error || "Сервер не принял объявление");
-      }
+      window.setTimeout(() => {
+        fetch(`${apiBase}/new-ad`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(moderationPayload),
+        })
+          .then(async (response) => {
+            const text = await response.text();
+            let result = {};
+            try {
+              result = JSON.parse(text);
+            } catch {
+              result = { ok: false, error: text };
+            }
+
+            if (!response.ok || !result.ok) {
+              throw new Error(result.error || "Сервер не принял объявление");
+            }
+
+            logDebugEvent("ad_submit_moderation_notify_success", { id });
+          })
+          .catch((error) => {
+            console.warn("Не удалось отправить уведомление модератору:", error);
+            logDebugEvent("ad_submit_moderation_notify_error", error);
+          });
+      }, 0);
 
       setTitle("");
       setPrice("");
       setDescription("");
       setCategory("");
       setImages([]);
-      setMessage("✅ Отправлено на модерацию");
     } catch (err) {
       console.error(err);
-      setMessage("❌ Ошибка отправки в модерацию");
+      logDebugEvent("ad_submit_error", err);
+      setMessage(`❌ Ошибка отправки: ${err?.message || "попробуй ещё раз"}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -274,12 +313,12 @@ export default function AddAd({ user, onBack }) {
         </section>
       </div>
 
-      <button className="create-submit-premium" onClick={handleSubmit}>
+      <button className="create-submit-premium" onClick={handleSubmit} disabled={isSubmitting}>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M21 4L10 15" />
           <path d="M21 4L14 21L10 15L3 11L21 4Z" />
         </svg>
-        <span>Отправить на модерацию</span>
+        <span>{isSubmitting ? "Отправляем..." : "Отправить на модерацию"}</span>
       </button>
 
       <div className="create-moderation-note">
