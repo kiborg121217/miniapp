@@ -100,7 +100,9 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--ios-env-safe-top", `${envTop}px`);
   root.style.setProperty("--ios-env-safe-bottom", `${envBottom}px`);
 
-  if (tg?.isFullscreen || rawSafeTop + rawSafeBottom + rawContentTop + rawContentBottom > 0) {
+  // Важно: не считаем обычный fullsize fullscreen-режимом только из-за safeAreaInset.
+  // Дополнительный верхний guard включаем только при реальном fullscreen.
+  if (tg?.isFullscreen === true) {
     root.dataset.tgFullscreenSafe = "true";
   } else {
     delete root.dataset.tgFullscreenSafe;
