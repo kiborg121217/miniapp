@@ -12509,18 +12509,18 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
   }
 }
 
-/* === Telegram fullscreen top chrome guard v8 ===
+/* === Telegram fullscreen top chrome guard v9 ===
    Нижний safe-area/навигацию не трогаем. В fullscreen Telegram верхние системные
    кнопки (закрыть, стрелка вниз, троеточие) на части iOS-клиентов не всегда входят
    в safeAreaInset/contentSafeAreaInset. Поэтому добавляем минимальный верхний
    guard только когда WebApp реально сообщает isFullscreen=true. v8 чуть увеличивает
-   guard для iPhone с Dynamic Island. */
+   guard для iPhone с Dynamic Island. v9 добавляет ещё небольшой запас 4px. */
 html[data-tg-fullscreen-safe="true"] {
   --real-safe-top: max(
     env(safe-area-inset-top, 0px),
     var(--tg-raw-safe-top, var(--tg-safe-top, 0px)),
     var(--tg-raw-content-safe-top, var(--tg-content-safe-top, 0px)),
-    70px
+    74px
   );
   --page-top-control: calc(var(--real-safe-top) + 12px);
 }
@@ -12535,4 +12535,140 @@ html[data-tg-fullscreen-safe="true"] {
     );
     --page-top-control: calc(var(--real-safe-top) + 8px);
   }
+}
+
+/* === Stabilization build: debug diagnostics === */
+.debug-page {
+  min-height: var(--tg-viewport-height, 100dvh);
+  padding: calc(var(--real-safe-top, env(safe-area-inset-top, 0px)) + 68px) 14px calc(var(--real-safe-bottom, env(safe-area-inset-bottom, 0px)) + 28px);
+  color: var(--text-main, #fff);
+}
+
+.debug-card {
+  border-radius: 28px;
+  padding: 18px;
+  background: rgba(18, 18, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+.debug-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.debug-kicker {
+  margin: 0 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.65;
+}
+
+.debug-head h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.12;
+}
+
+.debug-head span {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.debug-note {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.debug-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.debug-actions button {
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.debug-log-list {
+  display: grid;
+  gap: 8px;
+}
+
+.debug-empty {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.debug-log-item {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.debug-log-item summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.debug-log-item summary small {
+  opacity: 0.58;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.debug-log-item pre {
+  margin: 0;
+  padding: 12px;
+  max-height: 360px;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  line-height: 1.42;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+[data-theme="light"] .debug-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #111827;
+}
+
+[data-theme="light"] .debug-note,
+[data-theme="light"] .debug-empty,
+[data-theme="light"] .debug-log-item pre {
+  color: rgba(17, 24, 39, 0.72);
+}
+
+[data-theme="light"] .debug-head span,
+[data-theme="light"] .debug-actions button,
+[data-theme="light"] .debug-empty,
+[data-theme="light"] .debug-log-item {
+  background: rgba(15, 23, 42, 0.06);
+  color: #111827;
 }

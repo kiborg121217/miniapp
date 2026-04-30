@@ -2,6 +2,9 @@ import React, { Component } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
+import { installDebugLogListeners, logDebugEvent } from "./debugLog";
+
+installDebugLogListeners();
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -15,9 +18,11 @@ class AppErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error("Критическая ошибка интерфейса:", error, info);
+    logDebugEvent("react_error_boundary", { error, componentStack: info?.componentStack || "" });
   }
 
   handleReset = () => {
+    logDebugEvent("react_error_boundary_reset");
     try {
       sessionStorage.removeItem("app_page");
       sessionStorage.removeItem("selected_ad");

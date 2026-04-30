@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAds, getUserProfile, getUserFavoriteIds, toggleFavoriteAd } from "../firebase";
+import { logDebugEvent } from "../debugLog";
 import { CATEGORIES } from "../categories";
 
 function toTimestamp(value) {
@@ -51,6 +52,40 @@ function sortAds(list) {
 
     return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
   });
+}
+
+function withTimeout(promise, timeoutMs, fallbackValue = null) {
+  let timerId;
+  const timeout = new Promise((resolve) => {
+    timerId = window.setTimeout(() => resolve(fallbackValue), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout])
+    .catch(() => fallbackValue)
+    .finally(() => window.clearTimeout(timerId));
+}
+
+function runDeferredTask(label, task, delayMs = 0) {
+  const run = () => Promise.resolve()
+    .then(() => {
+      logDebugEvent(`${label}_start`);
+      return task();
+    })
+    .then(() => logDebugEvent(`${label}_success`))
+    .catch((error) => {
+      console.warn("Фоновая задача AdList не выполнена:", label, error);
+      logDebugEvent(`${label}_error`, error);
+    });
+
+  const schedule = () => {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(run, { timeout: 2200 });
+    } else {
+      window.setTimeout(run, 0);
+    }
+  };
+
+  return window.setTimeout(schedule, Math.max(0, delayMs));
 }
 
 function formatPrice(value) {
@@ -558,7 +593,13 @@ export default function AdList({
   }, []);
 
   useEffect(() => {
-    loadFavorites();
+    if (!currentUser?.id) {
+      setFavoriteIds(new Set());
+      return undefined;
+    }
+
+    const timer = runDeferredTask("favorites_load_once", loadFavorites, 1200);
+    return () => window.clearTimeout(timer);
   }, [currentUser?.id]);
 
   const loadFavorites = async () => {
@@ -568,8 +609,8 @@ export default function AdList({
     }
 
     try {
-      const ids = await getUserFavoriteIds(currentUser.id);
-      setFavoriteIds(new Set(ids.map(String)));
+      const ids = await withTimeout(getUserFavoriteIds(currentUser.id), 5200, []);
+      setFavoriteIds(new Set((Array.isArray(ids) ? ids : []).map(String)));
     } catch (error) {
       console.warn("Не удалось загрузить избранное:", error);
     }
@@ -619,27 +660,32 @@ export default function AdList({
 
   const loadAds = async () => {
     try {
-      const data = await getAds();
-      const approved = data.filter((ad) => ad.status === "approved");
+      logDebugEvent("ads_load_start");
+      const data = await withTimeout(getAds(), 9000, []);
+      const approved = (Array.isArray(data) ? data : []).filter((ad) => ad.status === "approved");
       setAds(sortAds(approved));
       setLoading(false);
+      logDebugEvent("ads_load_success", { count: approved.length });
 
-      const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))].slice(0, 32);
-      const profiles = await Promise.all(
-        sellerIds.map(async (sellerId) => {
-          try {
-            const profile = await getUserProfile(sellerId);
-            return profile?.isVerified ? sellerId : null;
-          } catch (error) {
-            console.warn("Не удалось проверить профиль продавца:", sellerId, error);
-            return null;
-          }
-        })
-      );
+      runDeferredTask("verified_sellers_deferred", async () => {
+        const sellerIds = [...new Set(approved.map((ad) => String(ad.userId || "")).filter(Boolean))].slice(0, 20);
+        const profiles = await Promise.all(
+          sellerIds.map(async (sellerId) => {
+            try {
+              const profile = await withTimeout(getUserProfile(sellerId), 2400, null);
+              return profile?.isVerified ? sellerId : null;
+            } catch (error) {
+              console.warn("Не удалось проверить профиль продавца:", sellerId, error);
+              return null;
+            }
+          })
+        );
 
-      setVerifiedSellerIds(new Set(profiles.filter(Boolean)));
+        setVerifiedSellerIds(new Set(profiles.filter(Boolean)));
+      }, 1800);
     } catch (error) {
       console.error("Ошибка загрузки объявлений:", error);
+      logDebugEvent("ads_load_error", error);
       setLoading(false);
     } finally {
       setLoading(false);

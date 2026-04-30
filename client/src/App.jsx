@@ -17,9 +17,10 @@ import useTelegramViewport from "./hooks/useTelegramViewport";
 import {
   getAdById,
   getUserProfileBundle,
-  listenUserChats,
+  getUserChatsOnce,
   startChatForAd,
 } from "./firebase";
+import { getDebugLog, clearDebugLog, logDebugEvent } from "./debugLog";
 import {
   authenticateMiniAppInitData,
   getStoredAuthSession,
@@ -154,6 +155,52 @@ function AdOpeningScreen({ onBack }) {
   );
 }
 
+function DebugPage({ onBack }) {
+  const [items, setItems] = useState(() => getDebugLog().slice().reverse());
+
+  const refresh = () => setItems(getDebugLog().slice().reverse());
+  const clear = () => {
+    clearDebugLog();
+    setItems([]);
+  };
+
+  return (
+    <div className="debug-page page-enter">
+      <PageBackButton onClick={onBack} />
+      <section className="debug-card">
+        <div className="debug-head">
+          <div>
+            <p className="debug-kicker">Диагностика</p>
+            <h1>Последние события приложения</h1>
+          </div>
+          <span>{items.length}/100</span>
+        </div>
+        <p className="debug-note">
+          Если снова был чёрный экран или повторная загрузка, откройте эту страницу и отправьте последние события разработчику.
+        </p>
+        <div className="debug-actions">
+          <button type="button" onClick={refresh}>Обновить</button>
+          <button type="button" onClick={clear}>Очистить</button>
+        </div>
+        <div className="debug-log-list">
+          {items.length === 0 ? (
+            <div className="debug-empty">Лог пока пуст.</div>
+          ) : (
+            items.map((item) => (
+              <details key={item.id} className="debug-log-item">
+                <summary>
+                  <span>{item.type}</span>
+                  <small>{new Date(item.ts).toLocaleString("ru-RU")}</small>
+                </summary>
+                <pre>{JSON.stringify(item, null, 2)}</pre>
+              </details>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
 function getStartAdIdFromLaunch() {
   const tg = window.Telegram?.WebApp;
   const params = new URLSearchParams(window.location.search);
@@ -234,10 +281,18 @@ function readInitialSessionState() {
   const selectedAd = safeParseJson(safeSessionGetItem("selected_ad"), null);
   const selectedSellerId = safeSessionGetItem("selected_seller_id") || null;
   const profileStatusPage = safeSessionGetItem("profile_status_page") || null;
-  const selectedChatId = safeSessionGetItem("selected_chat_id") || null;
+  let selectedChatId = safeSessionGetItem("selected_chat_id") || null;
 
   let page = safeSessionGetItem("app_page") || "list";
   if (!VALID_PAGES.has(page)) page = "list";
+
+  // Стабилизационный режим: не поднимаем раздел чатов из sessionStorage при старте.
+  // Чаты открываются только по явному нажатию пользователя или через start_param=chat_*.
+  if (page === "chats") {
+    page = "list";
+    selectedChatId = null;
+  }
+
   if (page === "view" && !selectedAd) page = "list";
   if (page === "seller" && !selectedSellerId) page = "list";
   if (page === "profileAds" && !profileStatusPage) page = "profile";
@@ -269,15 +324,30 @@ function withTimeout(promise, timeoutMs, fallbackValue = null) {
     .finally(() => window.clearTimeout(timerId));
 }
 
-function runBackgroundTask(task) {
-  const run = () => Promise.resolve().then(task).catch((error) => {
-    console.warn("Фоновая задача не выполнена:", error);
-  });
+function runBackgroundTask(task, label = "background_task", delayMs = 0) {
+  const run = () => Promise.resolve()
+    .then(() => {
+      logDebugEvent(`${label}_start`);
+      return task();
+    })
+    .then(() => logDebugEvent(`${label}_success`))
+    .catch((error) => {
+      console.warn("Фоновая задача не выполнена:", label, error);
+      logDebugEvent(`${label}_error`, error);
+    });
 
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(run, { timeout: 2000 });
+  const schedule = () => {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(run, { timeout: 2200 });
+    } else {
+      window.setTimeout(run, 0);
+    }
+  };
+
+  if (delayMs > 0) {
+    window.setTimeout(schedule, delayMs);
   } else {
-    window.setTimeout(run, 0);
+    schedule();
   }
 }
 
@@ -316,9 +386,11 @@ export default function App() {
   useEffect(() => {
     const handleGlobalError = (event) => {
       console.error("Global UI error:", event.error || event.message);
+      logDebugEvent("app_window_error", { message: event.message, error: event.error });
     };
     const handleUnhandledRejection = (event) => {
       console.error("Unhandled async error:", event.reason);
+      logDebugEvent("app_unhandled_rejection", { reason: event.reason });
     };
 
     window.addEventListener("error", handleGlobalError);
@@ -331,6 +403,7 @@ export default function App() {
 
   useEffect(() => {
     safeSessionSetItem("app_page", page);
+    logDebugEvent("route_change", { page });
   }, [page]);
 
   useEffect(() => {
@@ -377,16 +450,28 @@ export default function App() {
   }, [page, selectedAd, viewLoading]);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!tgUser?.id) {
       setUnreadChatsTotal(0);
-      return undefined;
+      return () => {
+        cancelled = true;
+      };
     }
 
-    return listenUserChats(
-      tgUser.id,
-      (items) => setUnreadChatsTotal(getUserUnreadTotal(items, tgUser.id)),
-      () => setUnreadChatsTotal(0)
-    );
+    const timer = window.setTimeout(() => {
+      runBackgroundTask(async () => {
+        const items = await withTimeout(getUserChatsOnce(tgUser.id, 80), 6500, []);
+        if (!cancelled && Array.isArray(items)) {
+          setUnreadChatsTotal(getUserUnreadTotal(items, tgUser.id));
+        }
+      }, "unread_badge_once");
+    }, 1600);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [tgUser?.id]);
 
   useEffect(() => {
@@ -405,18 +490,23 @@ export default function App() {
       try {
         if (initData) {
           safeSetProgress(34, "Проверяем Telegram-вход…");
+          logDebugEvent("auth_miniapp_start");
           const auth = await withTimeout(authenticateMiniAppInitData(initData), 8500, null);
           user = auth?.user || null;
+          logDebugEvent("auth_miniapp_done", { ok: !!user });
         } else {
           const stored = getStoredAuthSession();
           if (stored?.user && !cancelled) setTgUser(stored.user);
 
           safeSetProgress(34, "Проверяем сессию…");
+          logDebugEvent("auth_restore_start", { hasStoredUser: !!stored?.user });
           const session = await withTimeout(restoreAuthSession(), 6500, null);
           user = session?.user || stored?.user || null;
+          logDebugEvent("auth_restore_done", { ok: !!user });
         }
       } catch (error) {
         console.warn("Авторизация недоступна, открываем приложение без блокировки:", error);
+        logDebugEvent("auth_error_non_blocking", error);
       }
 
       if (!user) user = getTelegramUnsafeUser();
@@ -426,13 +516,14 @@ export default function App() {
         runBackgroundTask(async () => {
           const bundle = await withTimeout(getUserProfileBundle(user), 14000, null);
           if (!cancelled && bundle) setProfileCache(bundle);
-        });
+        }, "profile_bundle_deferred", 2600);
       }
 
       return user;
     };
 
     const boot = async () => {
+      logDebugEvent("boot_start");
       initTelegram();
 
       try {
@@ -441,6 +532,12 @@ export default function App() {
         tg?.expand?.();
       } catch {
         // Telegram API может быть недоступен на сайте/PWA.
+      }
+
+      if (window.location.pathname === "/debug") {
+        safeSetProgress(100, "Открываем диагностику…");
+        setBootLoading(false);
+        return;
       }
 
       if (window.location.pathname === "/auth/callback") {
@@ -487,6 +584,7 @@ export default function App() {
       }
 
       safeSetProgress(100, "Готово");
+      logDebugEvent("boot_success", { page: safeSessionGetItem("app_page") || page });
       window.setTimeout(() => {
         if (!cancelled) setBootLoading(false);
       }, 120);
@@ -494,6 +592,7 @@ export default function App() {
 
     boot().catch((error) => {
       console.error("Ошибка стартовой загрузки:", error);
+      logDebugEvent("boot_error", error);
       if (!cancelled) setBootLoading(false);
     });
 
@@ -597,6 +696,10 @@ export default function App() {
     if (!unreadChatsTotal) return "";
     return unreadChatsTotal > 99 ? "99+" : String(unreadChatsTotal);
   }, [unreadChatsTotal]);
+
+  if (window.location.pathname === "/debug") {
+    return <DebugPage onBack={() => { window.history.replaceState({}, "", "/"); setPage("list"); setBootLoading(false); }} />;
+  }
 
   if (window.location.pathname === "/auth/callback") {
     return (

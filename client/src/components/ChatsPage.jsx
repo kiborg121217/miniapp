@@ -7,6 +7,7 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../firebase";
+import { logDebugEvent } from "../debugLog";
 
 function formatChatTime(value) {
   if (!value) return "";
@@ -312,17 +313,23 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   useEffect(() => {
     if (!user?.id) return undefined;
 
+    logDebugEvent("chats_page_open", { selectedChatId: selectedChatId || null });
+
     const cached = readChatCache(user.id);
     if (cached.length > 0) setChats(cached);
 
     const unsubscribe = listenUserChats(
       user.id,
       (items) => {
+        logDebugEvent("chats_snapshot", { count: items.length });
         setChats(items);
         writeChatCache(user.id, items);
         setError("");
       },
-      () => setError("Не удалось загрузить чаты")
+      (error) => {
+        logDebugEvent("chats_snapshot_error", error);
+        setError("Не удалось загрузить чаты");
+      }
     );
 
     return unsubscribe;
@@ -336,9 +343,16 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
 
     if (chats.some((chat) => chat.id === selectedChatId)) return;
 
+    logDebugEvent("chat_fallback_load_start", { selectedChatId });
     getChatById(selectedChatId)
-      .then((chat) => setFallbackChat(chat))
-      .catch(() => setFallbackChat(null));
+      .then((chat) => {
+        logDebugEvent("chat_fallback_load_done", { found: !!chat });
+        setFallbackChat(chat);
+      })
+      .catch((error) => {
+        logDebugEvent("chat_fallback_load_error", error);
+        setFallbackChat(null);
+      });
   }, [selectedChatId, chats]);
 
   useEffect(() => {
