@@ -57,7 +57,44 @@ export function consumeOidcReturnPage() {
   return page;
 }
 
-async function postJson(path, body, timeoutMs = 10000) {
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function isRetryableAuthError(error) {
+  const name = String(error?.name || "");
+  const message = String(error?.message || "").toLowerCase();
+
+  return (
+    name === "AbortError" ||
+    message.includes("aborted") ||
+    message.includes("fetch") ||
+    message.includes("network") ||
+    message.includes("failed to fetch") ||
+    message.includes("load failed")
+  );
+}
+
+function normalizeAuthError(error) {
+  const name = String(error?.name || "");
+  const message = String(error?.message || "");
+
+  if (name === "AbortError" || message.toLowerCase().includes("aborted")) {
+    const normalized = new Error("Сервер авторизации не успел ответить. Попробуйте ещё раз через несколько секунд.");
+    normalized.retryable = true;
+    return normalized;
+  }
+
+  if (message.toLowerCase().includes("failed to fetch") || message.toLowerCase().includes("load failed")) {
+    const normalized = new Error("Не удалось подключиться к серверу авторизации. Проверьте интернет и повторите вход.");
+    normalized.retryable = true;
+    return normalized;
+  }
+
+  return error instanceof Error ? error : new Error(message || "Ошибка авторизации");
+}
+
+async function fetchJsonWithTimeout(path, body, timeoutMs) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -67,6 +104,8 @@ async function postJson(path, body, timeoutMs = 10000) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: controller.signal,
+      cache: "no-store",
+      credentials: "omit",
     });
 
     const text = await response.text();
@@ -86,6 +125,23 @@ async function postJson(path, body, timeoutMs = 10000) {
   } finally {
     window.clearTimeout(timer);
   }
+}
+
+async function postJson(path, body, timeoutMs = 16000) {
+  const attempts = Math.max(1, path.includes("/auth/oidc") ? 3 : 2);
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchJsonWithTimeout(path, body, timeoutMs + (attempt - 1) * 7000);
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableAuthError(error) || attempt === attempts) break;
+      await sleep(450 * attempt);
+    }
+  }
+
+  throw normalizeAuthError(lastError);
 }
 
 export function getTelegramInitData() {
@@ -132,7 +188,7 @@ export async function startTelegramOidcLogin(returnPage = "profile") {
       // Минимальный набор прав: профиль. Телефон и bot_access можно добавить позже в уведомлениях.
       scope: "openid profile",
     },
-    8000
+    22000
   );
 
   if (!data?.authUrl) {
@@ -147,7 +203,7 @@ export async function completeTelegramOidcLogin({ code, state }) {
     throw new Error("Telegram не вернул данные для завершения входа");
   }
 
-  const data = await postJson("/auth/oidc/callback", { code, state }, 14000);
+  const data = await postJson("/auth/oidc/callback", { code, state }, 28000);
   saveSession(data);
 
   return {
@@ -175,7 +231,7 @@ export async function restoreAuthSession() {
   if (!saved?.token) return null;
 
   try {
-    const data = await postJson("/auth/session", { sessionToken: saved.token }, 6500);
+    const data = await postJson("/auth/session", { sessionToken: saved.token }, 12000);
     saveSession({ ...data, sessionToken: saved.token });
 
     return {
@@ -184,7 +240,9 @@ export async function restoreAuthSession() {
       user: normalizeUser(data.user),
     };
   } catch (error) {
-    clearStoredAuthSession();
+    if (!error?.retryable) {
+      clearStoredAuthSession();
+    }
     throw error;
   }
 }

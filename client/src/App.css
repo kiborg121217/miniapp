@@ -12248,23 +12248,110 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
   display: block;
 }
 
+/* === Stability/PWA/chat hotfix 2026-04-30 === */
+.app-crash-screen {
+  min-height: 100dvh;
+  min-height: var(--tg-viewport-height, 100dvh);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at 25% 12%, rgba(134, 59, 255, 0.36), transparent 32%), #090713;
+  color: #fff;
+}
 
-/* ======================================================================
-   EMERGENCY STABILITY PATCH 2026-04-29
-   - prevents black fullscreen after broken restored state
-   - uses max() safe-area values instead of adding iOS env + Telegram twice
-   - fixes Create page top offset in Telegram fullscreen on iPhone Dynamic Island
-   ====================================================================== */
+.app-crash-card {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(20, 16, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+  text-align: center;
+}
 
-:root {
-  --tg-viewport-height: 100dvh;
-  --tg-stable-viewport-height: 100dvh;
-  --safe-top-real: max(var(--tg-safe-top, 0px), env(safe-area-inset-top, 0px));
-  --safe-bottom-real: max(var(--tg-safe-bottom, 0px), env(safe-area-inset-bottom, 0px));
-  --safe-left-real: max(0px, env(safe-area-inset-left, 0px));
-  --safe-right-real: max(0px, env(safe-area-inset-right, 0px));
-  --page-top-control: calc(var(--safe-top-real) + var(--tg-content-safe-top, 0px) + 12px);
-  --page-bottom-nav-gap: calc(var(--safe-bottom-real) + 8px);
+.app-crash-title {
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.app-crash-card p {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.45;
+}
+
+.app-crash-card button {
+  width: 100%;
+  border: 0;
+  border-radius: 18px;
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #863bff, #47bfff);
+}
+
+.nav-icon-with-badge {
+  position: relative !important;
+}
+
+.nav-unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -11px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff3b6b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(10, 7, 20, 0.98), 0 8px 18px rgba(255, 59, 107, 0.32);
+  pointer-events: none;
+}
+
+.chat-list-peer-name {
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  color: var(--text-primary, #ffffff);
+}
+
+.chat-list-ad-title {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.58);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-list-subline {
+  margin-top: 4px;
+}
+
+.chat-header-text h2 {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.chat-header-text p {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="light"] .chat-list-ad-title {
+  color: rgba(12, 9, 22, 0.54);
 }
 
 html,
@@ -12272,133 +12359,23 @@ body,
 #root,
 .app,
 .loading-screen {
-  min-height: 100vh !important;
-  min-height: 100dvh !important;
-  min-height: max(var(--tg-viewport-height, 100dvh), 100dvh) !important;
+  min-height: var(--tg-viewport-height, 100dvh) !important;
 }
 
+html,
 body {
   overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch;
-}
-
-.market-home {
-  padding-top: calc(var(--safe-top-real) + var(--tg-content-safe-top, 0px) + 12px) !important;
-  padding-bottom: calc(var(--safe-bottom-real) + 102px) !important;
-  padding-left: max(14px, var(--safe-left-real)) !important;
-  padding-right: max(14px, var(--safe-right-real)) !important;
-}
-
-.create-premium-page,
-.add-ad-page {
-  padding-top: calc(var(--safe-top-real) + var(--tg-content-safe-top, 0px) + 10px) !important;
-  padding-bottom: calc(var(--safe-bottom-real) + 76px) !important;
-  padding-left: max(12px, var(--safe-left-real)) !important;
-  padding-right: max(12px, var(--safe-right-real)) !important;
-}
-
-.create-premium-topbar {
-  margin-top: 0 !important;
-  margin-bottom: 14px !important;
-}
-
-.create-premium-topbar .back-btn,
-.create-premium-topbar .premium-back-btn {
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-}
-
-.ad-page-wrap,
-.seller-premium-page,
-.seller-page,
-.profile-ads-page,
-.profile-ads-premium-page,
-.help-page,
-.legal-page,
-.settings-ios-page,
-.settings-page {
-  padding-top: calc(var(--page-top-control) + 62px) !important;
-}
-
-.back-btn,
-.back-btn.premium-back-btn,
-.premium-back-btn,
-.share-top-btn,
-.share-top-btn.premium-share-btn,
-.premium-share-btn.share-top-btn,
-.seller-premium-share-btn {
-  top: var(--page-top-control) !important;
-}
-
-.bottom-nav {
-  bottom: calc(var(--safe-bottom-real) + 6px) !important;
-}
-
-.modal {
-  height: var(--tg-viewport-height, 100dvh) !important;
-  min-height: var(--tg-viewport-height, 100dvh) !important;
-}
-
-.app-error-state .loading-card {
-  gap: 14px;
-}
-
-.app-error-button {
-  appearance: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
-  color: #061019;
-  background: linear-gradient(135deg, #62ecff, #ffe08a);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
-}
-
-/* === iOS Telegram stability + no accidental zoom hotfix === */
-html,
-body,
-#root,
-.app {
-  min-height: 100vh !important;
-  min-height: 100svh !important;
-  min-height: 100dvh !important;
-  min-height: var(--tg-viewport-height, 100dvh) !important;
-  touch-action: manipulation;
-}
-
-button,
-a,
-.bottom-nav button,
-.chat-list-item,
-.contact-btn,
-.primary-btn,
-.secondary-btn {
-  touch-action: manipulation;
 }
 
 input,
-select,
 textarea,
+select,
 button {
-  font-size: max(16px, 1em);
+  font-size: 16px;
 }
 
-.chat-compose textarea,
-.create-premium-page input,
-.create-premium-page textarea,
-.create-premium-page select,
-.profile-name-control input,
-.settings-ios-page input,
-.settings-ios-page textarea {
-  font-size: 16px !important;
-}
-
-.modal,
-.modal img,
-.photo-modal,
-.image-modal,
-[data-allow-zoom="true"] {
-  touch-action: pinch-zoom pan-x pan-y !important;
+.market-card img,
+.chat-list-image,
+.chat-header-image {
+  -webkit-user-drag: none;
 }

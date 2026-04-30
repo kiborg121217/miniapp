@@ -1,46 +1,46 @@
-import { Component } from "react";
+import React, { Component } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 
-class RootErrorBoundary extends Component {
+class AppErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, info) {
-    console.error("Критическая ошибка приложения:", error, info);
+    console.error("Критическая ошибка интерфейса:", error, info);
   }
+
+  handleReset = () => {
+    try {
+      sessionStorage.removeItem("app_page");
+      sessionStorage.removeItem("selected_ad");
+      sessionStorage.removeItem("selected_seller_id");
+      sessionStorage.removeItem("selected_chat_id");
+      sessionStorage.removeItem("profile_status_page");
+      sessionStorage.removeItem("seller_back_target");
+      sessionStorage.removeItem("view_back_target");
+    } catch {
+      // ignore storage errors
+    }
+
+    window.location.replace("/");
+  };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="loading-screen app-error-state">
-          <div className="loading-card">
-            <div className="loading-title">Барахолка</div>
-            <div className="loading-subtitle">
-              Не удалось открыть страницу. Вернитесь на главную и обновите витрину.
-            </div>
-            <button
-              type="button"
-              className="app-error-button"
-              onClick={() => {
-                try {
-                  window.sessionStorage.clear();
-                } catch {
-                  // ignore unavailable storage
-                }
-
-                window.location.replace("/");
-              }}
-            >
-              На главную
-            </button>
+        <div className="app-crash-screen" role="alert">
+          <div className="app-crash-card">
+            <div className="app-crash-title">Барахолка</div>
+            <p>Интерфейс перезапущен из-за ошибки WebView. Нажмите кнопку ниже, чтобы открыть главную.</p>
+            <button type="button" onClick={this.handleReset}>На главную</button>
           </div>
         </div>
       );
@@ -51,7 +51,7 @@ class RootErrorBoundary extends Component {
 }
 
 createRoot(document.getElementById("root")).render(
-  <RootErrorBoundary>
+  <AppErrorBoundary>
     <App />
-  </RootErrorBoundary>
+  </AppErrorBoundary>
 );

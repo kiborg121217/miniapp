@@ -62,8 +62,16 @@ const PROMOTE_OPTIONS = [
   },
 ];
 
+function toTimestamp(value) {
+  if (typeof value === "number") return value;
+  if (value?.toMillis) return value.toMillis();
+  if (value?.seconds) return value.seconds * 1000;
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function isActiveUntil(value) {
-  return typeof value === "number" && value > Date.now();
+  return toTimestamp(value) > Date.now();
 }
 
 function getAdImage(ad) {

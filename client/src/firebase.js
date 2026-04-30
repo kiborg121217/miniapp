@@ -373,6 +373,16 @@ function getAdImage(ad) {
   return ad?.imageUrl || "";
 }
 
+function getProfileDisplayName(profile, fallback = "Пользователь") {
+  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ").trim();
+  return profile?.displayName || fullName || profile?.username || fallback;
+}
+
+function getTelegramUserDisplayName(user, fallback = "Пользователь") {
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+  return user?.displayName || fullName || user?.username || fallback;
+}
+
 export function getChatDocId(adId, buyerId, sellerId) {
   return `${toId(adId)}_${toId(buyerId)}_${toId(sellerId)}`;
 }
@@ -411,19 +421,10 @@ export async function startChatForAd(ad, buyer) {
   const snap = await getDoc(chatRef);
   const now = Date.now();
 
-  const buyerName =
-    buyer.displayName ||
-    buyer.first_name ||
-    buyer.firstName ||
-    buyer.username ||
-    "Покупатель";
-
-  const sellerName =
-    ad.sellerDisplayName ||
-    ad.displayName ||
-    ad.firstName ||
-    ad.username ||
-    "Продавец";
+  const [sellerProfile, buyerProfile] = await Promise.all([
+    getUserProfile(sellerId).catch(() => null),
+    getUserProfile(buyerId).catch(() => null),
+  ]);
 
   const payload = {
     adId,
@@ -431,10 +432,8 @@ export async function startChatForAd(ad, buyer) {
     adImage: getAdImage(ad),
     buyerId,
     sellerId,
-    buyerName,
-    buyerUsername: buyer.username || "",
-    sellerName,
-    sellerUsername: ad.username || ad.sellerUsername || "",
+    buyerName: getProfileDisplayName(buyerProfile, getTelegramUserDisplayName(buyer, "Покупатель")),
+    sellerName: getProfileDisplayName(sellerProfile, ad.sellerName || ad.userName || ad.authorName || "Продавец"),
     participants: [buyerId, sellerId],
     updatedAt: now,
   };
@@ -586,7 +585,6 @@ export async function markChatRead(chatId, userId) {
   if (normalizedUserId === toId(chat.sellerId)) patch.unreadBySeller = 0;
 
   if (Object.keys(patch).length > 0) {
-    patch.updatedAt = Date.now();
     await updateDoc(chatRef, patch);
   }
 }
