@@ -12294,26 +12294,32 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
 
 .nav-icon-with-badge {
   position: relative !important;
+  overflow: visible !important;
 }
 
 .nav-unread-badge {
   position: absolute;
-  top: -8px;
-  right: -11px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  top: -1px;
+  right: -7px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: #ff3b6b;
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   line-height: 1;
-  box-shadow: 0 0 0 2px rgba(10, 7, 20, 0.98), 0 8px 18px rgba(255, 59, 107, 0.32);
+  letter-spacing: -0.15px;
+  box-shadow: 0 0 0 1.5px rgba(10, 7, 20, 0.98);
   pointer-events: none;
+}
+
+[data-theme="light"] .nav-unread-badge {
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.96);
 }
 
 .chat-list-peer-name {
@@ -12509,18 +12515,18 @@ html[data-tg-fullscreen-safe="true"] .bottom-nav {
   }
 }
 
-/* === Telegram fullscreen top chrome guard v9 ===
+/* === Telegram fullscreen top chrome guard v10 ===
    Нижний safe-area/навигацию не трогаем. В fullscreen Telegram верхние системные
    кнопки (закрыть, стрелка вниз, троеточие) на части iOS-клиентов не всегда входят
    в safeAreaInset/contentSafeAreaInset. Поэтому добавляем минимальный верхний
    guard только когда WebApp реально сообщает isFullscreen=true. v8 чуть увеличивает
-   guard для iPhone с Dynamic Island. v9 добавляет ещё небольшой запас 4px. */
+   guard для iPhone с Dynamic Island. v10 добавляет ещё 4px, чтобы верх не цеплял системные кнопки Telegram. */
 html[data-tg-fullscreen-safe="true"] {
   --real-safe-top: max(
     env(safe-area-inset-top, 0px),
     var(--tg-raw-safe-top, var(--tg-safe-top, 0px)),
     var(--tg-raw-content-safe-top, var(--tg-content-safe-top, 0px)),
-    74px
+    78px
   );
   --page-top-control: calc(var(--real-safe-top) + 12px);
 }
@@ -12671,4 +12677,10 @@ html[data-tg-fullscreen-safe="true"] {
 [data-theme="light"] .debug-log-item {
   background: rgba(15, 23, 42, 0.06);
   color: #111827;
+}
+
+.create-submit-premium:disabled {
+  opacity: 0.74;
+  cursor: wait;
+  transform: none !important;
 }

@@ -351,13 +351,19 @@ function runBackgroundTask(task, label = "background_task", delayMs = 0) {
   }
 }
 
-function getUserUnreadTotal(chats, userId) {
+function getUserUnreadDialogCount(chats, userId) {
   if (!userId || !Array.isArray(chats)) return 0;
   const normalizedUserId = String(userId);
 
   return chats.reduce((total, chat) => {
-    if (String(chat?.buyerId) === normalizedUserId) return total + Number(chat.unreadByBuyer || 0);
-    if (String(chat?.sellerId) === normalizedUserId) return total + Number(chat.unreadBySeller || 0);
+    if (String(chat?.buyerId) === normalizedUserId) {
+      return total + (Number(chat.unreadByBuyer || 0) > 0 ? 1 : 0);
+    }
+
+    if (String(chat?.sellerId) === normalizedUserId) {
+      return total + (Number(chat.unreadBySeller || 0) > 0 ? 1 : 0);
+    }
+
     return total;
   }, 0);
 }
@@ -463,7 +469,7 @@ export default function App() {
       runBackgroundTask(async () => {
         const items = await withTimeout(getUserChatsOnce(tgUser.id, 80), 6500, []);
         if (!cancelled && Array.isArray(items)) {
-          setUnreadChatsTotal(getUserUnreadTotal(items, tgUser.id));
+          setUnreadChatsTotal(getUserUnreadDialogCount(items, tgUser.id));
         }
       }, "unread_badge_once");
     }, 1600);
