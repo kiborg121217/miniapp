@@ -780,19 +780,11 @@ app.post("/new-ad", async (req, res) => {
 📝 ${ad.description}`;
 
     if (imageUrls.length > 1) {
-      const media = [];
-
-      for (let i = 0; i < imageUrls.length; i++) {
-        const buffer = await downloadImageToBuffer(imageUrls[i]);
-
-        media.push({
-          type: "photo",
-          media: buffer,
-          filename: `ad_${ad.id}_${i + 1}.jpg`,
-          contentType: "image/jpeg",
-          ...(i === 0 ? { caption: text } : {}),
-        });
-      }
+      const media = imageUrls.map((url, index) => ({
+        type: "photo",
+        media: url,
+        ...(index === 0 ? { caption: text } : {}),
+      }));
 
       await bot.sendMediaGroup(ADMIN_ID, media);
 
@@ -807,27 +799,17 @@ app.post("/new-ad", async (req, res) => {
         },
       });
     } else {
-      const photoBuffer = await downloadImageToBuffer(imageUrls[0]);
-
-      await bot.sendPhoto(
-        ADMIN_ID,
-        photoBuffer,
-        {
-          caption: text,
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-                { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
-              ],
+      await bot.sendPhoto(ADMIN_ID, imageUrls[0], {
+        caption: text,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "✅ Принять", callback_data: `approve_${ad.id}` },
+              { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
             ],
-          },
+          ],
         },
-        {
-          filename: `ad_${ad.id}.jpg`,
-          contentType: "image/jpeg",
-        }
-      );
+      });
     }
 
     return res.status(200).json({ ok: true });
