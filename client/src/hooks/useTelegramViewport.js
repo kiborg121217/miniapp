@@ -95,6 +95,8 @@ function applyTelegramViewportVars() {
 
   root.style.setProperty("--tg-raw-safe-top", `${rawSafeTop}px`);
   root.style.setProperty("--tg-raw-safe-bottom", `${rawSafeBottom}px`);
+  root.style.setProperty("--tg-raw-content-safe-top", `${rawContentTop}px`);
+  root.style.setProperty("--tg-raw-content-safe-bottom", `${rawContentBottom}px`);
   root.style.setProperty("--ios-env-safe-top", `${envTop}px`);
   root.style.setProperty("--ios-env-safe-bottom", `${envBottom}px`);
 

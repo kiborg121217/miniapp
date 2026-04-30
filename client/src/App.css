@@ -12379,3 +12379,132 @@ button {
 .chat-header-image {
   -webkit-user-drag: none;
 }
+
+/* === FINAL Telegram safe-area balance fix v6 ===
+   Исправляет перекос после normalizer: в fullscreen верх больше не схлопывается,
+   а нижняя навигация в fullsize/fullscreen снова учитывает реальный safe-area.
+   Используем max(raw Telegram, iOS env), НЕ сумму. */
+:root {
+  --real-safe-top: max(
+    env(safe-area-inset-top, 0px),
+    var(--tg-raw-safe-top, var(--tg-safe-top, 0px)),
+    var(--tg-raw-content-safe-top, var(--tg-content-safe-top, 0px))
+  );
+  --real-safe-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--tg-raw-safe-bottom, var(--tg-safe-bottom, 0px)),
+    var(--tg-raw-content-safe-bottom, var(--tg-content-safe-bottom, 0px))
+  );
+  --page-top-control: calc(var(--real-safe-top) + 12px);
+  --page-bottom-nav-gap: calc(var(--real-safe-bottom) + 6px);
+  --nav-bottom-lift-fixed: var(--page-bottom-nav-gap);
+}
+
+.bottom-nav,
+html[data-tg-fullscreen-safe="true"] .bottom-nav {
+  bottom: var(--page-bottom-nav-gap) !important;
+}
+
+@media (max-width: 390px) {
+  .bottom-nav,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav {
+    bottom: var(--page-bottom-nav-gap) !important;
+  }
+}
+
+.market-home {
+  padding-top: calc(var(--real-safe-top) + 18px) !important;
+  padding-bottom: calc(var(--real-safe-bottom) + 124px) !important;
+}
+
+.chats-page,
+.chat-dialog-page {
+  padding-top: calc(var(--real-safe-top) + 18px) !important;
+  padding-bottom: calc(var(--real-safe-bottom) + 124px) !important;
+}
+
+.profile-premium-page,
+.settings-ios-page,
+.profile-page {
+  padding-top: calc(var(--real-safe-top) + 28px) !important;
+  padding-bottom: calc(var(--real-safe-bottom) + 116px) !important;
+}
+
+.create-premium-page,
+.add-ad-page {
+  padding-top: calc(var(--real-safe-top) + 18px) !important;
+  padding-bottom: calc(var(--real-safe-bottom) + 82px) !important;
+}
+
+.create-premium-topbar {
+  margin-top: 0 !important;
+}
+
+.ad-page-wrap,
+.seller-premium-page,
+.seller-page,
+.profile-ads-page,
+.profile-ads-premium-page,
+.help-page,
+.legal-page,
+.settings-page,
+.settings-detail-page {
+  padding-top: calc(var(--page-top-control) + 62px) !important;
+  padding-bottom: calc(var(--real-safe-bottom) + 116px) !important;
+}
+
+.back-btn,
+.back-btn.premium-back-btn,
+.premium-back-btn,
+.share-top-btn,
+.share-top-btn.premium-share-btn,
+.premium-share-btn.share-top-btn,
+.seller-premium-share-btn,
+.favorite-top-btn,
+.favorite-top-btn.premium-favorite-btn,
+.premium-favorite-btn.favorite-top-btn {
+  top: var(--page-top-control) !important;
+}
+
+.modal-close {
+  top: calc(var(--real-safe-top) + 14px) !important;
+}
+
+.modal .gallery-counter,
+.photo-modal .gallery-counter,
+.image-modal .gallery-counter {
+  top: calc(var(--real-safe-top) + 18px) !important;
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  :root {
+    --page-top-control: calc(var(--real-safe-top) + 8px);
+    --page-bottom-nav-gap: calc(var(--real-safe-bottom) + 4px);
+  }
+
+  .market-home,
+  .chats-page,
+  .chat-dialog-page {
+    padding-top: calc(var(--real-safe-top) + 12px) !important;
+    padding-bottom: calc(var(--real-safe-bottom) + 78px) !important;
+  }
+
+  .create-premium-page,
+  .add-ad-page {
+    padding-top: calc(var(--real-safe-top) + 10px) !important;
+    padding-bottom: calc(var(--real-safe-bottom) + 74px) !important;
+  }
+
+  .ad-page-wrap,
+  .seller-premium-page,
+  .seller-page,
+  .profile-ads-page,
+  .profile-ads-premium-page,
+  .help-page,
+  .legal-page,
+  .settings-page,
+  .settings-detail-page {
+    padding-top: calc(var(--page-top-control) + 58px) !important;
+    padding-bottom: calc(var(--real-safe-bottom) + 76px) !important;
+  }
+}
