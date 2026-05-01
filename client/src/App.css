@@ -12710,3 +12710,76 @@ html[data-tg-fullscreen-safe="true"] .chat-dialog-page {
     padding-bottom: calc(var(--real-safe-bottom, env(safe-area-inset-bottom, 0px)) + 6px) !important;
   }
 }
+
+/* === Mobile browser bottom-nav + iOS WebKit crash guard 2026-05-01 ===
+   1) В Telegram/PWA нижняя навигация приклеена к низу без лишнего визуального
+      зазора.
+   2) В обычном мобильном браузере/встроенном браузере оставляем отступ только
+      если visualViewport показывает нижнюю панель браузера, чтобы навигация не
+      попадала под URL/tab toolbar.
+   3) Для iOS in-app/browser включаем облегчённый режим эффектов: WebKit чаще
+      падает от большого количества blur/backdrop-filter/composited layers. */
+:root {
+  --browser-bottom-controls: 0px;
+  --page-bottom-nav-gap: 0px;
+  --nav-bottom-lift-fixed: 0px;
+}
+
+html[data-telegram-app="true"],
+html[data-standalone-app="true"] {
+  --page-bottom-nav-gap: 0px;
+  --nav-bottom-lift-fixed: 0px;
+}
+
+html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) {
+  --page-bottom-nav-gap: max(10px, env(safe-area-inset-bottom, 0px), var(--browser-bottom-controls, 0px));
+  --nav-bottom-lift-fixed: var(--page-bottom-nav-gap);
+}
+
+.bottom-nav,
+html[data-tg-fullscreen-safe="true"] .bottom-nav,
+html[data-telegram-app="true"] .bottom-nav,
+html[data-standalone-app="true"] .bottom-nav,
+html[data-mobile-browser="true"] .bottom-nav {
+  bottom: var(--page-bottom-nav-gap, 0px) !important;
+}
+
+html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .bottom-nav {
+  bottom: var(--page-bottom-nav-gap, 10px) !important;
+}
+
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) *,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) *::before,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .loading-orb,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .market-bg-orb,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .premium-bg-orb,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .profile-bg-orb,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .loading-screen::before,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .loading-screen::after {
+  display: none !important;
+}
+
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .page-enter,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .market-card,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .bottom-nav,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-list-card,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-messages-card,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-dialog-header,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-compose {
+  animation: none !important;
+  transition-duration: 0.12s !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18) !important;
+}
+
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .market-card img,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .ad-image,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-list-image,
+html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .chat-header-image {
+  transform: none !important;
+  will-change: auto !important;
+}
