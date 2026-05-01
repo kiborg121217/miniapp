@@ -12732,12 +12732,12 @@ html[data-standalone-app="true"] {
 }
 
 html[data-tg-fullscreen-safe="true"] {
-  --page-bottom-nav-gap: 6px;
-  --nav-bottom-lift-fixed: 6px;
+  --page-bottom-nav-gap: 14px;
+  --nav-bottom-lift-fixed: 14px;
 }
 
 html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) {
-  --page-bottom-nav-gap: max(6px, env(safe-area-inset-bottom, 0px), var(--browser-bottom-controls, 0px));
+  --page-bottom-nav-gap: max(2px, var(--browser-bottom-controls, 0px));
   --nav-bottom-lift-fixed: var(--page-bottom-nav-gap);
 }
 
@@ -12750,7 +12750,7 @@ html[data-mobile-browser="true"] .bottom-nav {
 }
 
 html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .bottom-nav {
-  bottom: var(--page-bottom-nav-gap, 10px) !important;
+  bottom: var(--page-bottom-nav-gap, 2px) !important;
 }
 
 html[data-ios-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) *,
