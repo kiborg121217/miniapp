@@ -12526,9 +12526,9 @@ html[data-tg-fullscreen-safe="true"] {
     env(safe-area-inset-top, 0px),
     var(--tg-raw-safe-top, var(--tg-safe-top, 0px)),
     var(--tg-raw-content-safe-top, var(--tg-content-safe-top, 0px)),
-    78px
+    74px
   );
-  --page-top-control: calc(var(--real-safe-top) + 12px);
+  --page-top-control: calc(var(--real-safe-top) + 10px);
 }
 
 @media (orientation: landscape) and (max-height: 620px) {
@@ -12727,12 +12727,17 @@ html[data-tg-fullscreen-safe="true"] .chat-dialog-page {
 
 html[data-telegram-app="true"],
 html[data-standalone-app="true"] {
-  --page-bottom-nav-gap: 0px;
-  --nav-bottom-lift-fixed: 0px;
+  --page-bottom-nav-gap: 4px;
+  --nav-bottom-lift-fixed: 4px;
+}
+
+html[data-tg-fullscreen-safe="true"] {
+  --page-bottom-nav-gap: 6px;
+  --nav-bottom-lift-fixed: 6px;
 }
 
 html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) {
-  --page-bottom-nav-gap: max(10px, env(safe-area-inset-bottom, 0px), var(--browser-bottom-controls, 0px));
+  --page-bottom-nav-gap: max(6px, env(safe-area-inset-bottom, 0px), var(--browser-bottom-controls, 0px));
   --nav-bottom-lift-fixed: var(--page-bottom-nav-gap);
 }
 
