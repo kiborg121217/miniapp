@@ -95,7 +95,7 @@ function getBrowserBottomControls({ envBottom, isTelegram, isStandalone }) {
 
   const base = Math.max(0, envBottom || 0);
   const vv = window.visualViewport;
-  if (!vv) return base;
+  if (!vv) return Math.min(10, base);
 
   const innerHeight = Math.max(1, window.innerHeight || 1);
   const visualHeight = Math.max(1, vv.height || innerHeight);
@@ -104,16 +104,16 @@ function getBrowserBottomControls({ envBottom, isTelegram, isStandalone }) {
   const visualRatio = visualHeight / innerHeight;
   const keyboardLooksOpen = visualHeight < innerHeight * 0.72 || gap > 150;
 
-  if (keyboardLooksOpen) return base;
+  if (keyboardLooksOpen) return Math.min(10, base);
 
   // В iOS/Yandex/VK visualViewport иногда отдаёт большой "bottom gap" даже
   // когда нижняя панель браузера уже скрыта. Если видимая область почти равна
   // layout viewport, считаем, что нижней панели нет, и не поднимаем навигацию.
-  if (visualRatio >= 0.9 && gap > 28) return base;
+  if (visualRatio >= 0.86 && gap > 18) return 0;
 
   // Когда нижняя панель браузера реально видна, даём защитный отступ,
   // но не разрешаем ему задирать навигацию почти в середину экрана.
-  return Math.min(54, Math.max(base, gap));
+  return Math.min(24, Math.max(0, gap - 24));
 }
 
 function applyTelegramViewportVars() {
