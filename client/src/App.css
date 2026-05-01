@@ -12817,3 +12817,65 @@ html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-tel
 html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-telegram-app="true"]) .bottom-nav {
   bottom: var(--page-bottom-nav-gap, 10px) !important;
 }
+
+/* === Desktop trackpad/wheel scroll fix ===
+   На ноутбуках скролл с тачпада должен идти через обычный document/body,
+   а не зависеть от fixed bottom-nav. Этот override включается только для
+   desktop-like устройств и не применяется к Telegram WebApp / PWA standalone. */
+@media (hover: hover) and (pointer: fine) {
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]),
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) body,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) #root {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: auto !important;
+  }
+
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) body {
+    position: static !important;
+  }
+
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .app {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: auto !important;
+  }
+
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .market-home,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .profile-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .profile-premium-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .profile-ads-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .profile-ads-premium-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .seller-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .seller-premium-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .create-premium-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .add-ad-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .chats-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .settings-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .settings-ios-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .settings-detail-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .help-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .legal-page,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .ad-page-wrap {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: auto !important;
+  }
+
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .app::before,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) .app::after,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) body::before,
+  html:not([data-telegram-app="true"]):not([data-standalone-app="true"]) body::after {
+    pointer-events: none !important;
+  }
+}
