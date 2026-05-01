@@ -28,17 +28,8 @@ function normalizeInsetPair({ telegramSafe, telegramContent, cssEnv }) {
   const safe = Math.max(0, telegramSafe || 0);
   const content = Math.max(0, telegramContent || 0);
   const env = Math.max(0, cssEnv || 0);
-
-  // В fullscreen на iOS Telegram может отдавать safeAreaInset, а WebKit параллельно
-  // отдаёт тот же самый вырез через env(safe-area-inset-*). CSS проекта местами
-  // складывает env + tg vars, поэтому сырые значения дают двойной верхний отступ.
-  // Здесь оставляем в Telegram-переменных только ту часть, которой НЕ покрывает env().
   const effectiveSafe = Math.max(safe, env);
   const safeExtra = Math.max(0, effectiveSafe - env);
-
-  // contentSafeAreaInset иногда приходит как полный верхний safe-area, а иногда как
-  // дополнительная зона внутри safe-area. Чтобы не складывать одно и то же дважды,
-  // учитываем только реальный остаток поверх max(safe, env).
   const contentExtra = Math.max(0, content - effectiveSafe);
 
   return {
@@ -60,9 +51,64 @@ function getSafeViewportHeight(tg) {
   return Math.round(value || window.innerHeight || 640);
 }
 
+function isRealTelegramWebApp(tg) {
+  const platform = String(tg?.platform || "").toLowerCase();
+  return Boolean(
+    tg?.initData ||
+      tg?.initDataUnsafe?.user ||
+      (platform && platform !== "unknown" && platform !== "web")
+  );
+}
+
+function getRuntimeFlags(tg) {
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const isIOS = /iPad|iPhone|iPod/i.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+  const isMobile = isIOS || isAndroid || /Mobile|Mobi/i.test(ua) || Math.min(window.innerWidth, window.innerHeight) <= 820;
+  const isStandalone =
+    window.navigator.standalone === true ||
+    window.matchMedia?.("(display-mode: standalone)")?.matches === true;
+  const isTelegram = isRealTelegramWebApp(tg);
+  const isLikelyInAppBrowser = /VK|VKontakte|Instagram|FBAN|FBAV|Line|MicroMessenger|YaApp|GSA|CriOS|EdgiOS/i.test(ua);
+
+  return {
+    isIOS,
+    isAndroid,
+    isMobile,
+    isStandalone,
+    isTelegram,
+    isLikelyInAppBrowser,
+  };
+}
+
+function setDatasetFlag(root, name, enabled) {
+  if (enabled) {
+    root.dataset[name] = "true";
+  } else {
+    delete root.dataset[name];
+  }
+}
+
+function getBrowserBottomControls({ envBottom, isTelegram, isStandalone }) {
+  if (isTelegram || isStandalone) return 0;
+
+  const vv = window.visualViewport;
+  if (!vv) return Math.max(0, envBottom || 0);
+
+  const rawGap = window.innerHeight - vv.height - vv.offsetTop;
+  const gap = Number.isFinite(rawGap) ? Math.max(0, Math.round(rawGap)) : 0;
+  const keyboardLooksOpen = vv.height < window.innerHeight * 0.72 || gap > 150;
+
+  if (keyboardLooksOpen) return Math.max(0, envBottom || 0);
+
+  return Math.min(120, Math.max(envBottom || 0, gap));
+}
+
 function applyTelegramViewportVars() {
   const tg = window.Telegram?.WebApp;
   const root = document.documentElement;
+  const flags = getRuntimeFlags(tg);
 
   const rawSafeTop = readTelegramInset(tg?.safeAreaInset, "top");
   const rawSafeBottom = readTelegramInset(tg?.safeAreaInset, "bottom");
@@ -71,6 +117,11 @@ function applyTelegramViewportVars() {
   const envTop = readCssSafeAreaInset("top");
   const envBottom = readCssSafeAreaInset("bottom");
   const viewportHeight = getSafeViewportHeight(tg);
+  const browserBottomControls = getBrowserBottomControls({
+    envBottom,
+    isTelegram: flags.isTelegram,
+    isStandalone: flags.isStandalone,
+  });
 
   const top = normalizeInsetPair({
     telegramSafe: rawSafeTop,
@@ -90,8 +141,10 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--tg-content-safe-bottom", `${bottom.contentExtra}px`);
   root.style.setProperty("--tg-viewport-height", `${viewportHeight}px`);
   root.style.setProperty("--tg-stable-viewport-height", `${viewportHeight}px`);
+  root.style.setProperty("--app-viewport-height", `${viewportHeight}px`);
   root.style.setProperty("--app-safe-top", `${top.appExtra}px`);
   root.style.setProperty("--app-safe-bottom", `${bottom.appExtra}px`);
+  root.style.setProperty("--browser-bottom-controls", `${browserBottomControls}px`);
 
   root.style.setProperty("--tg-raw-safe-top", `${rawSafeTop}px`);
   root.style.setProperty("--tg-raw-safe-bottom", `${rawSafeBottom}px`);
@@ -100,9 +153,13 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--ios-env-safe-top", `${envTop}px`);
   root.style.setProperty("--ios-env-safe-bottom", `${envBottom}px`);
 
-  // Важно: не считаем обычный fullsize fullscreen-режимом только из-за safeAreaInset.
-  // Дополнительный верхний guard включаем только при реальном fullscreen.
-  if (tg?.isFullscreen === true) {
+  setDatasetFlag(root, "telegramApp", flags.isTelegram);
+  setDatasetFlag(root, "standaloneApp", flags.isStandalone);
+  setDatasetFlag(root, "mobileBrowser", flags.isMobile && !flags.isStandalone && !flags.isTelegram);
+  setDatasetFlag(root, "iosBrowser", flags.isIOS && !flags.isStandalone && !flags.isTelegram);
+  setDatasetFlag(root, "inappBrowser", flags.isLikelyInAppBrowser && !flags.isTelegram);
+
+  if (flags.isTelegram && tg?.isFullscreen === true) {
     root.dataset.tgFullscreenSafe = "true";
   } else {
     delete root.dataset.tgFullscreenSafe;
@@ -116,8 +173,6 @@ export default function useTelegramViewport() {
     try {
       tg?.ready?.();
       tg?.expand?.();
-      // Не вызываем requestFullscreen() из React: на части iOS-клиентов Telegram
-      // повторный вызов приводит к повторному пересчёту viewport и чёрному экрану.
     } catch {
       // Старые клиенты Telegram могут поддерживать только часть API.
     }
@@ -137,7 +192,7 @@ export default function useTelegramViewport() {
     tg?.onEvent?.("contentSafeAreaChanged", handleSafeAreaChanged);
     tg?.onEvent?.("fullscreenChanged", handleSafeAreaChanged);
 
-    const timers = [80, 350, 900, 1800].map((delay) => window.setTimeout(applyTelegramViewportVars, delay));
+    const timers = [80, 350, 900, 1800, 3200].map((delay) => window.setTimeout(applyTelegramViewportVars, delay));
 
     return () => {
       window.removeEventListener("resize", handleResize);
