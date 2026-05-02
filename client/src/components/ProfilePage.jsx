@@ -327,6 +327,9 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
   }
 
   const isVkProfile = profile?.authProvider === "vk" || user?.authProvider === "vk" || Boolean(profile?.vkId);
+  const isTelegramMiniApp =
+    typeof window !== "undefined" && Boolean(window.Telegram?.WebApp?.initData);
+  const canLogout = !isTelegramMiniApp;
   const phoneVerificationRequired = profile?.phoneVerificationRequired !== false && !isVkProfile;
   const avatarUrl = getAvatarImageUrl(
     profile?.avatarUrl ||
@@ -501,38 +504,40 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
         </button>
 
 
-        <button
-          type="button"
-          className="profile-menu-tile profile-logout-tile"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          style={{
-            marginTop: "18px",
-            borderColor: "rgba(255, 82, 82, 0.42)",
-            background:
-              "linear-gradient(135deg, rgba(255, 60, 60, 0.18), rgba(255, 60, 60, 0.08))",
-            boxShadow: "0 18px 42px rgba(255, 42, 42, 0.12)",
-            opacity: isLoggingOut ? 0.72 : 1,
-          }}
-        >
-          <span
-            className="profile-menu-icon"
+        {canLogout && (
+          <button
+            type="button"
+            className="profile-menu-tile profile-logout-tile"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             style={{
-              color: "#ff6b6b",
-              background: "rgba(255, 80, 80, 0.16)",
-              borderColor: "rgba(255, 92, 92, 0.28)",
+              marginTop: "18px",
+              borderColor: "rgba(255, 82, 82, 0.42)",
+              background:
+                "linear-gradient(135deg, rgba(255, 60, 60, 0.18), rgba(255, 60, 60, 0.08))",
+              boxShadow: "0 18px 42px rgba(255, 42, 42, 0.12)",
+              opacity: isLoggingOut ? 0.72 : 1,
             }}
           >
-            <LogoutIcon />
-          </span>
-          <span className="profile-menu-copy">
-            <strong style={{ color: "#ff7a7a" }}>
-              {isLoggingOut ? "Выходим..." : "Выйти из аккаунта"}
-            </strong>
-            <span>Завершить текущую сессию</span>
-          </span>
-          <span className="profile-menu-arrow" style={{ color: "rgba(255, 122, 122, 0.9)" }}>›</span>
-        </button>
+            <span
+              className="profile-menu-icon"
+              style={{
+                color: "#ff6b6b",
+                background: "rgba(255, 80, 80, 0.16)",
+                borderColor: "rgba(255, 92, 92, 0.28)",
+              }}
+            >
+              <LogoutIcon />
+            </span>
+            <span className="profile-menu-copy">
+              <strong style={{ color: "#ff7a7a" }}>
+                {isLoggingOut ? "Выходим..." : "Выйти из аккаунта"}
+              </strong>
+              <span>Завершить текущую сессию</span>
+            </span>
+            <span className="profile-menu-arrow" style={{ color: "rgba(255, 122, 122, 0.9)" }}>›</span>
+          </button>
+        )}
       </section>
     </div>
   );
