@@ -279,6 +279,37 @@ export async function authenticateTelegramOidcToken(idToken) {
   };
 }
 
+
+export function getAuthSessionToken() {
+  return getStoredAuthSession()?.token || "";
+}
+
+async function postSessionJson(path, body = {}, timeoutMs = 12000) {
+  const sessionToken = getAuthSessionToken();
+
+  if (!sessionToken) {
+    throw new Error("Войдите в аккаунт, чтобы управлять уведомлениями");
+  }
+
+  return await postJson(path, { sessionToken, ...body }, timeoutMs);
+}
+
+export async function getVkCommunityNotificationStatus() {
+  return await postSessionJson("/vk/community/status", {}, 12000);
+}
+
+export async function connectVkCommunityNotifications() {
+  return await postSessionJson("/vk/community/connect", {}, 12000);
+}
+
+export async function checkVkCommunityNotifications() {
+  return await postSessionJson("/vk/community/check", {}, 16000);
+}
+
+export async function sendVkCommunityTestNotification() {
+  return await postSessionJson("/vk/community/test", {}, 16000);
+}
+
 export async function restoreAuthSession() {
   const saved = getStoredAuthSession();
   if (!saved?.token) return null;

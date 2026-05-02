@@ -55,6 +55,14 @@ const VK_ID_TOKEN_URL = "https://id.vk.ru/oauth2/auth";
 const VK_ID_USER_INFO_URL = "https://id.vk.ru/oauth2/user_info";
 const VK_ID_STATE_TTL_MS = Number(process.env.VK_ID_STATE_TTL_MS || 1000 * 60 * 10);
 
+const VK_COMMUNITY_ID = String(
+  process.env.VK_COMMUNITY_ID || process.env.VK_GROUP_ID || process.env.VK_PUBLIC_ID || ""
+).replace(/^-/, "").trim();
+const VK_COMMUNITY_TOKEN = String(
+  process.env.VK_COMMUNITY_TOKEN || process.env.VK_GROUP_TOKEN || process.env.VK_COMMUNITY_ACCESS_TOKEN || ""
+);
+const VK_API_VERSION = String(process.env.VK_API_VERSION || "5.199");
+
 let telegramJwksCache = { keys: [], expiresAt: 0 };
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
@@ -64,7 +72,7 @@ app.get("/", (req, res) => {
 });
 
 async function sendUserNotification(userId, text, notificationKey = "chatMessages", options = {}) {
-  if (!userId || !BOT_TOKEN) return { ok: false, skipped: true, reason: "missing_user_or_bot" };
+  if (!userId) return { ok: false, skipped: true, reason: "missing_user" };
 
   const userRef = db.collection("users").doc(String(userId));
   const userSnap = await userRef.get();
@@ -75,25 +83,233 @@ async function sendUserNotification(userId, text, notificationKey = "chatMessage
     return { ok: false, skipped: true, reason: "disabled" };
   }
 
+  if (isVkProfile(profile)) {
+    if (profile?.vkNotificationsEnabled === false || profile?.vkCommunityMessagesAllowed !== true) {
+      return { ok: false, skipped: true, channel: "vk", reason: "vk_messages_not_allowed" };
+    }
+
+    try {
+      const result = await sendVkCommunityMessage(profile.vkId, text, {
+        telegramOptions: options,
+        url: extractNotificationUrl(options) || WEB_APP_URL,
+      });
+      return { ...result, channel: "vk" };
+    } catch (error) {
+      console.error("sendVkCommunityMessage error:", error.message);
+      const msg = String(error.message || "").toLowerCase();
+      const noAccess = msg.includes("can't send") || msg.includes("not allowed") || msg.includes("permission") || msg.includes("access denied");
+
+      if (noAccess) {
+        await userRef.set(
+          {
+            vkCommunityMessagesAllowed: false,
+            vkNotificationsEnabled: false,
+            vkNotificationStatus: "send_denied",
+            vkNotificationsLastError: error.message,
+            updatedAt: Date.now(),
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
+
+      return { ok: false, channel: "vk", error: error.message };
+    }
+  }
+
+  if (!BOT_TOKEN) return { ok: false, skipped: true, reason: "missing_bot_token" };
+
   if (profile?.botCanMessage === false) {
     return { ok: false, skipped: true, reason: "no_write_access" };
   }
 
   try {
     await bot.sendMessage(String(userId), text, options);
-    return { ok: true };
+    return { ok: true, channel: "telegram" };
   } catch (error) {
     console.error("sendUserNotification error:", error.message);
     if (String(error.message || "").includes("bot can't initiate conversation")) {
       await userRef.set({ botCanMessage: false, updatedAt: Date.now() }, { merge: true }).catch(() => {});
     }
-    return { ok: false, error: error.message };
+    return { ok: false, channel: "telegram", error: error.message };
   }
 }
-
 function buildMiniAppChatUrl(chatId) {
   return `${WEB_APP_URL}?chat=${encodeURIComponent(String(chatId))}`;
 }
+
+function buildVkCommunityWriteUrl() {
+  return VK_COMMUNITY_ID ? `https://vk.com/write-${VK_COMMUNITY_ID}` : "";
+}
+
+function isVkProfile(profile) {
+  return Boolean(profile?.vkId || profile?.authProvider === "vk" || String(profile?.userId || "").startsWith("vk_"));
+}
+
+function extractNotificationUrl(options = {}) {
+  const keyboard = options?.reply_markup?.inline_keyboard;
+  if (!Array.isArray(keyboard)) return "";
+
+  for (const row of keyboard) {
+    if (!Array.isArray(row)) continue;
+    for (const button of row) {
+      const url = button?.url || button?.web_app?.url;
+      if (url) return String(url);
+    }
+  }
+
+  return "";
+}
+
+function appendUrlToVkMessage(text, url) {
+  const cleanText = String(text || "").trim();
+  const cleanUrl = String(url || "").trim();
+  if (!cleanUrl) return cleanText;
+  return `${cleanText}\n\nОткрыть в Барахолке: ${cleanUrl}`;
+}
+
+async function callVkApi(method, params = {}) {
+  if (!VK_COMMUNITY_TOKEN) {
+    throw new Error("VK community token не настроен на сервере");
+  }
+
+  const body = new URLSearchParams({
+    ...Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ),
+    access_token: VK_COMMUNITY_TOKEN,
+    v: VK_API_VERSION,
+  });
+
+  const response = await fetch(`https://api.vk.com/method/${method}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body,
+  });
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: { error_msg: text || "VK API вернул некорректный ответ" } };
+  }
+
+  if (!response.ok || data.error) {
+    const vkError = data.error || {};
+    const message = vkError.error_msg || vkError.error_description || "VK API error";
+    const error = new Error(message);
+    error.vkError = vkError;
+    throw error;
+  }
+
+  return data.response;
+}
+
+async function checkVkCommunityMessagesAllowed(vkId) {
+  const connectUrl = buildVkCommunityWriteUrl();
+
+  if (!VK_COMMUNITY_ID) {
+    return {
+      ok: false,
+      configured: false,
+      canCheck: false,
+      isAllowed: false,
+      communityId: "",
+      connectUrl,
+      error: "VK_COMMUNITY_ID не настроен",
+    };
+  }
+
+  if (!VK_COMMUNITY_TOKEN) {
+    return {
+      ok: false,
+      configured: true,
+      canCheck: false,
+      isAllowed: false,
+      communityId: VK_COMMUNITY_ID,
+      connectUrl,
+      error: "VK_COMMUNITY_TOKEN не настроен",
+    };
+  }
+
+  if (!vkId) {
+    return {
+      ok: false,
+      configured: true,
+      canCheck: true,
+      isAllowed: false,
+      communityId: VK_COMMUNITY_ID,
+      connectUrl,
+      error: "У пользователя нет vkId",
+    };
+  }
+
+  const response = await callVkApi("messages.isMessagesFromGroupAllowed", {
+    group_id: VK_COMMUNITY_ID,
+    user_id: String(vkId),
+  });
+
+  const isAllowed = Boolean(response?.is_allowed === 1 || response?.is_allowed === true);
+
+  return {
+    ok: true,
+    configured: true,
+    canCheck: true,
+    isAllowed,
+    communityId: VK_COMMUNITY_ID,
+    connectUrl,
+    response,
+  };
+}
+
+async function updateVkCommunityNotificationStatus(userRef, checkResult, extra = {}) {
+  const now = Date.now();
+  const isAllowed = Boolean(checkResult?.isAllowed);
+  const patch = {
+    vkCommunityId: VK_COMMUNITY_ID || checkResult?.communityId || "",
+    vkCommunityWriteUrl: checkResult?.connectUrl || buildVkCommunityWriteUrl(),
+    vkCommunityMessagesAllowed: isAllowed,
+    vkNotificationsEnabled: isAllowed,
+    vkNotificationStatus: isAllowed ? "allowed" : checkResult?.canCheck === false ? "needs_server_config" : "not_allowed",
+    vkNotificationsCheckedAt: now,
+    updatedAt: now,
+    ...extra,
+  };
+
+  if (isAllowed) {
+    patch.vkNotificationsConnectedAt = extra.vkNotificationsConnectedAt || now;
+  }
+
+  await userRef.set(patch, { merge: true }).catch(() => {});
+  return patch;
+}
+
+async function sendVkCommunityMessage(vkId, text, options = {}) {
+  if (!VK_COMMUNITY_ID || !VK_COMMUNITY_TOKEN) {
+    return { ok: false, skipped: true, reason: "vk_community_not_configured" };
+  }
+
+  if (!vkId) {
+    return { ok: false, skipped: true, reason: "missing_vk_id" };
+  }
+
+  const url = options.url || extractNotificationUrl(options.telegramOptions) || WEB_APP_URL;
+  const message = appendUrlToVkMessage(text, url).slice(0, 3900);
+
+  const response = await callVkApi("messages.send", {
+    user_id: String(vkId),
+    random_id: String(Date.now() + Math.floor(Math.random() * 1000000)),
+    message,
+  });
+
+  return { ok: true, response };
+}
+
+
 
 
 function timingSafeEqualHex(a, b) {
@@ -1060,6 +1276,169 @@ app.post("/auth/logout", async (req, res) => {
     return res.status(500).json({ ok: false, error: error.message || "Не удалось выйти" });
   }
 });
+
+
+async function readVkNotificationSession(req) {
+  const { profile } = await readAuthSession(req.body?.sessionToken);
+
+  if (!isVkProfile(profile)) {
+    const error = new Error("Уведомления ВКонтакте доступны только для профилей, вошедших через VK");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (!profile.vkId) {
+    const error = new Error("В профиле нет vkId. Выйдите и войдите через VK заново.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    profile,
+    userRef: db.collection("users").doc(String(profile.userId || profile.id)),
+  };
+}
+
+function vkNotificationPayload(profile, checkResult, extra = {}) {
+  return {
+    ok: true,
+    isVkProfile: true,
+    communityId: VK_COMMUNITY_ID || "",
+    configured: Boolean(VK_COMMUNITY_ID),
+    canCheck: Boolean(VK_COMMUNITY_ID && VK_COMMUNITY_TOKEN),
+    connectUrl: buildVkCommunityWriteUrl(),
+    isAllowed: Boolean(checkResult?.isAllowed || profile?.vkCommunityMessagesAllowed),
+    status:
+      checkResult?.isAllowed || profile?.vkCommunityMessagesAllowed
+        ? "allowed"
+        : !VK_COMMUNITY_ID
+        ? "needs_community_id"
+        : !VK_COMMUNITY_TOKEN
+        ? "needs_community_token"
+        : "not_allowed",
+    ...extra,
+  };
+}
+
+app.post("/vk/community/status", async (req, res) => {
+  try {
+    const { profile, userRef } = await readVkNotificationSession(req);
+    let checkResult = null;
+
+    if (VK_COMMUNITY_ID && VK_COMMUNITY_TOKEN) {
+      checkResult = await checkVkCommunityMessagesAllowed(profile.vkId);
+      await updateVkCommunityNotificationStatus(userRef, checkResult);
+    }
+
+    return res.json(vkNotificationPayload(profile, checkResult));
+  } catch (error) {
+    console.error("/vk/community/status error:", error.message);
+    return res.status(error.statusCode || 500).json({
+      ok: false,
+      error: error.message || "Не удалось проверить VK-уведомления",
+    });
+  }
+});
+
+app.post("/vk/community/connect", async (req, res) => {
+  try {
+    const { profile, userRef } = await readVkNotificationSession(req);
+    const connectUrl = buildVkCommunityWriteUrl();
+
+    if (!VK_COMMUNITY_ID) {
+      return res.status(500).json({
+        ok: false,
+        error: "VK_COMMUNITY_ID не настроен на сервере",
+      });
+    }
+
+    const initialPatch = {
+      vkCommunityId: VK_COMMUNITY_ID,
+      vkCommunityWriteUrl: connectUrl,
+      vkNotificationStatus: profile?.vkCommunityMessagesAllowed ? "allowed" : "open_dialog_required",
+      vkNotificationsRequestedAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await userRef.set(initialPatch, { merge: true });
+
+    let checkResult = null;
+    if (VK_COMMUNITY_TOKEN) {
+      checkResult = await checkVkCommunityMessagesAllowed(profile.vkId);
+      await updateVkCommunityNotificationStatus(userRef, checkResult, {
+        vkNotificationsRequestedAt: initialPatch.vkNotificationsRequestedAt,
+      });
+    }
+
+    return res.json(
+      vkNotificationPayload(profile, checkResult, {
+        connectUrl,
+        message: checkResult?.isAllowed
+          ? "Уведомления ВКонтакте уже подключены"
+          : "Откройте диалог с сообществом и разрешите сообщения, затем вернитесь и нажмите Проверить",
+      })
+    );
+  } catch (error) {
+    console.error("/vk/community/connect error:", error.message);
+    return res.status(error.statusCode || 500).json({
+      ok: false,
+      error: error.message || "Не удалось начать подключение VK-уведомлений",
+    });
+  }
+});
+
+app.post("/vk/community/check", async (req, res) => {
+  try {
+    const { profile, userRef } = await readVkNotificationSession(req);
+    const checkResult = await checkVkCommunityMessagesAllowed(profile.vkId);
+    await updateVkCommunityNotificationStatus(userRef, checkResult);
+
+    return res.json(
+      vkNotificationPayload(profile, checkResult, {
+        message: checkResult.isAllowed
+          ? "Уведомления ВКонтакте подключены"
+          : "Сообщество пока не может отправлять вам сообщения",
+      })
+    );
+  } catch (error) {
+    console.error("/vk/community/check error:", error.message);
+    return res.status(error.statusCode || 500).json({
+      ok: false,
+      error: error.message || "Не удалось проверить разрешение сообщений ВК",
+    });
+  }
+});
+
+app.post("/vk/community/test", async (req, res) => {
+  try {
+    const { profile, userRef } = await readVkNotificationSession(req);
+    const checkResult = await checkVkCommunityMessagesAllowed(profile.vkId);
+    await updateVkCommunityNotificationStatus(userRef, checkResult);
+
+    if (!checkResult.isAllowed) {
+      return res.status(403).json({
+        ok: false,
+        error: "Сначала разрешите сообщения от сообщества ВКонтакте",
+        connectUrl: checkResult.connectUrl,
+      });
+    }
+
+    const result = await sendVkCommunityMessage(
+      profile.vkId,
+      "✅ Уведомления Барахолки во ВКонтакте подключены. Теперь сюда будут приходить важные уведомления о чатах и модерации.",
+      { url: WEB_APP_URL }
+    );
+
+    return res.json({ ok: true, notification: result });
+  } catch (error) {
+    console.error("/vk/community/test error:", error.message);
+    return res.status(error.statusCode || 500).json({
+      ok: false,
+      error: error.message || "Не удалось отправить тестовое VK-уведомление",
+    });
+  }
+});
+
 
 
 async function downloadImageToBuffer(url) {

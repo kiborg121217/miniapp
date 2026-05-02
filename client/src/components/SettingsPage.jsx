@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import PageBackButton from "./PageBackButton";
 import { getNotificationSettings, updateNotificationSettings } from "../firebase";
 import { requestBotWriteAccess } from "../telegram";
+import {
+  checkVkCommunityNotifications,
+  connectVkCommunityNotifications,
+  getVkCommunityNotificationStatus,
+} from "../auth";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -252,16 +257,71 @@ function writeNotificationCache(userId, value) {
   }
 }
 
+function isVkNotificationUser(user) {
+  return (
+    user?.authProvider === "vk" ||
+    Boolean(user?.vkId) ||
+    String(user?.id || "").startsWith("vk_")
+  );
+}
+
+function openNotificationLink(url) {
+  const cleanUrl = String(url || "").trim();
+  if (!cleanUrl) return;
+
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openLink) {
+    tg.openLink(cleanUrl);
+    return;
+  }
+
+  window.open(cleanUrl, "_blank", "noopener,noreferrer");
+}
+
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  chatMessages: true,
+  moderation: true,
+  promotion: true,
+  favorites: false,
+  botCanMessage: false,
+  vkCommunityMessagesAllowed: false,
+  vkNotificationsEnabled: false,
+  vkNotificationStatus: "",
+  vkCommunityId: "",
+  vkCommunityWriteUrl: "",
+};
+
 function NotificationsPage({ user, onBack }) {
-  const [settings, setSettings] = useState({
-    chatMessages: true,
-    moderation: true,
-    promotion: true,
-    favorites: false,
-    botCanMessage: false,
-  });
+  const isVkUser = isVkNotificationUser(user);
+  const [settings, setSettings] = useState(DEFAULT_NOTIFICATION_SETTINGS);
+  const [vkStatus, setVkStatus] = useState(null);
+  const [vkConnectRequested, setVkConnectRequested] = useState(false);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const syncVkStatus = (data) => {
+    if (!data) return;
+
+    const normalized = {
+      configured: data.configured !== false,
+      canCheck: data.canCheck !== false,
+      isAllowed: Boolean(data.isAllowed),
+      connectUrl: data.connectUrl || "",
+      status: data.status || "",
+      communityId: data.communityId || "",
+      message: data.message || "",
+    };
+
+    setVkStatus(normalized);
+    setSettings((current) => ({
+      ...current,
+      vkCommunityMessagesAllowed: normalized.isAllowed,
+      vkNotificationsEnabled: normalized.isAllowed,
+      vkNotificationStatus: normalized.status,
+      vkCommunityId: normalized.communityId,
+      vkCommunityWriteUrl: normalized.connectUrl || current.vkCommunityWriteUrl || "",
+    }));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -271,9 +331,25 @@ function NotificationsPage({ user, onBack }) {
       return undefined;
     }
 
+    setLoading(true);
+    setStatus("");
+
     getNotificationSettings(user.id)
-      .then((data) => {
-        if (!cancelled) setSettings(data);
+      .then(async (data) => {
+        if (cancelled) return;
+        setSettings({ ...DEFAULT_NOTIFICATION_SETTINGS, ...data });
+
+        if (isVkUser) {
+          try {
+            const vkData = await getVkCommunityNotificationStatus();
+            if (!cancelled) syncVkStatus(vkData);
+          } catch (error) {
+            if (!cancelled) {
+              console.warn("Не удалось проверить VK-уведомления:", error);
+              setVkStatus({ configured: false, canCheck: false, isAllowed: false, status: "error" });
+            }
+          }
+        }
       })
       .catch(() => {
         if (!cancelled) setStatus("Не удалось загрузить настройки уведомлений");
@@ -285,11 +361,11 @@ function NotificationsPage({ user, onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, isVkUser]);
 
   const savePatch = async (patch) => {
     if (!user?.id) {
-      setStatus("Войдите через Telegram, чтобы управлять уведомлениями");
+      setStatus("Войдите в аккаунт, чтобы управлять уведомлениями");
       return;
     }
 
@@ -309,7 +385,7 @@ function NotificationsPage({ user, onBack }) {
     }
   };
 
-  const handleRequestAccess = async () => {
+  const handleTelegramRequestAccess = async () => {
     if (!user?.id) {
       setStatus("Войдите через Telegram, чтобы включить уведомления");
       return;
@@ -331,15 +407,77 @@ function NotificationsPage({ user, onBack }) {
     }
   };
 
+  const handleVkRequestAccess = async () => {
+    setStatus("Готовим подключение уведомлений ВКонтакте...");
+
+    try {
+      const data = await connectVkCommunityNotifications();
+      syncVkStatus(data);
+
+      if (data?.isAllowed) {
+        setStatus("Уведомления ВКонтакте подключены");
+        return;
+      }
+
+      if (data?.connectUrl) {
+        openNotificationLink(data.connectUrl);
+        setVkConnectRequested(true);
+        setStatus("Разрешите сообщения в диалоге с сообществом ВК, затем вернитесь и нажмите “Проверить разрешение”.");
+        return;
+      }
+
+      setStatus(data?.message || "Не удалось открыть диалог с сообществом ВК");
+    } catch (error) {
+      console.error("Ошибка подключения VK-уведомлений:", error);
+      setStatus(error.message || "Не удалось начать подключение VK-уведомлений");
+    }
+  };
+
+  const handleVkCheckAccess = async () => {
+    setStatus("Проверяем разрешение сообщений ВК...");
+
+    try {
+      const data = await checkVkCommunityNotifications();
+      syncVkStatus(data);
+
+      if (data?.isAllowed) {
+        setStatus("Уведомления ВКонтакте подключены");
+        setVkConnectRequested(false);
+        return;
+      }
+
+      setVkConnectRequested(true);
+      setStatus(data?.message || "Сообщество пока не может отправлять вам сообщения. Откройте диалог ВК и разрешите сообщения.");
+    } catch (error) {
+      console.error("Ошибка проверки VK-уведомлений:", error);
+      setStatus(error.message || "Не удалось проверить разрешение сообщений ВК");
+    }
+  };
+
+  const vkAllowed = Boolean(vkStatus?.isAllowed || settings.vkCommunityMessagesAllowed || settings.vkNotificationsEnabled);
+  const vkConfigured = vkStatus ? vkStatus.configured !== false : true;
+  const vkCanCheck = vkStatus ? vkStatus.canCheck !== false : true;
+  const shouldShowTelegramAccess = !isVkUser && !(settings.botCanMessage || user?.botCanMessage);
+  const shouldShowVkAccess = isVkUser && !vkAllowed;
+  const vkButtonText = !vkConfigured
+    ? "VK-сообщество не настроено"
+    : !vkCanCheck
+    ? "VK-токен не настроен"
+    : vkConnectRequested || settings.vkNotificationStatus === "open_dialog_required"
+    ? "Проверить разрешение сообщений ВК"
+    : "Разрешить сообщения во ВКонтакте";
+
+  const description = isVkUser
+    ? "Настройте уведомления так, как удобно вам. Общение происходит внутри Барахолки, а важные уведомления могут приходить в диалог с сообществом ВКонтакте."
+    : "Настройте уведомления так, как удобно вам. Общение происходит прямо внутри приложения, а важные уведомления могут приходить в Telegram.";
+
   return (
     <div className="settings-detail-page page-enter">
       <PageBackButton onClick={onBack} />
       <section className="settings-about-card notifications-card">
         <div className="settings-soon-icon"><TileIcon type="bell" /></div>
         <h2>Уведомления</h2>
-        <p>
-          Настройте уведомления так, как удобно вам. Общение происходит прямо внутри приложения, а важные уведомления могут приходить в Telegram.
-        </p>
+        <p>{description}</p>
 
         {loading ? (
           <NotificationLoading />
@@ -376,10 +514,25 @@ function NotificationsPage({ user, onBack }) {
           </div>
         )}
 
-        {!(settings.botCanMessage || user?.botCanMessage) && (
-          <button type="button" className="notification-access-btn" onClick={handleRequestAccess}>
+        {shouldShowTelegramAccess && (
+          <button type="button" className="notification-access-btn" onClick={handleTelegramRequestAccess}>
             Разрешить уведомления от бота
           </button>
+        )}
+
+        {shouldShowVkAccess && (
+          <button
+            type="button"
+            className="notification-access-btn"
+            onClick={vkConnectRequested || settings.vkNotificationStatus === "open_dialog_required" ? handleVkCheckAccess : handleVkRequestAccess}
+            disabled={!vkConfigured || !vkCanCheck}
+          >
+            {vkButtonText}
+          </button>
+        )}
+
+        {isVkUser && vkAllowed && !status && (
+          <div className="notification-status">Уведомления ВКонтакте подключены</div>
         )}
 
         {status && <div className="notification-status">{status}</div>}

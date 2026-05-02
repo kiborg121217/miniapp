@@ -16,6 +16,7 @@ import {
   onSnapshot,
   orderBy,
 } from "firebase/firestore";
+import { uploadImageToCloudinary } from "./cloudinary";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB4cSRFhtCSVSbLrymCeGtRsvj9XvmzU2Q",
@@ -599,11 +600,16 @@ export async function getNotificationSettings(userId) {
     promotion: notifications.promotion !== false,
     favorites: notifications.favorites === true,
     botCanMessage: profile?.botCanMessage === true || notifications.botCanMessage === true,
+    vkCommunityMessagesAllowed: profile?.vkCommunityMessagesAllowed === true,
+    vkNotificationsEnabled: profile?.vkNotificationsEnabled === true,
+    vkNotificationStatus: profile?.vkNotificationStatus || "",
+    vkCommunityId: profile?.vkCommunityId || "",
+    vkCommunityWriteUrl: profile?.vkCommunityWriteUrl || "",
   };
 }
 
 export async function updateNotificationSettings(userId, patch) {
-  if (!userId) throw new Error("Нужно войти через Telegram");
+  if (!userId) throw new Error("Нужно войти в аккаунт");
 
   const ref = doc(db, "users", toId(userId));
   const snap = await getDoc(ref);
@@ -634,18 +640,6 @@ export async function updateNotificationSettings(userId, patch) {
 
 /* -------------------- UPLOAD IMAGE -------------------- */
 
-export async function uploadImage(file) {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const res = await fetch(
-    "https://api.imgbb.com/1/upload?key=b60e952b6fc11497de56be77ee165530",
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-
-  const data = await res.json();
-  return data.data.url;
+export async function uploadImage(file, options = {}) {
+  return await uploadImageToCloudinary(file, options);
 }
