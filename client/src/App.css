@@ -12966,3 +12966,85 @@ html[data-vk-mini-app="true"] .login-secondary-provider {
     max-width: 492px !important;
   }
 }
+
+
+/* === VK Mini App stage 1.1: top chrome guard + runtime separation ===
+   VK Mini Apps are still HTML5 WebView/iFrame apps, but VK has its own top chrome.
+   These rules keep the content below VK system controls without touching Telegram/PWA. */
+html[data-vk-mini-app="true"] {
+  --vk-miniapp-top-guard: 54px;
+  --real-safe-top: max(env(safe-area-inset-top, 0px), var(--vk-miniapp-top-guard));
+  --real-safe-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+  --page-top-control: calc(var(--real-safe-top) + 10px);
+  --page-bottom-nav-gap: max(env(safe-area-inset-bottom, 0px), 8px);
+  --nav-bottom-lift-fixed: var(--page-bottom-nav-gap);
+}
+
+html[data-vk-mini-app="true"] .market-home,
+html[data-vk-mini-app="true"] .chats-page {
+  padding-top: calc(var(--real-safe-top) + 14px) !important;
+}
+
+html[data-vk-mini-app="true"] .profile-page,
+html[data-vk-mini-app="true"] .profile-premium-page,
+html[data-vk-mini-app="true"] .settings-ios-page,
+html[data-vk-mini-app="true"] .settings-page {
+  padding-top: calc(var(--real-safe-top) + 20px) !important;
+}
+
+html[data-vk-mini-app="true"] .create-premium-page,
+html[data-vk-mini-app="true"] .add-ad-page {
+  padding-top: calc(var(--real-safe-top) + 14px) !important;
+}
+
+html[data-vk-mini-app="true"] .ad-page-wrap,
+html[data-vk-mini-app="true"] .seller-premium-page,
+html[data-vk-mini-app="true"] .seller-page,
+html[data-vk-mini-app="true"] .profile-ads-page,
+html[data-vk-mini-app="true"] .profile-ads-premium-page,
+html[data-vk-mini-app="true"] .help-page,
+html[data-vk-mini-app="true"] .legal-page,
+html[data-vk-mini-app="true"] .settings-detail-page {
+  padding-top: calc(var(--page-top-control) + 54px) !important;
+}
+
+html[data-vk-mini-app="true"] .back-btn,
+html[data-vk-mini-app="true"] .back-btn.premium-back-btn,
+html[data-vk-mini-app="true"] .premium-back-btn,
+html[data-vk-mini-app="true"] .share-top-btn,
+html[data-vk-mini-app="true"] .share-top-btn.premium-share-btn,
+html[data-vk-mini-app="true"] .premium-share-btn.share-top-btn,
+html[data-vk-mini-app="true"] .seller-premium-share-btn,
+html[data-vk-mini-app="true"] .favorite-top-btn,
+html[data-vk-mini-app="true"] .favorite-top-btn.premium-favorite-btn,
+html[data-vk-mini-app="true"] .premium-favorite-btn.favorite-top-btn {
+  top: var(--page-top-control) !important;
+}
+
+html[data-vk-mini-app="true"] .bottom-nav {
+  bottom: var(--page-bottom-nav-gap, 8px) !important;
+}
+
+@media (max-width: 759px) {
+  html[data-vk-mini-app="true"] .bottom-nav {
+    width: min(calc(100vw - 44px), 492px) !important;
+    max-width: 492px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  html[data-vk-mini-app="true"] {
+    --vk-miniapp-top-guard: 30px;
+    --page-top-control: calc(var(--real-safe-top) + 8px);
+    --page-bottom-nav-gap: max(env(safe-area-inset-bottom, 0px), 4px);
+  }
+
+  html[data-vk-mini-app="true"] .market-home,
+  html[data-vk-mini-app="true"] .chats-page,
+  html[data-vk-mini-app="true"] .profile-page,
+  html[data-vk-mini-app="true"] .settings-ios-page,
+  html[data-vk-mini-app="true"] .create-premium-page,
+  html[data-vk-mini-app="true"] .add-ad-page {
+    padding-top: calc(var(--real-safe-top) + 8px) !important;
+  }
+}

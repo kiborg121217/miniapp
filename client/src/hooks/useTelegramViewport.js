@@ -1,17 +1,64 @@
 import { useEffect } from "react";
 
+function readVkParamsFromCurrentUrl() {
+  const merged = new URLSearchParams();
+  const sources = [];
+
+  try {
+    sources.push(window.location.search || "");
+    const hash = String(window.location.hash || "").replace(/^#\/?/, "");
+    sources.push(hash.includes("?") ? hash.slice(hash.indexOf("?")) : hash);
+  } catch {
+    // ignore
+  }
+
+  for (const source of sources) {
+    const raw = String(source || "").replace(/^\?/, "");
+    if (!raw) continue;
+
+    try {
+      const params = new URLSearchParams(raw);
+      for (const [key, value] of params.entries()) {
+        if (key === "sign" || key.startsWith("vk_")) merged.set(key, value);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return merged;
+}
+
+function isLikelyOpenedInsideVk() {
+  try {
+    if (/vk\.com|m\.vk\.com|vk-apps\.com/i.test(document.referrer || "")) return true;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const origins = Array.from(window.location.ancestorOrigins || []);
+    if (origins.some((origin) => /vk\.com|m\.vk\.com|vk-apps\.com/i.test(origin))) return true;
+  } catch {
+    // ignore
+  }
+
+  return false;
+}
+
 function isVkMiniAppLaunch() {
   try {
-    const params = new URLSearchParams(window.location.search || "");
+    const params = readVkParamsFromCurrentUrl();
     return Boolean(
       params.get("vk_app_id") ||
         params.get("vk_user_id") ||
         params.get("vk_platform") ||
         params.get("vk_ref") ||
-        params.get("sign")
+        params.get("sign") ||
+        isLikelyOpenedInsideVk()
     );
   } catch {
-    return false;
+    return isLikelyOpenedInsideVk();
   }
 }
 

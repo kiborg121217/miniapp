@@ -6,12 +6,75 @@ let bridgeLoadPromise = null;
 let initPromise = null;
 let cachedInfo = null;
 
-function getSearchParams() {
+function collectVkParamSources() {
+  const sources = [];
+
   try {
-    return new URLSearchParams(window.location.search || "");
+    sources.push(window.location.search || "");
   } catch {
-    return new URLSearchParams();
+    // ignore
   }
+
+  try {
+    const hash = String(window.location.hash || "");
+    if (hash) {
+      const normalizedHash = hash.replace(/^#\/?/, "");
+      sources.push(normalizedHash.includes("?") ? normalizedHash.slice(normalizedHash.indexOf("?")) : normalizedHash);
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const href = String(window.location.href || "");
+    const match = href.match(/[?#&](vk_[^#]+)/);
+    if (match?.[1]) sources.push(`?${match[1]}`);
+  } catch {
+    // ignore
+  }
+
+  return sources;
+}
+
+function mergeVkParamsFromSources() {
+  const merged = new URLSearchParams();
+
+  for (const source of collectVkParamSources()) {
+    const raw = String(source || "").replace(/^#/, "").replace(/^\?/, "");
+    if (!raw) continue;
+
+    try {
+      const params = new URLSearchParams(raw);
+      for (const [key, value] of params.entries()) {
+        if (key === "sign" || key.startsWith("vk_")) merged.set(key, value);
+      }
+    } catch {
+      // ignore malformed source
+    }
+  }
+
+  return merged;
+}
+
+function getSearchParams() {
+  return mergeVkParamsFromSources();
+}
+
+function isLikelyOpenedInsideVk() {
+  try {
+    if (/vk\.com|m\.vk\.com|vk-apps\.com/i.test(document.referrer || "")) return true;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const origins = Array.from(window.location.ancestorOrigins || []);
+    if (origins.some((origin) => /vk\.com|m\.vk\.com|vk-apps\.com/i.test(origin))) return true;
+  } catch {
+    // ignore
+  }
+
+  return false;
 }
 
 export function readVkLaunchParams() {
@@ -47,7 +110,8 @@ export function isVkMiniAppLaunch() {
       params.get("vk_user_id") ||
       params.get("vk_platform") ||
       params.get("vk_ref") ||
-      params.get("sign")
+      params.get("sign") ||
+      isLikelyOpenedInsideVk()
   );
 }
 
