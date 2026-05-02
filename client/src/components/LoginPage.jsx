@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BOT_USERNAME, startTelegramOidcLogin, startVkIdLogin } from "../auth";
+import { isVkMiniAppLaunch } from "../vkMiniApp";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -43,6 +44,7 @@ function openChannel() {
 }
 
 export default function LoginPage({ onBack, returnPage = "profile" }) {
+  const isVkMiniApp = isVkMiniAppLaunch();
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState("");
@@ -69,7 +71,7 @@ export default function LoginPage({ onBack, returnPage = "profile" }) {
     try {
       setIsLoading(true);
       setLoadingProvider("vk");
-      setStatus("Открываем VK ID...");
+      setStatus(isVkMiniApp ? "Продолжаем через VK..." : "Открываем VK ID...");
       await startVkIdLogin(returnPage);
     } catch (error) {
       console.error("VK ID login start error:", error);
@@ -85,52 +87,82 @@ export default function LoginPage({ onBack, returnPage = "profile" }) {
         <div className="login-orb login-orb-one" />
         <div className="login-orb login-orb-two" />
 
-        <div className="login-icon">
-          <TelegramIcon />
+        <div className={isVkMiniApp ? "login-icon login-icon-vk" : "login-icon"}>
+          {isVkMiniApp ? <VkIcon /> : <TelegramIcon />}
         </div>
 
         <div className="login-kicker">Единый аккаунт</div>
         <h1>Вход в Барахолку</h1>
         <p>
-          На сайте можно войти через Telegram или VK. После входа профиль,
-          объявления, избранное и чаты будут работать внутри Барахолки.
+          {isVkMiniApp
+            ? "Вы открыли Барахолку внутри ВКонтакте. Продолжите через VK, чтобы профиль, объявления, избранное и чаты работали в сервисе."
+            : "На сайте можно войти через Telegram или VK. После входа профиль, объявления, избранное и чаты будут работать внутри Барахолки."}
         </p>
 
-        <button
-          type="button"
-          className="telegram-oidc-login-btn"
-          onClick={handleTelegramLogin}
-          disabled={isLoading}
-        >
-          <TelegramIcon />
-          <span>{loadingProvider === "telegram" ? "Открываем Telegram..." : "Войти через Telegram"}</span>
-        </button>
+        {isVkMiniApp ? (
+          <>
+            <button
+              type="button"
+              className="vk-id-login-btn"
+              onClick={handleVkLogin}
+              disabled={isLoading}
+            >
+              <VkIcon />
+              <span>{loadingProvider === "vk" ? "Открываем VK..." : "Продолжить через VK"}</span>
+            </button>
 
-        <button
-          type="button"
-          className="vk-id-login-btn"
-          onClick={handleVkLogin}
-          disabled={isLoading}
-        >
-          <VkIcon />
-          <span>{loadingProvider === "vk" ? "Открываем VK..." : "Войти через VK"}</span>
-        </button>
+            <button
+              type="button"
+              className="telegram-oidc-login-btn login-secondary-provider"
+              onClick={handleTelegramLogin}
+              disabled={isLoading}
+            >
+              <TelegramIcon />
+              <span>{loadingProvider === "telegram" ? "Открываем Telegram..." : "Войти через Telegram"}</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="telegram-oidc-login-btn"
+              onClick={handleTelegramLogin}
+              disabled={isLoading}
+            >
+              <TelegramIcon />
+              <span>{loadingProvider === "telegram" ? "Открываем Telegram..." : "Войти через Telegram"}</span>
+            </button>
+
+            <button
+              type="button"
+              className="vk-id-login-btn"
+              onClick={handleVkLogin}
+              disabled={isLoading}
+            >
+              <VkIcon />
+              <span>{loadingProvider === "vk" ? "Открываем VK..." : "Войти через VK"}</span>
+            </button>
+          </>
+        )}
 
         {status && <div className="login-status">{status}</div>}
 
         <div className="login-note">
-          В Mini App внутри Telegram авторизация по-прежнему происходит автоматически.
-          В браузере можно выбрать удобный способ входа.
+          {isVkMiniApp
+            ? "Первый этап VK Mini App уже активен. Если авто-вход через параметры запуска недоступен без защищённого ключа, используйте кнопку “Продолжить через VK”."
+            : "В Mini App внутри Telegram авторизация по-прежнему происходит автоматически. В браузере можно выбрать удобный способ входа."}
         </div>
 
-        <div className="login-actions">
-          <button type="button" className="login-secondary-btn" onClick={openTelegramBot}>
-            Открыть бота
-          </button>
-          <button type="button" className="login-ghost-btn" onClick={openChannel}>
-            Канал проекта
-          </button>
-        </div>
+        {!isVkMiniApp && (
+          <div className="login-actions">
+            <button type="button" className="login-secondary-btn" onClick={openTelegramBot}>
+              Открыть бота
+            </button>
+            <button type="button" className="login-ghost-btn" onClick={openChannel}>
+              Канал проекта
+            </button>
+          </div>
+        )}
       </section>
 
     </div>

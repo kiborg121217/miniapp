@@ -7,6 +7,7 @@ import {
   connectVkCommunityNotifications,
   getVkCommunityNotificationStatus,
 } from "../auth";
+import { isVkMiniAppLaunch, requestVkCommunityMessagesViaBridge } from "../vkMiniApp";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -419,6 +420,29 @@ function NotificationsPage({ user, onBack }) {
         return;
       }
 
+      if (isVkMiniAppLaunch() && data?.communityId) {
+        setStatus("Открываем системное разрешение ВК...");
+
+        try {
+          await requestVkCommunityMessagesViaBridge(data.communityId);
+          const checked = await checkVkCommunityNotifications();
+          syncVkStatus(checked);
+
+          if (checked?.isAllowed) {
+            setVkConnectRequested(false);
+            setStatus("Уведомления ВКонтакте подключены");
+            return;
+          }
+        } catch (bridgeError) {
+          console.warn("VK Bridge allow messages failed:", bridgeError);
+          setVkConnectRequested(true);
+          setStatus("Если системное окно ВК не открылось, разрешите сообщения в диалоге с сообществом и нажмите “Проверить разрешение”.");
+
+          if (data?.connectUrl) openNotificationLink(data.connectUrl);
+          return;
+        }
+      }
+
       if (data?.connectUrl) {
         openNotificationLink(data.connectUrl);
         setVkConnectRequested(true);
@@ -468,7 +492,9 @@ function NotificationsPage({ user, onBack }) {
     : "Разрешить сообщения во ВКонтакте";
 
   const description = isVkUser
-    ? "Настройте уведомления так, как удобно вам. Общение происходит внутри Барахолки, а важные уведомления могут приходить в диалог с сообществом ВКонтакте."
+    ? isVkMiniAppLaunch()
+      ? "Настройте уведомления так, как удобно вам. В сервисе ВК разрешение сообщений можно выдать через системное окно ВКонтакте."
+      : "Настройте уведомления так, как удобно вам. Общение происходит внутри Барахолки, а важные уведомления могут приходить в диалог с сообществом ВКонтакте."
     : "Настройте уведомления так, как удобно вам. Общение происходит прямо внутри приложения, а важные уведомления могут приходить в Telegram.";
 
   return (

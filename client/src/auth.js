@@ -168,6 +168,23 @@ export function getTelegramUnsafeUser() {
   return normalizeUser(window.Telegram?.WebApp?.initDataUnsafe?.user || null);
 }
 
+
+export async function authenticateVkMiniAppLaunch({ launchParams, bridgeUser } = {}) {
+  if (!launchParams) return null;
+
+  const data = await postJson(
+    "/auth/vk-miniapp",
+    { launchParams, bridgeUser },
+    14000
+  );
+  saveSession(data);
+
+  return {
+    ...data,
+    user: normalizeUser(data.user),
+  };
+}
+
 export async function authenticateMiniAppInitData(initData) {
   if (!initData) return null;
 

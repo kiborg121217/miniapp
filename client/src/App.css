@@ -12943,3 +12943,26 @@ html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-tel
     0 0 22px rgba(0, 119, 255, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
+
+/* === VK Mini App stage 1 runtime guard === */
+html[data-vk-mini-app="true"] {
+  --page-bottom-nav-gap: 6px;
+  --nav-bottom-lift-fixed: 6px;
+  --browser-bottom-controls: 0px;
+}
+
+html[data-vk-mini-app="true"] .bottom-nav {
+  bottom: var(--page-bottom-nav-gap, 6px) !important;
+}
+
+html[data-vk-mini-app="true"] .login-secondary-provider {
+  margin-top: 10px;
+  opacity: 0.86;
+}
+
+@media (max-width: 759px) {
+  html[data-vk-mini-app="true"] .bottom-nav {
+    width: min(calc(100vw - 44px), 492px) !important;
+    max-width: 492px !important;
+  }
+}
