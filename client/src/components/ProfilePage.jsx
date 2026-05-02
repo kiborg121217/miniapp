@@ -5,6 +5,7 @@ import {
   uploadImage,
 } from "../firebase";
 import { getAvatarImageUrl } from "../cloudinary";
+import { logoutAuthSession } from "../auth";
 
 function UserPlaceholderIcon() {
   return (
@@ -20,6 +21,16 @@ function VerifiedIcon() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 3.4L18.6 6.2V11.2C18.6 15.4 16.05 19.1 12 20.6C7.95 19.1 5.4 15.4 5.4 11.2V6.2L12 3.4Z" />
       <path d="M8.7 12.1L10.9 14.2L15.6 9.5" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9.4 5.2H6.8C5.8 5.2 5 6 5 7V17C5 18 5.8 18.8 6.8 18.8H9.4" />
+      <path d="M13 8.2L16.8 12L13 15.8" />
+      <path d="M16.6 12H9" />
     </svg>
   );
 }
@@ -114,6 +125,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
   const [message, setMessage] = useState("");
   const [isProfileLoading, setIsProfileLoading] = useState(!initialProfileData);
   const [nameTouched, setNameTouched] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -237,6 +249,47 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
     } catch (error) {
       console.error(error);
       setMessage("Ошибка запроса подтверждения");
+    }
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    const confirmed = window.confirm("Выйти из аккаунта?");
+    if (!confirmed) return;
+
+    try {
+      setIsLoggingOut(true);
+      setMessage("Выходим из аккаунта...");
+
+      await logoutAuthSession();
+
+      try {
+        if (user?.id) {
+          window.localStorage.removeItem(`${PROFILE_CACHE_PREFIX}_${user.id}`);
+        }
+      } catch {
+        // ignore storage errors
+      }
+
+      try {
+        window.sessionStorage.removeItem("app_page");
+        window.sessionStorage.removeItem("selected_ad");
+        window.sessionStorage.removeItem("selected_ad_id");
+        window.sessionStorage.removeItem("selected_chat_id");
+        window.sessionStorage.removeItem("selected_seller_id");
+        window.sessionStorage.removeItem("profile_status_page");
+        window.sessionStorage.removeItem("seller_back_target");
+        window.sessionStorage.removeItem("view_back_target");
+      } catch {
+        // ignore storage errors
+      }
+
+      window.location.replace("/");
+    } catch (error) {
+      console.error("Ошибка выхода из аккаунта:", error);
+      setMessage("Не удалось выйти из аккаунта. Попробуй ещё раз.");
+      setIsLoggingOut(false);
     }
   };
 
@@ -445,6 +498,40 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
             <span>{rejectedAds.length} нужно исправить</span>
           </span>
           <span className="profile-menu-arrow">›</span>
+        </button>
+
+
+        <button
+          type="button"
+          className="profile-menu-tile profile-logout-tile"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          style={{
+            marginTop: "18px",
+            borderColor: "rgba(255, 82, 82, 0.42)",
+            background:
+              "linear-gradient(135deg, rgba(255, 60, 60, 0.18), rgba(255, 60, 60, 0.08))",
+            boxShadow: "0 18px 42px rgba(255, 42, 42, 0.12)",
+            opacity: isLoggingOut ? 0.72 : 1,
+          }}
+        >
+          <span
+            className="profile-menu-icon"
+            style={{
+              color: "#ff6b6b",
+              background: "rgba(255, 80, 80, 0.16)",
+              borderColor: "rgba(255, 92, 92, 0.28)",
+            }}
+          >
+            <LogoutIcon />
+          </span>
+          <span className="profile-menu-copy">
+            <strong style={{ color: "#ff7a7a" }}>
+              {isLoggingOut ? "Выходим..." : "Выйти из аккаунта"}
+            </strong>
+            <span>Завершить текущую сессию</span>
+          </span>
+          <span className="profile-menu-arrow" style={{ color: "rgba(255, 122, 122, 0.9)" }}>›</span>
         </button>
       </section>
     </div>
