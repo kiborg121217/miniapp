@@ -1,10 +1,9 @@
+import bridge from "@vkontakte/vk-bridge";
 import { logDebugEvent } from "./debugLog";
 
-const VK_BRIDGE_CDN_URL = "https://unpkg.com/@vkontakte/vk-bridge@2.15.12/dist/browser.min.js";
-
-let bridgeLoadPromise = null;
 let initPromise = null;
 let cachedInfo = null;
+let earlyInitStarted = false;
 
 function collectVkParamSources() {
   const sources = [];
@@ -62,14 +61,20 @@ function getSearchParams() {
 
 function isLikelyOpenedInsideVk() {
   try {
-    if (/vk\.com|m\.vk\.com|vk-apps\.com/i.test(document.referrer || "")) return true;
+    if (/vk\.com|m\.vk\.com|vk-apps\.com|vk\.ru|m\.vk\.ru/i.test(document.referrer || "")) return true;
   } catch {
     // ignore
   }
 
   try {
     const origins = Array.from(window.location.ancestorOrigins || []);
-    if (origins.some((origin) => /vk\.com|m\.vk\.com|vk-apps\.com/i.test(origin))) return true;
+    if (origins.some((origin) => /vk\.com|m\.vk\.com|vk-apps\.com|vk\.ru|m\.vk\.ru/i.test(origin))) return true;
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (/VKClient|VKAndroidApp|VKIOS|VKontakte/i.test(navigator.userAgent || "")) return true;
   } catch {
     // ignore
   }
@@ -130,38 +135,40 @@ function setVkDataset(info = {}) {
   if (appId) root.dataset.vkAppId = String(appId);
 }
 
-function loadVkBridgeScript() {
-  if (window.vkBridge?.send) return Promise.resolve(window.vkBridge);
-  if (bridgeLoadPromise) return bridgeLoadPromise;
-
-  bridgeLoadPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector("script[data-vk-bridge='true']");
-
-    if (existing) {
-      existing.addEventListener("load", () => resolve(window.vkBridge), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Не удалось загрузить VK Bridge")), { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = VK_BRIDGE_CDN_URL;
-    script.async = true;
-    script.defer = true;
-    script.dataset.vkBridge = "true";
-    script.onload = () => {
-      if (window.vkBridge?.send) resolve(window.vkBridge);
-      else reject(new Error("VK Bridge загружен, но объект vkBridge недоступен"));
-    };
-    script.onerror = () => reject(new Error("Не удалось загрузить VK Bridge"));
-    document.head.appendChild(script);
-  });
-
-  return bridgeLoadPromise;
+function getSafeBridge() {
+  return bridge?.default?.send ? bridge.default : bridge;
 }
 
 export async function getVkBridge() {
   if (!isVkMiniAppLaunch()) return null;
-  return await loadVkBridgeScript();
+  const vkBridge = getSafeBridge();
+  return vkBridge?.send ? vkBridge : null;
+}
+
+export function initVkMiniAppEarly() {
+  if (earlyInitStarted || !isVkMiniAppLaunch()) return;
+  earlyInitStarted = true;
+
+  const launchParams = readVkLaunchParams();
+  setVkDataset({ launchParams });
+  logDebugEvent("vk_miniapp_early_detected", {
+    appId: launchParams.vk_app_id || "",
+    platform: launchParams.vk_platform || "",
+    hasSign: Boolean(launchParams.sign),
+  });
+
+  const vkBridge = getSafeBridge();
+  if (!vkBridge?.send) {
+    logDebugEvent("vk_bridge_early_missing");
+    return;
+  }
+
+  // Важно вызвать VKWebAppInit как можно раньше, до тяжёлой загрузки React-экрана.
+  // Иначе мобильный клиент VK может вести себя как обычный mobile-web контейнер.
+  vkBridge
+    .send("VKWebAppInit")
+    .then(() => logDebugEvent("vk_bridge_early_init_success"))
+    .catch((error) => logDebugEvent("vk_bridge_early_init_error", error));
 }
 
 export async function initVkMiniApp() {
@@ -177,23 +184,24 @@ export async function initVkMiniApp() {
       hasSign: Boolean(launchParams.sign),
     });
 
-    let bridge = null;
     let user = null;
     let config = null;
     let initOk = false;
+    const vkBridge = getSafeBridge();
 
     try {
-      bridge = await loadVkBridgeScript();
-      await bridge.send("VKWebAppInit");
+      if (!earlyInitStarted && vkBridge?.send) {
+        await vkBridge.send("VKWebAppInit");
+      }
       initOk = true;
       logDebugEvent("vk_bridge_init_success");
     } catch (error) {
       logDebugEvent("vk_bridge_init_error", error);
     }
 
-    if (bridge?.send) {
+    if (vkBridge?.send) {
       try {
-        user = await bridge.send("VKWebAppGetUserInfo");
+        user = await vkBridge.send("VKWebAppGetUserInfo");
         logDebugEvent("vk_bridge_user_info_success", {
           id: user?.id || user?.user_id || "",
           hasPhoto: Boolean(user?.photo_200 || user?.photo_max_orig || user?.avatar),
@@ -203,7 +211,7 @@ export async function initVkMiniApp() {
       }
 
       try {
-        config = await bridge.send("VKWebAppGetConfig");
+        config = await vkBridge.send("VKWebAppGetConfig");
       } catch {
         config = null;
       }
@@ -233,10 +241,10 @@ export async function requestVkCommunityMessagesViaBridge(communityId) {
     throw new Error("VK-сообщество не настроено");
   }
 
-  const bridge = await getVkBridge();
-  if (!bridge?.send) {
+  const vkBridge = await getVkBridge();
+  if (!vkBridge?.send) {
     throw new Error("VK Bridge недоступен. Откройте приложение внутри ВКонтакте.");
   }
 
-  return await bridge.send("VKWebAppAllowMessagesFromGroup", { group_id: groupId });
+  return await vkBridge.send("VKWebAppAllowMessagesFromGroup", { group_id: groupId });
 }
