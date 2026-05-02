@@ -3,10 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { installDebugLogListeners, logDebugEvent } from "./debugLog";
-import { initVkMiniAppEarly } from "./vkMiniApp";
 
 installDebugLogListeners();
-initVkMiniAppEarly();
 
 class AppErrorBoundary extends Component {
   constructor(props) {
