@@ -274,6 +274,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
   }
 
   const isVkProfile = profile?.authProvider === "vk" || user?.authProvider === "vk" || Boolean(profile?.vkId);
+  const phoneVerificationRequired = profile?.phoneVerificationRequired !== false && !isVkProfile;
   const avatarUrl = getAvatarImageUrl(
     profile?.avatarUrl ||
       profile?.vkAvatarUrl ||
@@ -287,7 +288,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
     profile?.vkDomain ||
     user.username ||
     (profile?.vkId ? `id${profile.vkId}` : "no_username");
-  const isVerified = !!profile?.isVerified || isVkProfile;
+  const isVerified = !!profile?.isVerified || !!profile?.identityVerified || isVkProfile;
 
   return (
     <div className="profile-premium-page page-enter">
@@ -381,7 +382,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           )}
         </div>
 
-        {!isVerified && !isVkProfile && (
+        {!isVerified && phoneVerificationRequired && (
           <div className="profile-action-row-premium profile-action-row-single">
             <button type="button" className="profile-verify-action" onClick={handleVerifyPhone}>
               <span className="profile-action-icon">

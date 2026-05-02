@@ -447,6 +447,7 @@ function normalizePublicUserId(value) {
 
 function publicUserFromProfile(profile) {
   const userId = profile.userId || profile.telegramId || profile.vkUid || profile.id;
+  const isVkProfile = profile.authProvider === "vk" || Boolean(profile.vkId);
 
   return {
     id: normalizePublicUserId(userId),
@@ -454,7 +455,11 @@ function publicUserFromProfile(profile) {
     last_name: profile.lastName || "",
     username: profile.username || profile.vkDomain || "",
     photo_url: profile.telegramAvatarUrl || profile.vkAvatarUrl || profile.avatarUrl || "",
-    authProvider: profile.authProvider || (profile.vkId ? "vk" : "telegram"),
+    phone_number: profile.phoneNumber || "",
+    isVerified: Boolean(profile.isVerified || profile.identityVerified || isVkProfile),
+    phoneVerified: Boolean(profile.phoneVerified),
+    phoneVerificationRequired: profile.phoneVerificationRequired !== undefined ? Boolean(profile.phoneVerificationRequired) : !isVkProfile,
+    authProvider: profile.authProvider || (isVkProfile ? "vk" : "telegram"),
   };
 }
 
@@ -862,12 +867,17 @@ async function upsertVkIdUser(vkUser, source) {
     phoneNumber: existing.phoneNumber || user.phone_number || "",
     email: existing.email || user.email || "",
     isVerified: true,
+    identityVerified: true,
+    profileVerified: true,
     verifiedAt,
     verifiedBy: existing.verifiedBy || "vk_id",
     verificationProvider: existing.verificationProvider || "vk_id",
+    identityVerificationProvider: existing.identityVerificationProvider || "vk_id",
     vkVerifiedAt: existing.vkVerifiedAt || now,
     phoneVerified: Boolean(existing.phoneVerified || user.phone_number),
-    phoneVerificationProvider: existing.phoneVerificationProvider || (user.phone_number ? "vk_id" : ""),
+    phoneVerificationRequired: false,
+    phoneVerificationStatus: user.phone_number ? "verified" : "not_provided_by_vk",
+    phoneVerificationProvider: existing.phoneVerificationProvider || (user.phone_number ? "vk_id" : "vk_id_not_returned"),
     authProviders: {
       ...(existing.authProviders || {}),
       vk: true,
