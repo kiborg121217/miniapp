@@ -4,6 +4,7 @@ import {
   updateUserProfile,
   uploadImage,
 } from "../firebase";
+import { getAvatarImageUrl } from "../cloudinary";
 
 function UserPlaceholderIcon() {
   return (
@@ -272,10 +273,21 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
     );
   }
 
-  const avatarUrl = profile?.avatarUrl || profile?.telegramAvatarUrl || "";
+  const isVkProfile = profile?.authProvider === "vk" || user?.authProvider === "vk" || Boolean(profile?.vkId);
+  const avatarUrl = getAvatarImageUrl(
+    profile?.avatarUrl ||
+      profile?.vkAvatarUrl ||
+      profile?.telegramAvatarUrl ||
+      user?.photo_url ||
+      ""
+  );
   const profileName = profile?.displayName || user.first_name || "Пользователь";
-  const username = profile?.username || user.username || "no_username";
-  const isVerified = !!profile?.isVerified;
+  const username =
+    profile?.username ||
+    profile?.vkDomain ||
+    user.username ||
+    (profile?.vkId ? `id${profile.vkId}` : "no_username");
+  const isVerified = !!profile?.isVerified || isVkProfile;
 
   return (
     <div className="profile-premium-page page-enter">
@@ -322,7 +334,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
             <div className={isVerified ? "profile-status-pill verified" : "profile-status-pill unverified"}>
               {isVerified && <VerifiedIcon />}
               {!isVerified && <span className="profile-status-dot" />}
-              <span>{isVerified ? "Профиль подтвержден" : "Профиль не подтвержден"}</span>
+              <span>{isVerified ? (isVkProfile ? "Профиль подтвержден через VK" : "Профиль подтвержден") : "Профиль не подтвержден"}</span>
             </div>
           </div>
         </div>
@@ -369,7 +381,7 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
           )}
         </div>
 
-        {!isVerified && (
+        {!isVerified && !isVkProfile && (
           <div className="profile-action-row-premium profile-action-row-single">
             <button type="button" className="profile-verify-action" onClick={handleVerifyPhone}>
               <span className="profile-action-icon">

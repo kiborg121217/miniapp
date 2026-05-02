@@ -31,6 +31,8 @@ function normalizeUser(user) {
     last_name: user.last_name || user.lastName || "",
     username: user.username || user.preferred_username || user.domain || "",
     photo_url: user.photo_url || user.photoUrl || user.telegramAvatarUrl || user.vkAvatarUrl || user.picture || user.avatarUrl || "",
+    phone_number: user.phone_number || user.phoneNumber || user.phone || "",
+    isVerified: Boolean(user.isVerified || user.verified),
     authProvider: user.authProvider || user.provider || "telegram",
   };
 }
@@ -233,7 +235,7 @@ export async function startVkIdLogin(returnPage = "profile") {
     "/auth/vk/start",
     {
       returnTo: returnPage || "profile",
-      scope: "vkid.personal_info email",
+      scope: "vkid.personal_info email phone",
     },
     22000
   );

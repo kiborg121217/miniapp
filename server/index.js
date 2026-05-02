@@ -135,6 +135,31 @@ function safeJsonParse(bufferOrString) {
   }
 }
 
+function decodeJwtPayloadWithoutVerify(token) {
+  const parts = String(token || "").split(".");
+  if (parts.length < 2) return {};
+  return safeJsonParse(base64UrlDecode(parts[1])) || {};
+}
+
+function cleanVkUsername(value, fallbackVkId = "") {
+  const raw = String(value || "").trim();
+  const cleaned = raw
+    .replace(/^https?:\/\/(m\.)?vk\.com\//i, "")
+    .replace(/^@+/, "")
+    .replace(/\?.*$/, "")
+    .replace(/\/.*$/, "")
+    .trim();
+
+  if (cleaned && cleaned !== "id0") return cleaned;
+  return fallbackVkId ? `id${fallbackVkId}` : "";
+}
+
+function normalizeVkPhone(value) {
+  const phone = String(value || "").trim();
+  if (!phone) return "";
+  return phone.replace(/[()\s-]/g, "");
+}
+
 function assertOidcConfigured() {
   if (!TELEGRAM_OIDC_CLIENT_ID || !TELEGRAM_OIDC_CLIENT_SECRET) {
     throw new Error("Telegram OpenID Connect не настроен на сервере");
@@ -746,27 +771,68 @@ async function fetchVkIdUserInfo(accessToken) {
 }
 
 function normalizeVkIdUser(rawUser, tokenData = {}) {
-  const rawVkId = rawUser?.user_id || rawUser?.id || tokenData?.user_id || tokenData?.sub;
+  const idTokenClaims = decodeJwtPayloadWithoutVerify(tokenData?.id_token);
+  const rawVkId =
+    rawUser?.user_id ||
+    rawUser?.id ||
+    rawUser?.sub ||
+    tokenData?.user_id ||
+    tokenData?.sub ||
+    idTokenClaims?.sub ||
+    idTokenClaims?.user_id;
 
   if (!rawVkId) {
     throw new Error("VK ID не вернул идентификатор пользователя");
   }
 
-  const firstName = rawUser.first_name || rawUser.firstName || rawUser.name || "";
-  const lastName = rawUser.last_name || rawUser.lastName || "";
+  const vkId = String(rawVkId);
+  const firstName = rawUser.first_name || rawUser.firstName || idTokenClaims?.given_name || rawUser.name || "";
+  const lastName = rawUser.last_name || rawUser.lastName || idTokenClaims?.family_name || "";
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
 
+  const username = cleanVkUsername(
+    rawUser.username ||
+      rawUser.domain ||
+      rawUser.screen_name ||
+      rawUser.nickname ||
+      rawUser.preferred_username ||
+      idTokenClaims?.preferred_username ||
+      idTokenClaims?.screen_name,
+    vkId
+  );
+
+  const avatarUrl =
+    rawUser.avatar ||
+    rawUser.picture ||
+    rawUser.photo_400_orig ||
+    rawUser.photo_max_orig ||
+    rawUser.photo_200 ||
+    rawUser.photo_max ||
+    rawUser.photo ||
+    idTokenClaims?.picture ||
+    "";
+
+  const email = rawUser.email || idTokenClaims?.email || "";
+  const phone = normalizeVkPhone(
+    rawUser.phone ||
+      rawUser.phone_number ||
+      rawUser.phoneNumber ||
+      idTokenClaims?.phone ||
+      idTokenClaims?.phone_number
+  );
+
   return {
-    id: String(rawVkId),
-    vkId: String(rawVkId),
-    vkUid: `vk_${String(rawVkId)}`,
+    id: vkId,
+    vkId,
+    vkUid: `vk_${vkId}`,
     first_name: firstName,
     last_name: lastName,
-    username: rawUser.username || rawUser.domain || rawUser.screen_name || "",
-    display_name: rawUser.display_name || rawUser.displayName || fullName || rawUser.email || "Пользователь VK",
-    photo_url: rawUser.avatar || rawUser.picture || rawUser.photo_200 || rawUser.photo_max || rawUser.photo || "",
-    email: rawUser.email || "",
-    phone_number: rawUser.phone || rawUser.phone_number || "",
+    username,
+    display_name: rawUser.display_name || rawUser.displayName || fullName || username || rawUser.email || "Пользователь VK",
+    photo_url: avatarUrl,
+    email,
+    phone_number: phone,
+    vkProfileUrl: username ? `https://vk.com/${username}` : `https://vk.com/id${vkId}`,
   };
 }
 
@@ -778,6 +844,8 @@ async function upsertVkIdUser(vkUser, source) {
   const existing = snap.exists ? snap.data() : {};
   const now = Date.now();
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+  const hasCustomAvatar = Boolean(existing.avatarUrl && existing.avatarUrl !== existing.vkAvatarUrl);
+  const verifiedAt = existing.verifiedAt || now;
 
   const patch = {
     userId,
@@ -785,13 +853,21 @@ async function upsertVkIdUser(vkUser, source) {
     authProvider: existing.authProvider || "vk",
     firstName: user.first_name || existing.firstName || "",
     lastName: user.last_name || existing.lastName || "",
-    username: user.username || existing.username || "",
-    vkDomain: user.username || existing.vkDomain || "",
+    username: user.username || existing.username || `id${user.vkId}`,
+    vkDomain: user.username || existing.vkDomain || `id${user.vkId}`,
+    vkProfileUrl: user.vkProfileUrl || existing.vkProfileUrl || `https://vk.com/id${user.vkId}`,
     vkAvatarUrl: user.photo_url || existing.vkAvatarUrl || "",
-    avatarUrl: existing.avatarUrl || user.photo_url || "",
+    avatarUrl: hasCustomAvatar ? existing.avatarUrl : user.photo_url || existing.avatarUrl || "",
     displayName: existing.displayName || user.display_name || fullName || user.username || "Пользователь VK",
     phoneNumber: existing.phoneNumber || user.phone_number || "",
     email: existing.email || user.email || "",
+    isVerified: true,
+    verifiedAt,
+    verifiedBy: existing.verifiedBy || "vk_id",
+    verificationProvider: existing.verificationProvider || "vk_id",
+    vkVerifiedAt: existing.vkVerifiedAt || now,
+    phoneVerified: Boolean(existing.phoneVerified || user.phone_number),
+    phoneVerificationProvider: existing.phoneVerificationProvider || (user.phone_number ? "vk_id" : ""),
     authProviders: {
       ...(existing.authProviders || {}),
       vk: true,
@@ -829,7 +905,7 @@ app.post("/auth/vk/start", async (req, res) => {
   try {
     const returnTo = req.body?.returnTo || "profile";
     const { state, codeChallenge } = await createVkIdState(returnTo);
-    const scope = String(req.body?.scope || "vkid.personal_info email");
+    const scope = String(req.body?.scope || "vkid.personal_info email phone");
 
     const url = new URL(VK_ID_AUTH_URL);
     url.searchParams.set("response_type", "code");
