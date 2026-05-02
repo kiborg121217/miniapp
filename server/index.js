@@ -44,6 +44,17 @@ const TELEGRAM_OIDC_AUTH_URL = "https://oauth.telegram.org/auth";
 const TELEGRAM_OIDC_TOKEN_URL = "https://oauth.telegram.org/token";
 const TELEGRAM_OIDC_JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json";
 const OIDC_STATE_TTL_MS = Number(process.env.OIDC_STATE_TTL_MS || 1000 * 60 * 10);
+
+const VK_ID_CLIENT_ID = String(process.env.VK_ID_CLIENT_ID || process.env.VK_CLIENT_ID || "");
+const VK_ID_CLIENT_SECRET = String(process.env.VK_ID_CLIENT_SECRET || process.env.VK_CLIENT_SECRET || "");
+const VK_ID_REDIRECT_URI = String(
+  process.env.VK_ID_REDIRECT_URI || `${WEB_APP_URL}/auth/vk/callback`
+);
+const VK_ID_AUTH_URL = "https://id.vk.ru/authorize";
+const VK_ID_TOKEN_URL = "https://id.vk.ru/oauth2/auth";
+const VK_ID_USER_INFO_URL = "https://id.vk.ru/oauth2/user_info";
+const VK_ID_STATE_TTL_MS = Number(process.env.VK_ID_STATE_TTL_MS || 1000 * 60 * 10);
+
 let telegramJwksCache = { keys: [], expiresAt: 0 };
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
@@ -397,13 +408,28 @@ function normalizeTelegramUser(raw) {
   };
 }
 
+function normalizePublicUserId(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const raw = String(value);
+
+  if (/^\d+$/.test(raw)) {
+    const numeric = Number(raw);
+    if (Number.isSafeInteger(numeric)) return numeric;
+  }
+
+  return raw;
+}
+
 function publicUserFromProfile(profile) {
+  const userId = profile.userId || profile.telegramId || profile.vkUid || profile.id;
+
   return {
-    id: Number(profile.userId || profile.telegramId || profile.id),
+    id: normalizePublicUserId(userId),
     first_name: profile.firstName || "",
     last_name: profile.lastName || "",
-    username: profile.username || "",
-    photo_url: profile.telegramAvatarUrl || profile.avatarUrl || "",
+    username: profile.username || profile.vkDomain || "",
+    photo_url: profile.telegramAvatarUrl || profile.vkAvatarUrl || profile.avatarUrl || "",
+    authProvider: profile.authProvider || (profile.vkId ? "vk" : "telegram"),
   };
 }
 
@@ -591,10 +617,262 @@ async function sendAuthResponse(req, res, telegramUser, source) {
   });
 }
 
+function assertVkIdConfigured() {
+  if (!VK_ID_CLIENT_ID) {
+    throw new Error("VK ID не настроен на сервере: нет VK_ID_CLIENT_ID");
+  }
+}
+
+async function createVkIdState(returnTo = "profile") {
+  assertVkIdConfigured();
+
+  const state = randomBase64Url(24);
+  const codeVerifier = randomBase64Url(48);
+  const codeChallenge = sha256Base64Url(codeVerifier);
+  const now = Date.now();
+
+  await db.collection("auth_vk_states").doc(state).set({
+    state,
+    codeVerifier,
+    codeChallenge,
+    returnTo: String(returnTo || "profile"),
+    createdAt: now,
+    expiresAt: now + VK_ID_STATE_TTL_MS,
+  });
+
+  return { state, codeVerifier, codeChallenge };
+}
+
+async function readAndDeleteVkIdState(state) {
+  if (!state) {
+    throw new Error("VK ID не вернул state");
+  }
+
+  const ref = db.collection("auth_vk_states").doc(String(state));
+  const snap = await ref.get();
+
+  if (!snap.exists) {
+    throw new Error("Сессия VK-входа не найдена или уже использована");
+  }
+
+  const data = snap.data();
+  await ref.delete().catch(() => {});
+
+  if (!data?.expiresAt || data.expiresAt < Date.now()) {
+    throw new Error("Сессия VK-входа истекла. Попробуйте войти заново.");
+  }
+
+  if (!data?.codeVerifier) {
+    throw new Error("Сессия VK-входа повреждена. Попробуйте войти заново.");
+  }
+
+  return data;
+}
+
+async function exchangeVkIdCode(code, deviceId, codeVerifier) {
+  assertVkIdConfigured();
+
+  if (!code) {
+    throw new Error("VK ID не вернул код авторизации");
+  }
+
+  if (!deviceId) {
+    throw new Error("VK ID не вернул device_id. Попробуйте войти заново.");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code: String(code),
+    client_id: VK_ID_CLIENT_ID,
+    redirect_uri: VK_ID_REDIRECT_URI,
+    code_verifier: codeVerifier,
+    device_id: String(deviceId),
+  });
+
+  const response = await fetch(VK_ID_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body,
+  });
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: text };
+  }
+
+  if (!response.ok || !data.access_token) {
+    throw new Error(data.error_description || data.error || "VK ID не выдал access_token");
+  }
+
+  return data;
+}
+
+async function fetchVkIdUserInfo(accessToken) {
+  const body = new URLSearchParams({
+    access_token: String(accessToken || ""),
+    client_id: VK_ID_CLIENT_ID,
+  });
+
+  const response = await fetch(VK_ID_USER_INFO_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body,
+  });
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: text };
+  }
+
+  if (!response.ok || data.error || !data.user) {
+    throw new Error(data.error_description || data.error || "VK ID не вернул данные пользователя");
+  }
+
+  return data.user;
+}
+
+function normalizeVkIdUser(rawUser, tokenData = {}) {
+  const rawVkId = rawUser?.user_id || rawUser?.id || tokenData?.user_id || tokenData?.sub;
+
+  if (!rawVkId) {
+    throw new Error("VK ID не вернул идентификатор пользователя");
+  }
+
+  const firstName = rawUser.first_name || rawUser.firstName || rawUser.name || "";
+  const lastName = rawUser.last_name || rawUser.lastName || "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    id: String(rawVkId),
+    vkId: String(rawVkId),
+    vkUid: `vk_${String(rawVkId)}`,
+    first_name: firstName,
+    last_name: lastName,
+    username: rawUser.username || rawUser.domain || rawUser.screen_name || "",
+    display_name: rawUser.display_name || rawUser.displayName || fullName || rawUser.email || "Пользователь VK",
+    photo_url: rawUser.avatar || rawUser.picture || rawUser.photo_200 || rawUser.photo_max || rawUser.photo || "",
+    email: rawUser.email || "",
+    phone_number: rawUser.phone || rawUser.phone_number || "",
+  };
+}
+
+async function upsertVkIdUser(vkUser, source) {
+  const user = normalizeVkIdUser(vkUser);
+  const userId = user.vkUid;
+  const ref = db.collection("users").doc(userId);
+  const snap = await ref.get();
+  const existing = snap.exists ? snap.data() : {};
+  const now = Date.now();
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+
+  const patch = {
+    userId,
+    vkId: user.vkId,
+    authProvider: existing.authProvider || "vk",
+    firstName: user.first_name || existing.firstName || "",
+    lastName: user.last_name || existing.lastName || "",
+    username: user.username || existing.username || "",
+    vkDomain: user.username || existing.vkDomain || "",
+    vkAvatarUrl: user.photo_url || existing.vkAvatarUrl || "",
+    avatarUrl: existing.avatarUrl || user.photo_url || "",
+    displayName: existing.displayName || user.display_name || fullName || user.username || "Пользователь VK",
+    phoneNumber: existing.phoneNumber || user.phone_number || "",
+    email: existing.email || user.email || "",
+    authProviders: {
+      ...(existing.authProviders || {}),
+      vk: true,
+      [source]: true,
+    },
+    lastAuthAt: now,
+    updatedAt: now,
+    createdAt: existing.createdAt || now,
+  };
+
+  await ref.set(patch, { merge: true });
+  const updated = await ref.get();
+
+  return { id: updated.id, ...updated.data() };
+}
+
+async function sendVkAuthResponse(req, res, vkUser, source) {
+  const profile = await upsertVkIdUser(vkUser, source);
+  const sessionToken = await createAuthSession(profile.userId || profile.id, source, req);
+
+  return res.json({
+    ok: true,
+    user: publicUserFromProfile(profile),
+    profile,
+    sessionToken,
+    expiresAt: Date.now() + AUTH_SESSION_TTL_MS,
+  });
+}
+
 app.get("/auth/config", (req, res) => {
   res.json({ ok: true, botUsername: BOT_USERNAME });
 });
 
+app.post("/auth/vk/start", async (req, res) => {
+  try {
+    const returnTo = req.body?.returnTo || "profile";
+    const { state, codeChallenge } = await createVkIdState(returnTo);
+    const scope = String(req.body?.scope || "vkid.personal_info email");
+
+    const url = new URL(VK_ID_AUTH_URL);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", VK_ID_CLIENT_ID);
+    url.searchParams.set("redirect_uri", VK_ID_REDIRECT_URI);
+    url.searchParams.set("scope", scope);
+    url.searchParams.set("state", state);
+    url.searchParams.set("code_challenge", codeChallenge);
+    url.searchParams.set("code_challenge_method", "S256");
+    url.searchParams.set("prompt", "login");
+
+    return res.json({
+      ok: true,
+      authUrl: url.toString(),
+      state,
+      redirectUri: VK_ID_REDIRECT_URI,
+    });
+  } catch (error) {
+    console.error("/auth/vk/start error:", error.message);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || "Не удалось начать VK ID вход",
+    });
+  }
+});
+
+app.post("/auth/vk/callback", async (req, res) => {
+  try {
+    const { code, state, deviceId } = req.body || {};
+    const vkState = await readAndDeleteVkIdState(state);
+    const tokens = await exchangeVkIdCode(code, deviceId, vkState.codeVerifier);
+    const rawUser = await fetchVkIdUserInfo(tokens.access_token);
+    const vkUser = normalizeVkIdUser(rawUser, tokens);
+
+    return await sendVkAuthResponse(req, res, vkUser, "website_vk");
+  } catch (error) {
+    console.error("/auth/vk/callback error:", error.message);
+    return res.status(401).json({
+      ok: false,
+      error: error.message || "Не удалось завершить VK ID вход",
+    });
+  }
+});
 
 app.post("/auth/oidc/start", async (req, res) => {
   try {

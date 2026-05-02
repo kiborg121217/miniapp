@@ -12879,3 +12879,67 @@ html[data-mobile-browser="true"]:not([data-standalone-app="true"]):not([data-tel
     pointer-events: none !important;
   }
 }
+
+/* ===== VK ID auth button ===== */
+.vk-id-login-btn {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 12px;
+  border: 1px solid rgba(79, 145, 255, 0.34);
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #f8fbff;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(91, 154, 255, 0.34), transparent 42%),
+    linear-gradient(135deg, rgba(0, 119, 255, 0.92), rgba(20, 44, 86, 0.88));
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.26),
+    0 0 24px rgba(0, 119, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  cursor: pointer;
+  transition: transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.vk-id-login-btn svg {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+}
+
+.vk-id-login-btn svg path {
+  fill: currentColor;
+  stroke: none;
+}
+
+.vk-id-login-btn:active {
+  transform: scale(0.98);
+}
+
+.vk-id-login-btn:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.login-icon-vk {
+  color: #8db9ff;
+}
+
+[data-theme="light"] .vk-id-login-btn {
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(132, 184, 255, 0.42), transparent 42%),
+    linear-gradient(135deg, #0077ff, #1d4ed8);
+  border-color: rgba(0, 119, 255, 0.26);
+  box-shadow:
+    0 18px 42px rgba(29, 78, 216, 0.14),
+    0 0 22px rgba(0, 119, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}

@@ -546,8 +546,8 @@ export default function App() {
         return;
       }
 
-      if (window.location.pathname === "/auth/callback") {
-        safeSetProgress(100, "Завершаем Telegram-вход…");
+      if (window.location.pathname === "/auth/callback" || window.location.pathname === "/auth/vk/callback") {
+        safeSetProgress(100, window.location.pathname === "/auth/vk/callback" ? "Завершаем VK-вход…" : "Завершаем Telegram-вход…");
         setBootLoading(false);
         return;
       }
@@ -707,9 +707,12 @@ export default function App() {
     return <DebugPage onBack={() => { window.history.replaceState({}, "", "/"); setPage("list"); setBootLoading(false); }} />;
   }
 
-  if (window.location.pathname === "/auth/callback") {
+  if (window.location.pathname === "/auth/callback" || window.location.pathname === "/auth/vk/callback") {
+    const authProvider = window.location.pathname === "/auth/vk/callback" ? "vk" : "telegram";
+
     return (
       <AuthCallbackPage
+        provider={authProvider}
         onBack={() => {
           window.history.replaceState({}, "", "/");
           setPage("list");

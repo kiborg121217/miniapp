@@ -9,15 +9,29 @@ export const BOT_USERNAME =
 const SESSION_KEY = "baraholka_auth_session_v1";
 const OIDC_RETURN_PAGE_KEY = "baraholka_oidc_return_page_v1";
 
+function normalizeUserId(value) {
+  if (value === undefined || value === null || value === "") return null;
+
+  const raw = String(value);
+
+  if (/^\d+$/.test(raw)) {
+    const numeric = Number(raw);
+    if (Number.isSafeInteger(numeric)) return numeric;
+  }
+
+  return raw;
+}
+
 function normalizeUser(user) {
   if (!user) return null;
 
   return {
-    id: Number(user.id),
+    id: normalizeUserId(user.id || user.userId || user.uid),
     first_name: user.first_name || user.firstName || user.name || "",
     last_name: user.last_name || user.lastName || "",
-    username: user.username || user.preferred_username || "",
-    photo_url: user.photo_url || user.photoUrl || user.telegramAvatarUrl || user.picture || "",
+    username: user.username || user.preferred_username || user.domain || "",
+    photo_url: user.photo_url || user.photoUrl || user.telegramAvatarUrl || user.vkAvatarUrl || user.picture || user.avatarUrl || "",
+    authProvider: user.authProvider || user.provider || "telegram",
   };
 }
 
@@ -204,6 +218,43 @@ export async function completeTelegramOidcLogin({ code, state }) {
   }
 
   const data = await postJson("/auth/oidc/callback", { code, state }, 28000);
+  saveSession(data);
+
+  return {
+    ...data,
+    user: normalizeUser(data.user),
+  };
+}
+
+export async function startVkIdLogin(returnPage = "profile") {
+  sessionStorage.setItem(OIDC_RETURN_PAGE_KEY, returnPage || "profile");
+
+  const data = await postJson(
+    "/auth/vk/start",
+    {
+      returnTo: returnPage || "profile",
+      scope: "vkid.personal_info email",
+    },
+    22000
+  );
+
+  if (!data?.authUrl) {
+    throw new Error("Сервер не вернул ссылку VK ID");
+  }
+
+  window.location.assign(data.authUrl);
+}
+
+export async function completeVkIdLogin({ code, state, deviceId }) {
+  if (!code || !state) {
+    throw new Error("VK ID не вернул данные для завершения входа");
+  }
+
+  const data = await postJson(
+    "/auth/vk/callback",
+    { code, state, deviceId },
+    28000
+  );
   saveSession(data);
 
   return {
