@@ -54,6 +54,12 @@ const VK_ID_AUTH_URL = "https://id.vk.ru/authorize";
 const VK_ID_TOKEN_URL = "https://id.vk.ru/oauth2/auth";
 const VK_ID_USER_INFO_URL = "https://id.vk.ru/oauth2/user_info";
 const VK_ID_STATE_TTL_MS = Number(process.env.VK_ID_STATE_TTL_MS || 1000 * 60 * 10);
+const VK_MINI_APP_SECRET = String(
+  process.env.VK_MINI_APP_SECRET ||
+    process.env.VK_APP_SECRET ||
+    process.env.VK_MINI_APP_SECURE_KEY ||
+    ""
+);
 
 const VK_COMMUNITY_ID = String(
   process.env.VK_COMMUNITY_ID || process.env.VK_GROUP_ID || process.env.VK_PUBLIC_ID || ""
@@ -62,7 +68,6 @@ const VK_COMMUNITY_TOKEN = String(
   process.env.VK_COMMUNITY_TOKEN || process.env.VK_GROUP_TOKEN || process.env.VK_COMMUNITY_ACCESS_TOKEN || ""
 );
 const VK_API_VERSION = String(process.env.VK_API_VERSION || "5.199");
-const VK_MINI_APP_SECRET = String(process.env.VK_MINI_APP_SECRET || process.env.VK_APP_SECRET || "");
 
 let telegramJwksCache = { keys: [], expiresAt: 0 };
 
@@ -864,6 +869,106 @@ async function sendAuthResponse(req, res, telegramUser, source) {
   });
 }
 
+
+function base64UrlFromBuffer(buffer) {
+  return Buffer.from(buffer)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function parseVkLaunchParams(searchOrQuery) {
+  const raw = String(searchOrQuery || "").replace(/^\?/, "");
+  const params = new URLSearchParams(raw);
+  const result = {};
+
+  for (const [key, value] of params.entries()) {
+    if (key === "sign" || key.startsWith("vk_")) {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function verifyVkMiniAppLaunchParams(searchOrQuery) {
+  if (!VK_MINI_APP_SECRET) {
+    throw new Error("VK Mini App secret не настроен на сервере. Авто-вход внутри VK Mini App пока недоступен.");
+  }
+
+  const params = parseVkLaunchParams(searchOrQuery);
+  const sign = params.sign;
+  const queryParams = Object.keys(params)
+    .filter((key) => key !== "sign" && key.startsWith("vk_") && params[key] !== undefined && params[key] !== null)
+    .sort((a, b) => a.localeCompare(b))
+    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+    .join("&");
+
+  if (!sign || !queryParams) {
+    throw new Error("VK Mini App не передал корректные launch-параметры");
+  }
+
+  const calculated = base64UrlFromBuffer(
+    crypto.createHmac("sha256", VK_MINI_APP_SECRET).update(queryParams).digest()
+  );
+
+  if (calculated !== String(sign)) {
+    throw new Error("Не удалось проверить подпись VK Mini App");
+  }
+
+  if (VK_ID_CLIENT_ID && params.vk_app_id && String(params.vk_app_id) !== String(VK_ID_CLIENT_ID)) {
+    throw new Error("VK Mini App запущен не для этого приложения");
+  }
+
+  return params;
+}
+
+function normalizeVkMiniAppBridgeUser(bridgeUser = {}) {
+  if (!bridgeUser || typeof bridgeUser !== "object") return {};
+
+  return {
+    id: bridgeUser.id || bridgeUser.user_id || "",
+    first_name: bridgeUser.first_name || bridgeUser.firstName || "",
+    last_name: bridgeUser.last_name || bridgeUser.lastName || "",
+    username: bridgeUser.domain || bridgeUser.screen_name || bridgeUser.nickname || bridgeUser.username || "",
+    display_name: [bridgeUser.first_name || bridgeUser.firstName || "", bridgeUser.last_name || bridgeUser.lastName || ""]
+      .filter(Boolean)
+      .join(" ")
+      .trim(),
+    photo_url:
+      bridgeUser.photo_max_orig ||
+      bridgeUser.photo_400_orig ||
+      bridgeUser.photo_200 ||
+      bridgeUser.photo_100 ||
+      bridgeUser.avatar ||
+      bridgeUser.picture ||
+      "",
+  };
+}
+
+function normalizeVkMiniAppUser(launchParams, bridgeUser = {}) {
+  const vkId = String(launchParams?.vk_user_id || bridgeUser?.id || bridgeUser?.user_id || "").trim();
+
+  if (!vkId) {
+    throw new Error("VK Mini App не передал vk_user_id");
+  }
+
+  const normalizedBridgeUser = normalizeVkMiniAppBridgeUser(bridgeUser);
+
+  return normalizeVkIdUser({
+    user_id: vkId,
+    id: vkId,
+    first_name: normalizedBridgeUser.first_name,
+    last_name: normalizedBridgeUser.last_name,
+    username: normalizedBridgeUser.username || `id${vkId}`,
+    domain: normalizedBridgeUser.username || `id${vkId}`,
+    display_name: normalizedBridgeUser.display_name || `id${vkId}`,
+    avatar: normalizedBridgeUser.photo_url,
+    picture: normalizedBridgeUser.photo_url,
+  });
+}
+
 function assertVkIdConfigured() {
   if (!VK_ID_CLIENT_ID) {
     throw new Error("VK ID не настроен на сервере: нет VK_ID_CLIENT_ID");
@@ -1111,30 +1216,6 @@ async function upsertVkIdUser(vkUser, source) {
   return { id: updated.id, ...updated.data() };
 }
 
-
-function verifyVkMiniAppLaunchParams(params = {}) {
-  if (!VK_MINI_APP_SECRET) return { ok: true, skipped: true };
-
-  const sign = String(params.sign || "");
-  if (!sign) return { ok: false, reason: "VK Mini App не передал sign" };
-
-  const pairs = Object.keys(params)
-    .filter((key) => key.startsWith("vk_") && params[key] !== undefined && params[key] !== null)
-    .sort()
-    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`);
-
-  const payload = pairs.join("&");
-  const digest = crypto
-    .createHmac("sha256", VK_MINI_APP_SECRET)
-    .update(payload)
-    .digest("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-
-  return { ok: digest === sign, reason: digest === sign ? "" : "Некорректная подпись VK Mini App" };
-}
-
 async function sendVkAuthResponse(req, res, vkUser, source) {
   const profile = await upsertVkIdUser(vkUser, source);
   const sessionToken = await createAuthSession(profile.userId || profile.id, source, req);
@@ -1153,34 +1234,20 @@ app.get("/auth/config", (req, res) => {
 });
 
 
-app.post("/auth/vk-miniapp/bridge", async (req, res) => {
+app.post("/auth/vk-miniapp", async (req, res) => {
   try {
-    const rawUser = req.body?.user || {};
-    const launchParams = req.body?.launchParams || {};
+    const launchParams = req.body?.launchParams;
+    const bridgeUser = req.body?.bridgeUser || null;
+    const verifiedLaunchParams = verifyVkMiniAppLaunchParams(launchParams);
+    const vkUser = normalizeVkMiniAppUser(verifiedLaunchParams, bridgeUser);
 
-    if (!rawUser?.id && !rawUser?.user_id) {
-      return res.status(400).json({ ok: false, error: "VK Mini App не передал пользователя" });
-    }
-
-    const verification = verifyVkMiniAppLaunchParams(launchParams);
-    if (!verification.ok) {
-      return res.status(403).json({ ok: false, error: verification.reason || "Не удалось проверить VK Mini App" });
-    }
-
-    const vkUser = normalizeVkIdUser({
-      ...rawUser,
-      user_id: rawUser.user_id || rawUser.id,
-      photo_200: rawUser.photo_200,
-      photo_max_orig: rawUser.photo_max_orig || rawUser.photo_200,
-      username: rawUser.domain || rawUser.screen_name || rawUser.username,
-    });
-
-    return await sendVkAuthResponse(req, res, vkUser, verification.skipped ? "vk_miniapp_bridge" : "vk_miniapp_signed");
+    return await sendVkAuthResponse(req, res, vkUser, "vk_miniapp");
   } catch (error) {
-    console.error("/auth/vk-miniapp/bridge error:", error.message);
-    return res.status(500).json({
+    console.error("/auth/vk-miniapp error:", error.message);
+    return res.status(401).json({
       ok: false,
-      error: error.message || "Не удалось войти через VK Mini App",
+      error: error.message || "Не удалось авторизоваться через VK Mini App",
+      needsVkMiniAppSecret: !VK_MINI_APP_SECRET,
     });
   }
 });
