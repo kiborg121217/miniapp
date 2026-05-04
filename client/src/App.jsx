@@ -14,7 +14,6 @@ import AuthCallbackPage from "./components/AuthCallbackPage";
 import "./App.css";
 import { initTelegram } from "./telegram";
 import useTelegramViewport from "./hooks/useTelegramViewport";
-import { getVkLaunchQueryString, initVkMiniApp, isVkMiniAppLaunch } from "./vkMiniApp";
 import {
   getAdById,
   getUserProfileBundle,
@@ -24,7 +23,6 @@ import {
 import { getDebugLog, clearDebugLog, logDebugEvent } from "./debugLog";
 import {
   authenticateMiniAppInitData,
-  authenticateVkMiniAppLaunch,
   getStoredAuthSession,
   getTelegramInitData,
   getTelegramUnsafeUser,
@@ -491,10 +489,8 @@ export default function App() {
       if (text) setBootSubtitle(text);
     };
 
-    const resolveAuth = async (vkMiniAppInfo = null) => {
+    const resolveAuth = async () => {
       const initData = getTelegramInitData();
-      const vkLaunchQuery = getVkLaunchQueryString();
-      const stored = getStoredAuthSession();
       let user = null;
 
       try {
@@ -504,24 +500,8 @@ export default function App() {
           const auth = await withTimeout(authenticateMiniAppInitData(initData), 8500, null);
           user = auth?.user || null;
           logDebugEvent("auth_miniapp_done", { ok: !!user });
-        } else if (isVkMiniAppLaunch() && vkLaunchQuery) {
-          safeSetProgress(34, "Проверяем VK Mini App…");
-          logDebugEvent("auth_vk_miniapp_start", { hasStoredUser: !!stored?.user });
-
-          const auth = await withTimeout(
-            authenticateVkMiniAppLaunch({
-              launchParams: vkLaunchQuery,
-              bridgeUser: vkMiniAppInfo?.user || null,
-            }),
-            8500,
-            null
-          );
-
-          user = auth?.user || null;
-          logDebugEvent("auth_vk_miniapp_done", { ok: !!user });
-
-          if (!user && stored?.user && !cancelled) setTgUser(stored.user);
         } else {
+          const stored = getStoredAuthSession();
           if (stored?.user && !cancelled) setTgUser(stored.user);
 
           safeSetProgress(34, "Проверяем сессию…");
@@ -533,11 +513,6 @@ export default function App() {
       } catch (error) {
         console.warn("Авторизация недоступна, открываем приложение без блокировки:", error);
         logDebugEvent("auth_error_non_blocking", error);
-
-        if (!user && stored?.user) {
-          user = stored.user;
-          if (!cancelled) setTgUser(stored.user);
-        }
       }
 
       if (!user) user = getTelegramUnsafeUser();
@@ -577,14 +552,8 @@ export default function App() {
         return;
       }
 
-      safeSetProgress(22, isVkMiniAppLaunch() ? "Открываем сервис ВК…" : "Открываем приложение…");
-
-      let vkMiniAppInfo = null;
-      if (isVkMiniAppLaunch()) {
-        vkMiniAppInfo = await withTimeout(initVkMiniApp(), 3600, { isVkMiniApp: true });
-      }
-
-      await resolveAuth(vkMiniAppInfo);
+      safeSetProgress(22, "Открываем приложение…");
+      await resolveAuth();
 
       if (cancelled) return;
 
@@ -784,7 +753,7 @@ export default function App() {
         tgUser ? (
           <AddAd user={tgUser} onBack={() => goToPage("list")} />
         ) : (
-          <LoginPage returnPage="add" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="add" onBack={() => goToPage("list")} onDone={(user, profile) => handleAuthSuccess(user, profile)} />
         )
       )}
 
@@ -802,7 +771,7 @@ export default function App() {
             onOpenChats={() => goToPage("chats")}
           />
         ) : (
-          <LoginPage returnPage="profile" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="profile" onBack={() => goToPage("list")} onDone={(user, profile) => handleAuthSuccess(user, profile)} />
         )
       )}
 
@@ -816,7 +785,7 @@ export default function App() {
             onOpenAd={handleOpenAdFromChat}
           />
         ) : (
-          <LoginPage returnPage="chats" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="chats" onBack={() => goToPage("list")} onDone={(user, profile) => handleAuthSuccess(user, profile)} />
         )
       )}
 
