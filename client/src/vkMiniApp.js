@@ -96,3 +96,38 @@ export async function getVkMiniAppUserInfo() {
   }
   return bridge.send("VKWebAppGetUserInfo");
 }
+
+// Backward-compatible exports used by SettingsPage.jsx from VK notifications stage.
+export function isVkMiniAppLaunch() {
+  return isVkMiniAppRuntime();
+}
+
+export function getVkLaunchQueryString() {
+  if (typeof window === "undefined") return "";
+  const launchParams = readVkLaunchParams();
+  const params = new URLSearchParams();
+  Object.entries(launchParams).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== "") {
+      params.set(key, String(value));
+    }
+  });
+  return params.toString();
+}
+
+export async function getVkBridge() {
+  return await initVkBridge();
+}
+
+export async function requestVkCommunityMessagesViaBridge(communityId) {
+  const groupId = Number(String(communityId || "").replace(/^-/, ""));
+  if (!groupId) {
+    throw new Error("VK-сообщество не настроено");
+  }
+
+  const bridge = await initVkBridge();
+  if (!bridge?.send) {
+    throw new Error("VK Bridge недоступен. Откройте приложение внутри ВКонтакте.");
+  }
+
+  return bridge.send("VKWebAppAllowMessagesFromGroup", { group_id: groupId });
+}
