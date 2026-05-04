@@ -1,4 +1,3 @@
-import { getVkMiniAppUserInfo, readVkLaunchParams } from "./vkMiniApp";
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_SERVER_URL ||
@@ -169,6 +168,23 @@ export function getTelegramUnsafeUser() {
   return normalizeUser(window.Telegram?.WebApp?.initDataUnsafe?.user || null);
 }
 
+
+export async function authenticateVkMiniAppLaunch({ launchParams, bridgeUser } = {}) {
+  if (!launchParams) return null;
+
+  const data = await postJson(
+    "/auth/vk-miniapp",
+    { launchParams, bridgeUser },
+    14000
+  );
+  saveSession(data);
+
+  return {
+    ...data,
+    user: normalizeUser(data.user),
+  };
+}
+
 export async function authenticateMiniAppInitData(initData) {
   if (!initData) return null;
 
@@ -221,30 +237,6 @@ export async function completeTelegramOidcLogin({ code, state }) {
   }
 
   const data = await postJson("/auth/oidc/callback", { code, state }, 28000);
-  saveSession(data);
-
-  return {
-    ...data,
-    user: normalizeUser(data.user),
-  };
-}
-
-
-export async function startVkMiniAppBridgeLogin() {
-  const vkUser = await getVkMiniAppUserInfo();
-  if (!vkUser?.id) {
-    throw new Error("VK Mini App не передал пользователя");
-  }
-
-  const data = await postJson(
-    "/auth/vk-miniapp/bridge",
-    {
-      user: vkUser,
-      launchParams: readVkLaunchParams(),
-    },
-    18000
-  );
-
   saveSession(data);
 
   return {
