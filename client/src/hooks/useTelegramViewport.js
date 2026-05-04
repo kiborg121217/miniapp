@@ -1,5 +1,67 @@
 import { useEffect } from "react";
 
+function readVkParamsFromCurrentUrl() {
+  const merged = new URLSearchParams();
+  const sources = [];
+
+  try {
+    sources.push(window.location.search || "");
+    const hash = String(window.location.hash || "").replace(/^#\/?/, "");
+    sources.push(hash.includes("?") ? hash.slice(hash.indexOf("?")) : hash);
+  } catch {
+    // ignore
+  }
+
+  for (const source of sources) {
+    const raw = String(source || "").replace(/^\?/, "");
+    if (!raw) continue;
+
+    try {
+      const params = new URLSearchParams(raw);
+      for (const [key, value] of params.entries()) {
+        if (key === "sign" || key.startsWith("vk_")) merged.set(key, value);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return merged;
+}
+
+function isLikelyOpenedInsideVk() {
+  try {
+    if (/vk\.com|m\.vk\.com|vk-apps\.com/i.test(document.referrer || "")) return true;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const origins = Array.from(window.location.ancestorOrigins || []);
+    if (origins.some((origin) => /vk\.com|m\.vk\.com|vk-apps\.com/i.test(origin))) return true;
+  } catch {
+    // ignore
+  }
+
+  return false;
+}
+
+function isVkMiniAppLaunch() {
+  try {
+    const params = readVkParamsFromCurrentUrl();
+    return Boolean(
+      params.get("vk_app_id") ||
+        params.get("vk_user_id") ||
+        params.get("vk_platform") ||
+        params.get("vk_ref") ||
+        params.get("sign") ||
+        isLikelyOpenedInsideVk()
+    );
+  } catch {
+    return isLikelyOpenedInsideVk();
+  }
+}
+
 function readTelegramInset(inset, key) {
   const value = inset?.[key];
   return Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -70,17 +132,16 @@ function getRuntimeFlags(tg) {
     window.navigator.standalone === true ||
     window.matchMedia?.("(display-mode: standalone)")?.matches === true;
   const isTelegram = isRealTelegramWebApp(tg);
+  const isVkMiniApp = isVkMiniAppLaunch();
   const isLikelyInAppBrowser = /VK|VKontakte|Instagram|FBAN|FBAV|Line|MicroMessenger|YaApp|GSA|CriOS|EdgiOS/i.test(ua);
-
-  const isVkMiniApp = /[?&#]vk_app_id=|vk_platform=|vk_user_id=|sign=/.test(String(window.location.href || "")) || /(^|\.)vk\.com|(^|\.)vk\.ru|(^|\.)m\.vk\.com|(^|\.)m\.vk\.ru/.test(String(document.referrer || "")) || /VKAndroidApp|VK\/|VKontakte/i.test(ua);
 
   return {
     isIOS,
     isAndroid,
-    isVkMiniApp,
     isMobile,
     isStandalone,
     isTelegram,
+    isVkMiniApp,
     isLikelyInAppBrowser,
   };
 }
@@ -93,8 +154,8 @@ function setDatasetFlag(root, name, enabled) {
   }
 }
 
-function getBrowserBottomControls({ envBottom, isTelegram, isStandalone }) {
-  if (isTelegram || isStandalone) return 0;
+function getBrowserBottomControls({ envBottom, isTelegram, isStandalone, isVkMiniApp }) {
+  if (isTelegram || isStandalone || isVkMiniApp) return 0;
 
   const base = Math.max(0, envBottom || 0);
   const vv = window.visualViewport;
@@ -135,6 +196,7 @@ function applyTelegramViewportVars() {
     envBottom,
     isTelegram: flags.isTelegram,
     isStandalone: flags.isStandalone,
+    isVkMiniApp: flags.isVkMiniApp,
   });
 
   const top = normalizeInsetPair({
@@ -168,12 +230,11 @@ function applyTelegramViewportVars() {
   root.style.setProperty("--ios-env-safe-bottom", `${envBottom}px`);
 
   setDatasetFlag(root, "telegramApp", flags.isTelegram);
-  setDatasetFlag(root, "standaloneApp", flags.isStandalone);
-  setDatasetFlag(root, "androidDevice", flags.isAndroid);
   setDatasetFlag(root, "vkMiniApp", flags.isVkMiniApp);
-  setDatasetFlag(root, "mobileBrowser", flags.isMobile && !flags.isStandalone && !flags.isTelegram);
-  setDatasetFlag(root, "iosBrowser", flags.isIOS && !flags.isStandalone && !flags.isTelegram);
-  setDatasetFlag(root, "inappBrowser", flags.isLikelyInAppBrowser && !flags.isTelegram);
+  setDatasetFlag(root, "standaloneApp", flags.isStandalone);
+  setDatasetFlag(root, "mobileBrowser", flags.isMobile && !flags.isStandalone && !flags.isTelegram && !flags.isVkMiniApp);
+  setDatasetFlag(root, "iosBrowser", flags.isIOS && !flags.isStandalone && !flags.isTelegram && !flags.isVkMiniApp);
+  setDatasetFlag(root, "inappBrowser", flags.isLikelyInAppBrowser && !flags.isTelegram && !flags.isVkMiniApp);
 
   if (flags.isTelegram && tg?.isFullscreen === true) {
     root.dataset.tgFullscreenSafe = "true";
