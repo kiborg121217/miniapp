@@ -1654,13 +1654,49 @@ app.post("/new-ad", async (req, res) => {
       });
     }
 
-    const text = `📦 Новое объявление
+    const TELEGRAM_CAPTION_SAFE_LIMIT = 900;
+    const TELEGRAM_MESSAGE_SAFE_LIMIT = 3500;
+
+    const toTelegramSafeText = (value, maxLength) => {
+      const normalized = String(value ?? "").trim();
+      const chars = Array.from(normalized);
+
+      if (chars.length <= maxLength) {
+        return normalized;
+      }
+
+      return `${chars.slice(0, Math.max(0, maxLength - 1)).join("")}…`;
+    };
+
+    const splitTelegramMessage = (value, maxLength = TELEGRAM_MESSAGE_SAFE_LIMIT) => {
+      const chars = Array.from(String(value ?? ""));
+      const chunks = [];
+
+      for (let index = 0; index < chars.length; index += maxLength) {
+        chunks.push(chars.slice(index, index + maxLength).join(""));
+      }
+
+      return chunks.length > 0 ? chunks : [""];
+    };
+
+    const headerText = `📦 Новое объявление
 
 🆔 ${ad.id}
 📌 ${ad.title}
 🗂 Категория: ${ad.category || "Без категории"}
-💰 ${ad.price} ₽
-📝 ${ad.description}`;
+💰 ${ad.price} ₽`;
+
+    const caption = toTelegramSafeText(
+      `${headerText}
+📝 ${ad.description}`,
+      TELEGRAM_CAPTION_SAFE_LIMIT
+    );
+
+    const fullText = `${headerText}
+
+📝 Полное описание:
+${ad.description}`;
+    const fullTextChunks = splitTelegramMessage(fullText);
 
     const keyboard = {
       reply_markup: {
@@ -1677,16 +1713,24 @@ app.post("/new-ad", async (req, res) => {
       const media = imageUrls.map((url, index) => ({
         type: "photo",
         media: url,
-        ...(index === 0 ? { caption: text } : {}),
+        ...(index === 0 ? { caption } : {}),
       }));
 
       await bot.sendMediaGroup(ADMIN_ID, media);
-      await bot.sendMessage(ADMIN_ID, "Выберите действие:", keyboard);
     } else {
       await bot.sendPhoto(ADMIN_ID, imageUrls[0], {
-        caption: text,
-        ...keyboard,
+        caption,
       });
+    }
+
+    for (let index = 0; index < fullTextChunks.length; index += 1) {
+      const isLastChunk = index === fullTextChunks.length - 1;
+
+      await bot.sendMessage(
+        ADMIN_ID,
+        fullTextChunks[index],
+        isLastChunk ? keyboard : undefined
+      );
     }
 
     return res.status(200).json({ ok: true });
