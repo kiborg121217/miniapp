@@ -1686,15 +1686,12 @@ app.post("/new-ad", async (req, res) => {
 🗂 Категория: ${ad.category || "Без категории"}
 💰 ${ad.price} ₽`;
 
-    const caption = toTelegramSafeText(
-      `${headerText}
-📝 ${ad.description}`,
-      TELEGRAM_CAPTION_SAFE_LIMIT
-    );
+    // В подписи к фото держим только короткую шапку объявления.
+    // Полное описание отправляется отдельным сообщением ниже, чтобы не дублировать текст
+    // и не упираться в лимит caption у Telegram.
+    const caption = toTelegramSafeText(headerText, TELEGRAM_CAPTION_SAFE_LIMIT);
 
-    const fullText = `${headerText}
-
-📝 Полное описание:
+    const fullText = `📝 Полное описание:
 ${ad.description}`;
     const fullTextChunks = splitTelegramMessage(fullText);
 
