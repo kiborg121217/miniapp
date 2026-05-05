@@ -812,7 +812,7 @@ export default function App() {
         tgUser ? (
           <AddAd user={tgUser} onBack={() => goToPage("list")} />
         ) : (
-          <LoginPage returnPage="add" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="add" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 
@@ -831,7 +831,7 @@ export default function App() {
             onOpenChats={() => goToPage("chats")}
           />
         ) : (
-          <LoginPage returnPage="profile" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="profile" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 
@@ -845,7 +845,7 @@ export default function App() {
             onOpenAd={handleOpenAdFromChat}
           />
         ) : (
-          <LoginPage returnPage="chats" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="chats" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 

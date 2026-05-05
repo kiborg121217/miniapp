@@ -60,6 +60,9 @@ const VK_MINI_APP_SECRET = String(
     process.env.VK_MINI_APP_SECURE_KEY ||
     ""
 );
+const VK_MINI_APP_ID = String(
+  process.env.VK_MINI_APP_ID || process.env.VK_APP_ID || "54575193"
+);
 
 const VK_COMMUNITY_ID = String(
   process.env.VK_COMMUNITY_ID || process.env.VK_GROUP_ID || process.env.VK_PUBLIC_ID || ""
@@ -917,7 +920,7 @@ function verifyVkMiniAppLaunchParams(searchOrQuery) {
     throw new Error("Не удалось проверить подпись VK Mini App");
   }
 
-  if (VK_ID_CLIENT_ID && params.vk_app_id && String(params.vk_app_id) !== String(VK_ID_CLIENT_ID)) {
+  if (VK_MINI_APP_ID && params.vk_app_id && String(params.vk_app_id) !== String(VK_MINI_APP_ID)) {
     throw new Error("VK Mini App запущен не для этого приложения");
   }
 

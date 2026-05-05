@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { BOT_USERNAME, startTelegramOidcLogin, startVkIdLogin } from "../auth";
-import { isVkMiniAppLaunch } from "../vkMiniApp";
+import {
+  BOT_USERNAME,
+  authenticateVkMiniAppLaunch,
+  startTelegramOidcLogin,
+  startVkIdLogin,
+} from "../auth";
+import { getVkLaunchQueryString, getVkMiniAppCachedInfo, isVkMiniAppLaunch } from "../vkMiniApp";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -43,7 +48,7 @@ function openChannel() {
   window.open(CHANNEL_URL, "_blank", "noopener,noreferrer");
 }
 
-export default function LoginPage({ onBack, returnPage = "profile" }) {
+export default function LoginPage({ onBack, returnPage = "profile", onAuthSuccess }) {
   const isVkMiniApp = isVkMiniAppLaunch();
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -71,13 +76,31 @@ export default function LoginPage({ onBack, returnPage = "profile" }) {
     try {
       setIsLoading(true);
       setLoadingProvider("vk");
-      setStatus(isVkMiniApp ? "Продолжаем через VK..." : "Открываем VK ID...");
+
+      if (isVkMiniApp) {
+        const launchParams = getVkLaunchQueryString();
+
+        if (!launchParams) {
+          throw new Error("VK не передал параметры запуска. Закройте сервис и откройте его заново из ВКонтакте.");
+        }
+
+        setStatus("Проверяем вход внутри VK...");
+        const auth = await authenticateVkMiniAppLaunch({
+          launchParams,
+          bridgeUser: getVkMiniAppCachedInfo()?.user || null,
+        });
+
+        onAuthSuccess?.(auth?.user || null, auth?.profile || null);
+        return;
+      }
+
+      setStatus("Открываем VK ID...");
       await startVkIdLogin(returnPage);
     } catch (error) {
-      console.error("VK ID login start error:", error);
+      console.error("VK login error:", error);
       setIsLoading(false);
       setLoadingProvider("");
-      setStatus(error.message || "Не удалось открыть вход через VK");
+      setStatus(error.message || "Не удалось войти через VK");
     }
   };
 
@@ -108,7 +131,7 @@ export default function LoginPage({ onBack, returnPage = "profile" }) {
               disabled={isLoading}
             >
               <VkIcon />
-              <span>{loadingProvider === "vk" ? "Открываем VK..." : "Продолжить через VK"}</span>
+              <span>{loadingProvider === "vk" ? "Проверяем VK..." : "Продолжить через VK"}</span>
             </button>
 
             <button
