@@ -114,7 +114,14 @@ function writeProfileCache(userId, value) {
   }
 }
 
-export default function ProfilePage({ user, onOpenSection, onOpenChats, initialProfileData, onProfileDataLoaded }) {
+export default function ProfilePage({
+  user,
+  onOpenSection,
+  onOpenChats,
+  initialProfileData,
+  onProfileDataLoaded,
+  onLogoutComplete,
+}) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [activeAds, setActiveAds] = useState([]);
@@ -255,9 +262,6 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
-    const confirmed = window.confirm("Выйти из аккаунта?");
-    if (!confirmed) return;
-
     try {
       setIsLoggingOut(true);
       setMessage("Выходим из аккаунта...");
@@ -268,6 +272,11 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
         if (user?.id) {
           window.localStorage.removeItem(`${PROFILE_CACHE_PREFIX}_${user.id}`);
         }
+        window.localStorage.removeItem("baraholka_user");
+        window.localStorage.removeItem("baraholka_profile");
+        window.localStorage.removeItem("baraholka_auth_user");
+        window.localStorage.removeItem("baraholka_auth_session");
+        window.localStorage.removeItem("baraholka_auth_session_v1");
       } catch {
         // ignore storage errors
       }
@@ -285,10 +294,12 @@ export default function ProfilePage({ user, onOpenSection, onOpenChats, initialP
         // ignore storage errors
       }
 
-      window.location.replace("/");
+      onLogoutComplete?.();
     } catch (error) {
       console.error("Ошибка выхода из аккаунта:", error);
-      setMessage("Не удалось выйти из аккаунта. Попробуй ещё раз.");
+      setMessage("Сессия на устройстве сброшена. Обновляем профиль...");
+      onLogoutComplete?.();
+    } finally {
       setIsLoggingOut(false);
     }
   };
