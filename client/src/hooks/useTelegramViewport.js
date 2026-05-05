@@ -232,6 +232,7 @@ function applyTelegramViewportVars() {
   setDatasetFlag(root, "telegramApp", flags.isTelegram);
   setDatasetFlag(root, "vkMiniApp", flags.isVkMiniApp);
   setDatasetFlag(root, "standaloneApp", flags.isStandalone);
+  setDatasetFlag(root, "androidApp", flags.isAndroid && flags.isMobile);
   setDatasetFlag(root, "mobileBrowser", flags.isMobile && !flags.isStandalone && !flags.isTelegram && !flags.isVkMiniApp);
   setDatasetFlag(root, "iosBrowser", flags.isIOS && !flags.isStandalone && !flags.isTelegram && !flags.isVkMiniApp);
   setDatasetFlag(root, "inappBrowser", flags.isLikelyInAppBrowser && !flags.isTelegram && !flags.isVkMiniApp);
