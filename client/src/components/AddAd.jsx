@@ -137,13 +137,13 @@ export default function AddAd({ user, onBack }) {
         sellerAvatarUrl,
       });
 
-      setMessage("✅ Отправлено на модерацию");
       logDebugEvent("ad_submit_firestore_saved", { id, imageCount: imageUrls.length });
 
-      const apiBase =
+      const apiBase = String(
         import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_SERVER_URL ||
-        "https://miniapp-1wzi.onrender.com";
+          import.meta.env.VITE_SERVER_URL ||
+          "https://miniapp-1wzi.onrender.com"
+      ).replace(/\/+$/, "");
 
       const moderationPayload = {
         id,
@@ -156,32 +156,43 @@ export default function AddAd({ user, onBack }) {
         userId: realUser.id,
       };
 
-      window.setTimeout(() => {
-        fetch(`${apiBase}/new-ad`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(moderationPayload),
-        })
-          .then(async (response) => {
-            const text = await response.text();
-            let result = {};
-            try {
-              result = JSON.parse(text);
-            } catch {
-              result = { ok: false, error: text };
-            }
+      setMessage("Отправляем модератору...");
+      logDebugEvent("ad_submit_moderation_notify_start", { id, apiBase });
 
-            if (!response.ok || !result.ok) {
-              throw new Error(result.error || "Сервер не принял объявление");
-            }
+      const moderationResponse = await fetch(`${apiBase}/new-ad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(moderationPayload),
+      });
 
-            logDebugEvent("ad_submit_moderation_notify_success", { id });
-          })
-          .catch((error) => {
-            console.warn("Не удалось отправить уведомление модератору:", error);
-            logDebugEvent("ad_submit_moderation_notify_error", error);
-          });
-      }, 0);
+      const moderationText = await moderationResponse.text();
+      let moderationResult = {};
+
+      try {
+        moderationResult = moderationText ? JSON.parse(moderationText) : {};
+      } catch {
+        moderationResult = { ok: false, error: moderationText };
+      }
+
+      if (!moderationResponse.ok || !moderationResult.ok) {
+        const errorMessage =
+          moderationResult.error ||
+          `Сервер модерации вернул HTTP ${moderationResponse.status}`;
+
+        logDebugEvent("ad_submit_moderation_notify_error", {
+          id,
+          apiBase,
+          status: moderationResponse.status,
+          error: errorMessage,
+          response: moderationText.slice(0, 900),
+        });
+
+        setMessage(`⚠️ Объявление сохранено, но Telegram-модератору не ушло: ${errorMessage}`);
+        return;
+      }
+
+      logDebugEvent("ad_submit_moderation_notify_success", { id, apiBase });
+      setMessage("✅ Отправлено на модерацию");
 
       setTitle("");
       setPrice("");

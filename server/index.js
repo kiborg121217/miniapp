@@ -1624,11 +1624,25 @@ app.post("/notify-chat-message", async (req, res) => {
 
 app.post("/new-ad", async (req, res) => {
   try {
+    if (!BOT_TOKEN) {
+      return res.status(500).json({
+        ok: false,
+        error: "BOT_TOKEN не настроен на Render",
+      });
+    }
+
+    if (!ADMIN_ID || !Number.isFinite(ADMIN_ID)) {
+      return res.status(500).json({
+        ok: false,
+        error: "ADMIN_ID не настроен на Render или имеет неверный формат",
+      });
+    }
+
     const ad = req.body;
 
     const imageUrls =
       Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0
-        ? ad.imageUrls
+        ? ad.imageUrls.filter(Boolean)
         : ad?.imageUrl
         ? [ad.imageUrl]
         : [];
@@ -1642,10 +1656,22 @@ app.post("/new-ad", async (req, res) => {
 
     const text = `📦 Новое объявление
 
+🆔 ${ad.id}
 📌 ${ad.title}
 🗂 Категория: ${ad.category || "Без категории"}
 💰 ${ad.price} ₽
 📝 ${ad.description}`;
+
+    const keyboard = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "✅ Принять", callback_data: `approve_${ad.id}` },
+            { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
+          ],
+        ],
+      },
+    };
 
     if (imageUrls.length > 1) {
       const media = imageUrls.map((url, index) => ({
@@ -1655,37 +1681,26 @@ app.post("/new-ad", async (req, res) => {
       }));
 
       await bot.sendMediaGroup(ADMIN_ID, media);
-
-      await bot.sendMessage(ADMIN_ID, "Выберите действие:", {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-              { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
-            ],
-          ],
-        },
-      });
+      await bot.sendMessage(ADMIN_ID, "Выберите действие:", keyboard);
     } else {
       await bot.sendPhoto(ADMIN_ID, imageUrls[0], {
         caption: text,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "✅ Принять", callback_data: `approve_${ad.id}` },
-              { text: "❌ Отклонить", callback_data: `reject_${ad.id}` },
-            ],
-          ],
-        },
+        ...keyboard,
       });
     }
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error("Ошибка /new-ad:", error);
+    console.error("Ошибка /new-ad:", {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body || error.response,
+    });
+
     return res.status(500).json({
       ok: false,
       error: error.message || "Не удалось отправить объявление в Telegram",
+      telegramError: error.response?.body || null,
     });
   }
 });
