@@ -351,11 +351,14 @@ export async function restoreAuthSession() {
 export async function logoutAuthSession() {
   const saved = getStoredAuthSession();
 
+  // Локальный выход должен сработать всегда, даже если backend временно недоступен.
+  clearStoredAuthSession();
+
+  if (!saved?.token) return;
+
   try {
-    if (saved?.token) {
-      await postJson("/auth/logout", { sessionToken: saved.token }, 4000);
-    }
-  } finally {
-    clearStoredAuthSession();
+    await postJson("/auth/logout", { sessionToken: saved.token }, 4000);
+  } catch (error) {
+    console.warn("Не удалось завершить серверную сессию, локальный выход выполнен:", error);
   }
 }

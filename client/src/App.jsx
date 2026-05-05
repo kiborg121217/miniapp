@@ -644,6 +644,34 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
+  const handleLogoutComplete = () => {
+    setTgUser(null);
+    setProfileCache(null);
+    setSelectedAd(null);
+    setSelectedSellerId(null);
+    setSelectedChatId(null);
+    setProfileStatusPage(null);
+    setSellerBackTarget("list");
+    setViewBackTarget("list");
+    setViewLoading(false);
+    setPage("profile");
+
+    safeSessionSetItem("app_page", "profile");
+    safeSessionRemoveItem("selected_ad");
+    safeSessionRemoveItem("selected_ad_id");
+    safeSessionRemoveItem("selected_seller_id");
+    safeSessionRemoveItem("selected_chat_id");
+    safeSessionRemoveItem("profile_status_page");
+    safeSessionRemoveItem("seller_back_target");
+    safeSessionRemoveItem("view_back_target");
+
+    if (window.location.pathname !== "/") {
+      window.history.replaceState({}, "", "/");
+    }
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
   const goToPage = (nextPage) => {
     setPage(nextPage);
 
@@ -794,6 +822,7 @@ export default function App() {
             user={tgUser}
             initialProfileData={profileCache}
             onProfileDataLoaded={setProfileCache}
+            onLogoutComplete={handleLogoutComplete}
             onOpenSection={(status) => {
               setProfileStatusPage(status);
               setPage("profileAds");
