@@ -1,9 +1,23 @@
-import bridge from "@vkontakte/vk-bridge";
+import * as vkBridgeModule from "@vkontakte/vk-bridge";
 import { logDebugEvent } from "./debugLog";
 
 let bridgeInitPromise = null;
 let initPromise = null;
 let cachedInfo = null;
+
+function resolveVkBridge() {
+  const candidates = [
+    vkBridgeModule,
+    vkBridgeModule?.default,
+    vkBridgeModule?.bridge,
+    vkBridgeModule?.default?.default,
+    vkBridgeModule?.default?.bridge,
+  ];
+
+  return candidates.find((candidate) => candidate && typeof candidate.send === "function") || null;
+}
+
+const bridge = resolveVkBridge();
 
 function collectVkParamSources() {
   const sources = [];
@@ -136,10 +150,6 @@ function setVkDataset(info = {}) {
 export function sendVkBridgeInitEarly(options = {}) {
   const force = typeof options === "boolean" ? options : Boolean(options?.force);
 
-  // В режиме VK Mini Apps событие VKWebAppInit должно быть отправлено сразу при запуске.
-  // Проверка среды через query/referrer/ancestorOrigins не всегда надёжна в VK WebView,
-  // поэтому main.jsx вызывает эту функцию с force=true. В обычном браузере bridge
-  // просто вернёт ошибку/false, но сайт продолжит работать.
   if (!force && !isVkMiniAppLaunch()) return null;
   if (bridgeInitPromise) return bridgeInitPromise;
 
@@ -152,21 +162,37 @@ export function sendVkBridgeInitEarly(options = {}) {
     // ignore
   }
 
-  bridgeInitPromise = bridge
-    .send("VKWebAppInit")
-    .then(() => {
-      logDebugEvent("vk_bridge_init_success_early", {
-        appId: launchParams.vk_app_id || "",
-        platform: launchParams.vk_platform || "",
-        hasSign: Boolean(launchParams.sign),
-      });
-      return true;
-    })
-    .catch((error) => {
-      console.warn("[VK] VKWebAppInit failed", error);
-      logDebugEvent("vk_bridge_init_error_early", error);
-      return false;
+  if (!bridge || typeof bridge.send !== "function") {
+    console.warn("[VK] vk-bridge send() is unavailable", vkBridgeModule);
+    logDebugEvent("vk_bridge_unavailable_early", {
+      moduleKeys: Object.keys(vkBridgeModule || {}),
+      hasDefault: Boolean(vkBridgeModule?.default),
     });
+    bridgeInitPromise = Promise.resolve(false);
+    return bridgeInitPromise;
+  }
+
+  try {
+    bridgeInitPromise = bridge
+      .send("VKWebAppInit")
+      .then(() => {
+        logDebugEvent("vk_bridge_init_success_early", {
+          appId: launchParams.vk_app_id || "",
+          platform: launchParams.vk_platform || "",
+          hasSign: Boolean(launchParams.sign),
+        });
+        return true;
+      })
+      .catch((error) => {
+        console.warn("[VK] VKWebAppInit failed", error);
+        logDebugEvent("vk_bridge_init_error_early", error);
+        return false;
+      });
+  } catch (error) {
+    console.warn("[VK] VKWebAppInit threw synchronously", error);
+    logDebugEvent("vk_bridge_init_throw_early", error);
+    bridgeInitPromise = Promise.resolve(false);
+  }
 
   return bridgeInitPromise;
 }
@@ -193,20 +219,22 @@ export async function initVkMiniApp() {
     let config = null;
     const initOk = await sendVkBridgeInitEarly();
 
-    try {
-      user = await bridge.send("VKWebAppGetUserInfo");
-      logDebugEvent("vk_bridge_user_info_success", {
-        id: user?.id || user?.user_id || "",
-        hasPhoto: Boolean(user?.photo_200 || user?.photo_max_orig || user?.avatar),
-      });
-    } catch (error) {
-      logDebugEvent("vk_bridge_user_info_error", error);
-    }
+    if (bridge && typeof bridge.send === "function") {
+      try {
+        user = await bridge.send("VKWebAppGetUserInfo");
+        logDebugEvent("vk_bridge_user_info_success", {
+          id: user?.id || user?.user_id || "",
+          hasPhoto: Boolean(user?.photo_200 || user?.photo_max_orig || user?.avatar),
+        });
+      } catch (error) {
+        logDebugEvent("vk_bridge_user_info_error", error);
+      }
 
-    try {
-      config = await bridge.send("VKWebAppGetConfig");
-    } catch {
-      config = null;
+      try {
+        config = await bridge.send("VKWebAppGetConfig");
+      } catch {
+        config = null;
+      }
     }
 
     cachedInfo = {
@@ -219,7 +247,6 @@ export async function initVkMiniApp() {
       platform: launchParams.vk_platform || config?.platform || "",
     };
 
-    setVkDataset(cachedInfo);
     return cachedInfo;
   })();
 
