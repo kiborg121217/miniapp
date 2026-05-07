@@ -267,7 +267,7 @@ function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
   return (
     <div className="chat-settings-backdrop" onClick={onClose}>
       <section className="chat-settings-sheet" onClick={(event) => event.stopPropagation()}>
-        <div className="chat-settings-handle" />
+        <button type="button" className="chat-settings-handle" onClick={onClose} aria-label="Закрыть настройки" />
         <div className="chat-settings-head">
           <div>
             <h2>Настроить список</h2>

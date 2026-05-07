@@ -13989,3 +13989,459 @@ html[data-android-app="true"] .favorite-top-btn {
     border-radius: 18px;
   }
 }
+
+/* =========================================================
+   HOTFIX 2026-05-07: chats controls + bottom nav geometry
+   Fixes mobile horizontal offset, desktop sheet overlap,
+   close button placement and removes heavy glow effects.
+   ========================================================= */
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+.app {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+/* Global bottom navigation: filled bottom bar, never shifted off-screen */
+.bottom-nav {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+  transform: none !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-height: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  padding:
+    8px max(10px, env(safe-area-inset-right, 0px))
+    calc(10px + env(safe-area-inset-bottom, 0px))
+    max(10px, env(safe-area-inset-left, 0px)) !important;
+  border-radius: 30px 30px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.11) !important;
+  background: linear-gradient(180deg, rgba(22, 32, 42, 0.97), rgba(10, 16, 23, 1)) !important;
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32) !important;
+  backdrop-filter: blur(22px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(130%) !important;
+  z-index: 9000 !important;
+}
+
+.bottom-nav::before,
+.bottom-nav::after {
+  display: none !important;
+  content: none !important;
+}
+
+.bottom-nav .nav-item,
+.nav-item {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  margin: 0 !important;
+  padding: 6px 4px 4px !important;
+  border-radius: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.bottom-nav .nav-icon,
+.nav-icon {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.bottom-nav .nav-label,
+.nav-label {
+  display: block !important;
+  max-width: 100% !important;
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.bottom-nav .nav-item.active,
+.bottom-nav .nav-item.active .nav-icon {
+  color: #55efe8 !important;
+}
+
+[data-theme="light"] .bottom-nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 253, 1)) !important;
+  border-top-color: rgba(15, 23, 42, 0.09) !important;
+  box-shadow: 0 -16px 38px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .bottom-nav .nav-item.active,
+[data-theme="light"] .bottom-nav .nav-item.active .nav-icon {
+  color: #0a73ff !important;
+}
+
+@media (min-width: 860px) {
+  .bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(860px, calc(100vw - 40px)) !important;
+    max-width: min(860px, calc(100vw - 40px)) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 30px 30px 0 0 !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .bottom-nav {
+    min-height: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: 5px !important;
+  }
+
+  .bottom-nav .nav-item,
+  .nav-item {
+    height: 56px !important;
+    min-height: 56px !important;
+  }
+
+  .bottom-nav .nav-label,
+  .nav-label {
+    font-size: 0.72rem !important;
+  }
+}
+
+/* Chats page: keep controls symmetric and readable */
+.chats-page-redesign {
+  width: 100% !important;
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  padding-left: clamp(14px, 4vw, 34px) !important;
+  padding-right: clamp(14px, 4vw, 34px) !important;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.chat-toolbar {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 64px !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.chat-search-field,
+.chat-filter-button {
+  height: 62px !important;
+  min-height: 62px !important;
+  box-sizing: border-box !important;
+}
+
+.chat-filter-button {
+  width: 64px !important;
+  min-width: 64px !important;
+  padding: 0 !important;
+}
+
+.chat-filter-row {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+}
+
+.chat-filter-row button {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 50px !important;
+  padding: 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+}
+
+.chats-page-redesign .chat-list-item {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 430px) {
+  .chat-toolbar {
+    grid-template-columns: minmax(0, 1fr) 58px !important;
+    gap: 10px !important;
+  }
+
+  .chat-search-field,
+  .chat-filter-button {
+    height: 58px !important;
+    min-height: 58px !important;
+  }
+
+  .chat-filter-button {
+    width: 58px !important;
+    min-width: 58px !important;
+  }
+
+  .chat-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .chat-filter-row button {
+    height: 46px !important;
+  }
+}
+
+/* Settings sheet: above nav, clean, no random glow, close aligned */
+.chat-settings-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding:
+    18px max(14px, env(safe-area-inset-right, 0px))
+    max(18px, env(safe-area-inset-bottom, 0px))
+    max(14px, env(safe-area-inset-left, 0px)) !important;
+  background: rgba(2, 7, 13, 0.62) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-sizing: border-box !important;
+}
+
+.chat-settings-sheet {
+  position: relative !important;
+  width: min(100%, 720px) !important;
+  max-height: min(82vh, 680px) !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+  padding: 22px !important;
+  padding-top: 18px !important;
+  border-radius: 28px !important;
+  background: linear-gradient(180deg, rgba(19, 29, 43, 0.98), rgba(10, 16, 25, 0.99)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(18px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(120%) !important;
+}
+
+.chat-settings-sheet::before,
+.chat-settings-sheet::after {
+  display: none !important;
+  content: none !important;
+}
+
+.chat-settings-handle {
+  display: block !important;
+  width: 58px !important;
+  height: 6px !important;
+  min-height: 6px !important;
+  padding: 0 !important;
+  margin: 0 auto 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(226, 234, 240, 0.42) !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-handle:active {
+  transform: translateY(1px) !important;
+}
+
+.chat-settings-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 46px !important;
+  align-items: start !important;
+  gap: 14px !important;
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+}
+
+.chat-settings-head h2 {
+  margin: 0 !important;
+  font-size: clamp(1.45rem, 3vw, 2rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.chat-settings-head p {
+  margin: 8px 0 0 !important;
+  color: rgba(226, 234, 240, 0.66) !important;
+  line-height: 1.35 !important;
+}
+
+.chat-settings-head button {
+  position: static !important;
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-size: 1.7rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-group {
+  margin: 18px 0 0 !important;
+}
+
+.chat-settings-group h3 {
+  margin: 0 0 10px !important;
+  color: rgba(226, 234, 240, 0.72) !important;
+}
+
+.chat-radio-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.chat-radio-grid button {
+  width: 100% !important;
+  min-height: 50px !important;
+  padding: 0 10px !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.chat-radio-grid button.active,
+.chat-switch-row input:checked {
+  box-shadow: none !important;
+}
+
+.chat-switch-row {
+  margin-top: 18px !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-actions {
+  margin-top: 20px !important;
+  padding-bottom: 0 !important;
+}
+
+.chat-settings-actions button {
+  box-shadow: none !important;
+}
+
+@media (min-width: 860px) and (min-height: 650px) {
+  .chat-settings-backdrop {
+    align-items: center !important;
+    padding-bottom: 120px !important;
+  }
+
+  .chat-settings-sheet {
+    width: min(720px, calc(100vw - 64px)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .chat-settings-backdrop {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .chat-settings-sheet {
+    width: 100% !important;
+    max-height: 86vh !important;
+    padding: 18px !important;
+    border-radius: 26px !important;
+  }
+
+  .chat-radio-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chat-settings-actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .chat-settings-backdrop {
+    align-items: center !important;
+    padding: 10px 16px 86px !important;
+  }
+
+  .chat-settings-sheet {
+    width: min(760px, calc(100vw - 32px)) !important;
+    max-height: calc(100vh - 110px) !important;
+    padding: 16px !important;
+    border-radius: 24px !important;
+  }
+
+  .chat-radio-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+[data-theme="light"] .chat-settings-backdrop {
+  background: rgba(248, 250, 252, 0.74) !important;
+}
+
+[data-theme="light"] .chat-settings-sheet {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #111827 !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 26px 80px rgba(15, 23, 42, 0.18) !important;
+}
+
+[data-theme="light"] .chat-settings-handle {
+  background: rgba(15, 23, 42, 0.22) !important;
+}
+
+[data-theme="light"] .chat-settings-head p,
+[data-theme="light"] .chat-settings-group h3 {
+  color: rgba(52, 64, 84, 0.72) !important;
+}
+
+[data-theme="light"] .chat-settings-head button {
+  background: rgba(15, 23, 42, 0.055) !important;
+  border-color: rgba(15, 23, 42, 0.09) !important;
+  color: rgba(15, 23, 42, 0.72) !important;
+}
