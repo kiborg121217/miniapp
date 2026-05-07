@@ -38,6 +38,7 @@ function formatChatTime(value) {
 
 const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
 const CHAT_FILTER_STORAGE_KEY = "baraholka_chat_list_controls_v1";
+const CHAT_PIN_STORAGE_PREFIX = "baraholka_chat_pins_v1";
 
 const QUICK_FILTERS = [
   { id: "all", label: "Все" },
@@ -67,6 +68,32 @@ function writeChatCache(userId, chats) {
   } catch {
     // ignore cache errors
   }
+}
+
+function readPinnedChatIds(userId) {
+  if (!userId || typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePinnedChatIds(userId, ids) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    const normalized = [...new Set((Array.isArray(ids) ? ids : []).map(String).filter(Boolean))];
+    window.localStorage.setItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`, JSON.stringify(normalized));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function isLocallyPinned(chatId, pinnedIds) {
+  if (!chatId) return false;
+  return Array.isArray(pinnedIds) && pinnedIds.map(String).includes(String(chatId));
 }
 
 function readListControls() {
@@ -211,11 +238,10 @@ function ChatPlaceholderImage({ compact = false }) {
   );
 }
 
-function ChatListItem({ chat, userId, peerName, onClick }) {
+function ChatListItem({ chat, userId, peerName, pinned, onClick }) {
   const unread = getUnreadCount(chat, userId);
   const adTitle = chat.adTitle || "Объявление";
-  const pinned = isPinnedChat(chat, userId);
-  const isActive = getChatStatus(chat) === "active";
+  const isPinned = Boolean(pinned);
 
   return (
     <button type="button" className={`chat-list-item ${unread > 0 ? "has-unread" : ""}`} onClick={onClick}>
@@ -225,14 +251,14 @@ function ChatListItem({ chat, userId, peerName, onClick }) {
         ) : (
           <ChatPlaceholderImage />
         )}
-        {isActive && <span className="chat-online-dot" aria-label="Активный чат" />}
+        
       </span>
 
       <span className="chat-list-body">
         <span className="chat-list-topline">
           <span className="chat-list-title chat-list-peer-name">
             {peerName}
-            {pinned && <span className="chat-pin-badge"><PinIcon /></span>}
+            {isPinned && <span className="chat-pin-badge" title="Закреплён"><PinIcon /></span>}
           </span>
           <span className="chat-list-time">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
         </span>
@@ -264,16 +290,33 @@ function BackIcon() {
 }
 
 function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
+  const [isClosing, setIsClosing] = useState(false);
+
+  const requestClose = () => {
+    setIsClosing(true);
+    window.setTimeout(onClose, 180);
+  };
+
+  const requestApply = () => {
+    setIsClosing(true);
+    window.setTimeout(onApply, 160);
+  };
+
+  const requestReset = () => {
+    setIsClosing(true);
+    window.setTimeout(onReset, 160);
+  };
+
   return (
-    <div className="chat-settings-backdrop" onClick={onClose}>
+    <div className={`chat-settings-backdrop ${isClosing ? "is-closing" : ""}`} onClick={requestClose}>
       <section className="chat-settings-sheet" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="chat-settings-handle" onClick={onClose} aria-label="Закрыть настройки" />
+        <button type="button" className="chat-settings-handle" onClick={requestClose} aria-label="Закрыть настройки" />
         <div className="chat-settings-head">
           <div>
             <h2>Настроить список</h2>
             <p>Сортировка и отображение диалогов</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Закрыть настройки">×</button>
+          <button type="button" onClick={requestClose} aria-label="Закрыть настройки">×</button>
         </div>
 
         <div className="chat-settings-group">
@@ -319,7 +362,7 @@ function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
         <label className="chat-switch-row">
           <span>
             <strong>Закреплённые сверху</strong>
-            <small>Если в данных чата есть закрепление</small>
+            <small>Закрепить чат можно внутри диалога</small>
           </span>
           <input
             type="checkbox"
@@ -329,15 +372,15 @@ function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
         </label>
 
         <div className="chat-settings-actions">
-          <button type="button" className="chat-settings-reset" onClick={onReset}>Сбросить</button>
-          <button type="button" className="chat-settings-apply" onClick={onApply}>Применить</button>
+          <button type="button" className="chat-settings-reset" onClick={requestReset}>Сбросить</button>
+          <button type="button" className="chat-settings-apply" onClick={requestApply}>Применить</button>
         </div>
       </section>
     </div>
   );
 }
 
-function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
+function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack, onOpenAd }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -345,6 +388,11 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
   const [error, setError] = useState("");
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const handleInputFocus = () => document.body.classList.add("chat-keyboard-mode");
+  const handleInputBlur = () => {
+    window.setTimeout(() => document.body.classList.remove("chat-keyboard-mode"), 120);
+  };
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -376,6 +424,10 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
     node.style.height = "auto";
     node.style.height = `${Math.min(node.scrollHeight, 118)}px`;
   }, [text]);
+
+  useEffect(() => () => {
+    document.body.classList.remove("chat-keyboard-mode");
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -429,6 +481,16 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
           <p>{chat?.adTitle || "Чат по объявлению"}</p>
         </div>
 
+        <button
+          type="button"
+          className={`chat-pin-action ${pinned ? "active" : ""}`}
+          onClick={() => onTogglePin?.(chatId)}
+          aria-label={pinned ? "Открепить чат" : "Закрепить чат"}
+          title={pinned ? "Открепить" : "Закрепить"}
+        >
+          <PinIcon />
+        </button>
+
         {chat?.adId && (
           <button type="button" className="chat-open-ad-btn" onClick={handleOpenAd} disabled={openingAd}>
             {openingAd ? "Открываем…" : "Объявление"}
@@ -468,6 +530,8 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Написать сообщение..."
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             rows={1}
             maxLength={1200}
             enterKeyHint="send"
@@ -497,6 +561,31 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   const [controls, setControls] = useState(readListControls);
   const [draftControls, setDraftControls] = useState(() => readListControls());
   const [showSettings, setShowSettings] = useState(false);
+  const [pinnedIds, setPinnedIds] = useState(() => readPinnedChatIds(user?.id));
+
+  const handleSearchFocus = () => document.body.classList.add("chat-keyboard-mode");
+  const handleSearchBlur = () => {
+    window.setTimeout(() => document.body.classList.remove("chat-keyboard-mode"), 120);
+  };
+
+  useEffect(() => {
+    setPinnedIds(readPinnedChatIds(user?.id));
+  }, [user?.id]);
+
+  const toggleChatPin = (chatIdToToggle) => {
+    if (!user?.id || !chatIdToToggle) return;
+    setPinnedIds((current) => {
+      const id = String(chatIdToToggle);
+      const exists = current.map(String).includes(id);
+      const next = exists ? current.filter((item) => String(item) !== id) : [id, ...current];
+      writePinnedChatIds(user.id, next);
+      return next;
+    });
+  };
+
+  useEffect(() => () => {
+    document.body.classList.remove("chat-keyboard-mode");
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return undefined;
@@ -617,7 +706,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
 
     filtered.sort((a, b) => {
       if (controls.pinnedFirst) {
-        const pinnedDiff = Number(isPinnedChat(b.chat, user?.id)) - Number(isPinnedChat(a.chat, user?.id));
+        const pinnedDiff = Number(isPinnedChat(b.chat, user?.id) || isLocallyPinned(b.chat.id, pinnedIds)) - Number(isPinnedChat(a.chat, user?.id) || isLocallyPinned(a.chat.id, pinnedIds));
         if (pinnedDiff !== 0) return pinnedDiff;
       }
 
@@ -631,7 +720,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
     });
 
     return filtered;
-  }, [chats, controls, profileNames, quickFilter, searchQuery, user?.id]);
+  }, [chats, controls, pinnedIds, profileNames, quickFilter, searchQuery, user?.id]);
 
   const activeFilter = QUICK_FILTERS.find((item) => item.id === quickFilter) || QUICK_FILTERS[0];
   const resultCaption = searchQuery.trim()
@@ -666,6 +755,8 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         chat={activeChat}
         user={user}
         peerName={activePeerName}
+        pinned={isPinnedChat(activeChat, user?.id) || isLocallyPinned(activeChat?.id, pinnedIds)}
+        onTogglePin={toggleChatPin}
         onBack={onBackToList}
         onOpenAd={onOpenAd}
       />
@@ -689,6 +780,8 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
             placeholder="Поиск по чатам, товарам и сообщениям"
           />
         </label>
@@ -732,6 +825,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
               chat={chat}
               userId={user.id}
               peerName={peerName}
+              pinned={isPinnedChat(chat, user.id) || isLocallyPinned(chat.id, pinnedIds)}
               onClick={() => onSelectChat?.(chat.id)}
             />
           ))
