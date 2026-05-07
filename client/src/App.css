@@ -14866,3 +14866,219 @@ body:has(.chat-compose textarea:focus) .bottom-nav {
     max-height: calc(100dvh - var(--baraholka-bottom-nav-height) - var(--baraholka-bottom-safe) - 20px) !important;
   }
 }
+
+/* =========================================================
+   CHATS V3.3 FINAL POLISH — nav, sheet animation, WebView offsets
+   ========================================================= */
+:root {
+  --baraholka-bottom-nav-height: 84px;
+  --baraholka-bottom-safe: max(env(safe-area-inset-bottom, 0px), 0px);
+}
+
+/* Чаты в VK/Telegram опускаем ниже, чтобы не залезали под системные кнопки */
+html[data-vk-mini-app="true"] .chats-page-redesign,
+html[data-telegram-mini-app="true"] .chats-page-redesign,
+html[data-android-app="true"] .chats-page-redesign {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+}
+
+/* Остальные основные страницы в WebView чуть ниже, без сильного сдвига макета */
+html[data-vk-mini-app="true"] .market-home,
+html[data-telegram-mini-app="true"] .market-home,
+html[data-android-app="true"] .market-home {
+  padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important;
+}
+
+html[data-vk-mini-app="true"] .ad-page-wrap,
+html[data-telegram-mini-app="true"] .ad-page-wrap,
+html[data-android-app="true"] .ad-page-wrap,
+html[data-vk-mini-app="true"] .help-page,
+html[data-telegram-mini-app="true"] .help-page,
+html[data-android-app="true"] .help-page,
+html[data-vk-mini-app="true"] .premium-page,
+html[data-telegram-mini-app="true"] .premium-page,
+html[data-android-app="true"] .premium-page,
+html[data-vk-mini-app="true"] .form,
+html[data-telegram-mini-app="true"] .form,
+html[data-android-app="true"] .form,
+html[data-vk-mini-app="true"] .seller-premium-page,
+html[data-telegram-mini-app="true"] .seller-premium-page,
+html[data-android-app="true"] .seller-premium-page,
+html[data-vk-mini-app="true"] .settings-ios-page,
+html[data-telegram-mini-app="true"] .settings-ios-page,
+html[data-android-app="true"] .settings-ios-page {
+  padding-top: calc(var(--page-original-top, 0px) + env(safe-area-inset-top, 0px) + 86px) !important;
+}
+
+/* Время в светлой теме должно быть читаемым */
+[data-theme="light"] .chat-list-time,
+[data-theme="light"] .chat-dialog-time,
+[data-theme="light"] .chat-message-time {
+  color: rgba(16, 24, 39, 0.58) !important;
+}
+
+/* Навигация на телефонах: закрывает весь низ без щелей и просветов */
+@media (max-width: 859px) {
+  :root {
+    --baraholka-bottom-nav-height: 86px;
+    --baraholka-bottom-safe: max(env(safe-area-inset-bottom, 0px), 16px);
+  }
+
+  .app {
+    padding-bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 8px) !important;
+  }
+
+  .bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: none !important;
+    min-width: 100vw !important;
+    height: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 26px) !important;
+    min-height: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 26px) !important;
+    padding: 10px max(8px, env(safe-area-inset-right, 0px)) calc(28px + var(--baraholka-bottom-safe)) max(8px, env(safe-area-inset-left, 0px)) !important;
+    margin: 0 !important;
+    border-radius: 30px 30px 0 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .bottom-nav::after {
+    content: "" !important;
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: -42px !important;
+    width: 100vw !important;
+    height: 52px !important;
+    background: inherit !important;
+    border: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Ноутбуки/ПК: нижнюю мобильную капсулу превращаем в компактную верхнюю навигацию */
+@media (min-width: 860px) {
+  .app {
+    padding-bottom: 34px !important;
+    padding-top: 78px !important;
+  }
+
+  .bottom-nav {
+    position: fixed !important;
+    top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    min-width: 520px !important;
+    max-width: min(760px, calc(100vw - 32px)) !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    padding: 7px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,255,255,0.13) !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+
+  .bottom-nav::after,
+  .bottom-nav::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    flex: 0 0 auto !important;
+    min-width: 118px !important;
+    height: 46px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    flex-direction: row !important;
+    gap: 9px !important;
+  }
+
+  .bottom-nav .nav-icon,
+  .bottom-nav .nav-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .bottom-nav .nav-label {
+    font-size: 14px !important;
+    line-height: 1 !important;
+  }
+
+  .bottom-nav .nav-item + .nav-item::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .chats-page-redesign {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+  }
+}
+
+/* Настройки списка: плавное закрытие вниз и рабочий скролл над навигацией */
+.chat-settings-backdrop {
+  transition: opacity 0.24s ease !important;
+}
+
+.chat-settings-sheet {
+  animation: chatSettingsSheetIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+
+.chat-settings-backdrop.is-closing {
+  opacity: 0 !important;
+}
+
+.chat-settings-sheet.is-closing {
+  animation: chatSettingsSheetOut 0.24s cubic-bezier(0.4, 0, 1, 1) both !important;
+}
+
+@keyframes chatSettingsSheetIn {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes chatSettingsSheetOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(42px); opacity: 0; }
+}
+
+@media (max-width: 859px) {
+  .chat-settings-backdrop {
+    top: 0 !important;
+    bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 28px) !important;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 10px 10px !important;
+    overflow: hidden !important;
+  }
+
+  .chat-settings-sheet {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-bottom: 18px !important;
+  }
+}
+
+/* Фильтры без некрасивых теней */
+.chat-filter-row button,
+.chat-filter-row button.active,
+.chat-filter-button,
+.chat-search-field {
+  box-shadow: none !important;
+}

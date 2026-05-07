@@ -293,10 +293,10 @@ function BackIcon() {
   );
 }
 
-function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
+function SettingsSheet({ draft, onChange, onClose, onReset, onApply, closing = false }) {
   return (
-    <div className="chat-settings-backdrop" onClick={onClose}>
-      <section className="chat-settings-sheet" onClick={(event) => event.stopPropagation()}>
+    <div className={`chat-settings-backdrop ${closing ? "is-closing" : ""}`} onClick={onClose}>
+      <section className={`chat-settings-sheet ${closing ? "is-closing" : ""}`} onClick={(event) => event.stopPropagation()}>
         <button type="button" className="chat-settings-handle" onClick={onClose} aria-label="Закрыть настройки" />
         <div className="chat-settings-head">
           <div>
@@ -538,6 +538,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   const [controls, setControls] = useState(readListControls);
   const [draftControls, setDraftControls] = useState(() => readListControls());
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsClosing, setSettingsClosing] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(() => readPinnedChatIds(user?.id));
 
   useEffect(() => {
@@ -700,15 +701,25 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
       ? `${visibleChats.length} диалогов`
       : `${activeFilter.label}: ${visibleChats.length}`;
 
+  const closeSettings = () => {
+    if (settingsClosing) return;
+    setSettingsClosing(true);
+    window.setTimeout(() => {
+      setShowSettings(false);
+      setSettingsClosing(false);
+    }, 240);
+  };
+
   const openSettings = () => {
     setDraftControls(controls);
+    setSettingsClosing(false);
     setShowSettings(true);
   };
 
   const applySettings = () => {
     setControls(draftControls);
     writeListControls(draftControls);
-    setShowSettings(false);
+    closeSettings();
   };
 
   const resetSettings = () => {
@@ -716,7 +727,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
     setDraftControls(next);
     setControls(next);
     writeListControls(next);
-    setShowSettings(false);
+    closeSettings();
   };
 
   if (selectedChatId) {
@@ -805,9 +816,10 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         <SettingsSheet
           draft={draftControls}
           onChange={setDraftControls}
-          onClose={() => setShowSettings(false)}
+          onClose={closeSettings}
           onReset={resetSettings}
           onApply={applySettings}
+          closing={settingsClosing}
         />
       )}
     </div>
