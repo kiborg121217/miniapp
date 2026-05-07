@@ -38,7 +38,27 @@ function formatChatTime(value) {
 
 const CHAT_CACHE_PREFIX = "baraholka_user_chats_v1";
 const CHAT_FILTER_STORAGE_KEY = "baraholka_chat_list_controls_v1";
-const CHAT_PIN_STORAGE_PREFIX = "baraholka_chat_pins_v1";
+const CHAT_PIN_STORAGE_PREFIX = "baraholka_pinned_chats_v1";
+
+function readPinnedChatIds(userId) {
+  if (!userId || typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePinnedChatIds(userId, ids) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`, JSON.stringify([...new Set(ids.map(String))]));
+  } catch {
+    // ignore storage errors
+  }
+}
 
 const QUICK_FILTERS = [
   { id: "all", label: "Все" },
@@ -68,32 +88,6 @@ function writeChatCache(userId, chats) {
   } catch {
     // ignore cache errors
   }
-}
-
-function readPinnedChatIds(userId) {
-  if (!userId || typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writePinnedChatIds(userId, ids) {
-  if (!userId || typeof window === "undefined") return;
-  try {
-    const normalized = [...new Set((Array.isArray(ids) ? ids : []).map(String).filter(Boolean))];
-    window.localStorage.setItem(`${CHAT_PIN_STORAGE_PREFIX}_${userId}`, JSON.stringify(normalized));
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function isLocallyPinned(chatId, pinnedIds) {
-  if (!chatId) return false;
-  return Array.isArray(pinnedIds) && pinnedIds.map(String).includes(String(chatId));
 }
 
 function readListControls() {
@@ -219,12 +213,23 @@ function SlidersIcon() {
 
 function PinIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-      <path d="M8.4 4.8L19.2 15.6" />
-      <path d="M14.4 5.9L18.1 9.6L14.5 13.2L16 18.5L15 19.5L10.5 15L6.2 19.3L4.7 17.8L9 13.5L4.5 9L5.5 8L10.8 9.5L14.4 5.9Z" />
+    <svg viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+      <path
+        fill="#3A98FF"
+        d="M509.765,496.18L405.025,306.098c-2.666-4.837-8.748-6.598-13.585-3.933c-4.837,2.666-6.598,8.748-3.933,13.585l88.067,159.825L315.75,387.508c-4.838-2.664-10.919-0.904-13.585,3.933c-2.665,4.837-0.904,10.919,3.933,13.585L496.18,509.765c3.891,2.144,8.744,1.466,11.897-1.688C511.225,504.929,511.913,500.079,509.765,496.18z"
+      />
+      <path
+        fill="#3A98FF"
+        d="M133.166,16.789L16.789,133.166c-21.062,21.063-21.059,55.151,0,76.21c21.063,21.061,55.151,21.059,76.21,0L209.376,92.999c21.062-21.062,21.059-55.149,0-76.21C188.314-4.273,154.227-4.269,133.166,16.789zM195.233,78.857L78.856,195.234c-13.245,13.247-34.685,13.242-47.925,0c-13.247-13.245-13.242-34.685,0-47.925L147.309,30.932c13.245-13.247,34.684-13.243,47.925,0C208.48,44.176,208.476,65.616,195.233,78.857z"
+      />
+      <path
+        fill="#283954"
+        d="M447.041,207.904c-27.433-27.433-68.126-37.351-104.982-26.002L200.17,85.417c-4.565-3.105-10.787-1.921-13.893,2.646s-1.921,10.787,2.646,13.893l156.052,106.115c14.477,9.843,16.448,30.451,4.045,42.854l-98.095,98.095c-12.426,12.43-33.032,10.401-42.854-4.045L101.956,188.924c-3.107-4.568-9.327-5.749-13.893-2.646c-4.567,3.105-5.752,9.325-2.646,13.893l96.484,141.888c-11.015,35.72-2.628,76.351,26.003,104.983c18.303,18.303,48.087,18.301,66.388,0l172.749-172.75C465.394,255.942,465.389,226.251,447.041,207.904zM432.898,260.149l-172.75,172.75c-10.503,10.505-27.598,10.507-38.103,0c-19.101-19.101-27.026-44.737-24.298-69.275c18.3,17.87,48.38,18.481,67.321-0.46l98.095-98.095c18.899-18.899,18.359-48.972,0.485-67.297c25.207-2.739,50.898,5.921,69.251,24.275C443.433,232.581,443.432,249.617,432.898,260.149z"
+      />
     </svg>
   );
 }
+
 
 function ChatPlaceholderImage({ compact = false }) {
   return (
@@ -238,10 +243,10 @@ function ChatPlaceholderImage({ compact = false }) {
   );
 }
 
-function ChatListItem({ chat, userId, peerName, pinned, onClick }) {
+function ChatListItem({ chat, userId, peerName, onClick, pinnedIds = [] }) {
   const unread = getUnreadCount(chat, userId);
   const adTitle = chat.adTitle || "Объявление";
-  const isPinned = Boolean(pinned);
+  const pinned = isPinnedChat(chat, userId) || pinnedIds.map(String).includes(String(chat.id));
 
   return (
     <button type="button" className={`chat-list-item ${unread > 0 ? "has-unread" : ""}`} onClick={onClick}>
@@ -251,14 +256,13 @@ function ChatListItem({ chat, userId, peerName, pinned, onClick }) {
         ) : (
           <ChatPlaceholderImage />
         )}
-        
       </span>
 
       <span className="chat-list-body">
         <span className="chat-list-topline">
           <span className="chat-list-title chat-list-peer-name">
             {peerName}
-            {isPinned && <span className="chat-pin-badge" title="Закреплён"><PinIcon /></span>}
+            {pinned && <span className="chat-pin-badge"><PinIcon /></span>}
           </span>
           <span className="chat-list-time">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
         </span>
@@ -290,33 +294,16 @@ function BackIcon() {
 }
 
 function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
-  const [isClosing, setIsClosing] = useState(false);
-
-  const requestClose = () => {
-    setIsClosing(true);
-    window.setTimeout(onClose, 180);
-  };
-
-  const requestApply = () => {
-    setIsClosing(true);
-    window.setTimeout(onApply, 160);
-  };
-
-  const requestReset = () => {
-    setIsClosing(true);
-    window.setTimeout(onReset, 160);
-  };
-
   return (
-    <div className={`chat-settings-backdrop ${isClosing ? "is-closing" : ""}`} onClick={requestClose}>
+    <div className="chat-settings-backdrop" onClick={onClose}>
       <section className="chat-settings-sheet" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="chat-settings-handle" onClick={requestClose} aria-label="Закрыть настройки" />
+        <button type="button" className="chat-settings-handle" onClick={onClose} aria-label="Закрыть настройки" />
         <div className="chat-settings-head">
           <div>
             <h2>Настроить список</h2>
             <p>Сортировка и отображение диалогов</p>
           </div>
-          <button type="button" onClick={requestClose} aria-label="Закрыть настройки">×</button>
+          <button type="button" onClick={onClose} aria-label="Закрыть настройки">×</button>
         </div>
 
         <div className="chat-settings-group">
@@ -362,7 +349,7 @@ function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
         <label className="chat-switch-row">
           <span>
             <strong>Закреплённые сверху</strong>
-            <small>Закрепить чат можно внутри диалога</small>
+            <small>Показывать закреплённые диалоги первыми</small>
           </span>
           <input
             type="checkbox"
@@ -372,15 +359,15 @@ function SettingsSheet({ draft, onChange, onClose, onReset, onApply }) {
         </label>
 
         <div className="chat-settings-actions">
-          <button type="button" className="chat-settings-reset" onClick={requestReset}>Сбросить</button>
-          <button type="button" className="chat-settings-apply" onClick={requestApply}>Применить</button>
+          <button type="button" className="chat-settings-reset" onClick={onReset}>Сбросить</button>
+          <button type="button" className="chat-settings-apply" onClick={onApply}>Применить</button>
         </div>
       </section>
     </div>
   );
 }
 
-function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack, onOpenAd }) {
+function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd, isPinned, onTogglePin }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -388,11 +375,6 @@ function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack,
   const [error, setError] = useState("");
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
-
-  const handleInputFocus = () => document.body.classList.add("chat-keyboard-mode");
-  const handleInputBlur = () => {
-    window.setTimeout(() => document.body.classList.remove("chat-keyboard-mode"), 120);
-  };
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -424,10 +406,6 @@ function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack,
     node.style.height = "auto";
     node.style.height = `${Math.min(node.scrollHeight, 118)}px`;
   }, [text]);
-
-  useEffect(() => () => {
-    document.body.classList.remove("chat-keyboard-mode");
-  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -470,32 +448,33 @@ function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack,
           <BackIcon />
         </button>
 
-        {chat?.adImage ? (
-          <img className="chat-header-image" src={chat.adImage} alt="" />
-        ) : (
-          <ChatPlaceholderImage compact />
-        )}
-
-        <div className="chat-header-text">
-          <h2>{peerName || "Диалог"}</h2>
-          <p>{chat?.adTitle || "Чат по объявлению"}</p>
-        </div>
+        <button
+          type="button"
+          className="chat-header-ad-link"
+          onClick={handleOpenAd}
+          disabled={!chat?.adId || openingAd}
+          aria-label="Открыть объявление"
+        >
+          {chat?.adImage ? (
+            <img className="chat-header-image" src={chat.adImage} alt="" />
+          ) : (
+            <ChatPlaceholderImage compact />
+          )}
+          <span className="chat-header-text">
+            <h2>{peerName || "Диалог"}</h2>
+            <p>{chat?.adTitle || "Чат по объявлению"}</p>
+          </span>
+        </button>
 
         <button
           type="button"
-          className={`chat-pin-action ${pinned ? "active" : ""}`}
-          onClick={() => onTogglePin?.(chatId)}
-          aria-label={pinned ? "Открепить чат" : "Закрепить чат"}
-          title={pinned ? "Открепить" : "Закрепить"}
+          className={`chat-pin-action ${isPinned ? "active" : ""}`}
+          onClick={onTogglePin}
+          aria-label={isPinned ? "Открепить чат" : "Закрепить чат"}
+          title={isPinned ? "Открепить" : "Закрепить"}
         >
           <PinIcon />
         </button>
-
-        {chat?.adId && (
-          <button type="button" className="chat-open-ad-btn" onClick={handleOpenAd} disabled={openingAd}>
-            {openingAd ? "Открываем…" : "Объявление"}
-          </button>
-        )}
       </section>
 
       <section className="chat-messages-card" ref={messagesRef}>
@@ -530,8 +509,6 @@ function ChatDialog({ chatId, chat, user, peerName, pinned, onTogglePin, onBack,
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Написать сообщение..."
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
             rows={1}
             maxLength={1200}
             enterKeyHint="send"
@@ -563,30 +540,6 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   const [showSettings, setShowSettings] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(() => readPinnedChatIds(user?.id));
 
-  const handleSearchFocus = () => document.body.classList.add("chat-keyboard-mode");
-  const handleSearchBlur = () => {
-    window.setTimeout(() => document.body.classList.remove("chat-keyboard-mode"), 120);
-  };
-
-  useEffect(() => {
-    setPinnedIds(readPinnedChatIds(user?.id));
-  }, [user?.id]);
-
-  const toggleChatPin = (chatIdToToggle) => {
-    if (!user?.id || !chatIdToToggle) return;
-    setPinnedIds((current) => {
-      const id = String(chatIdToToggle);
-      const exists = current.map(String).includes(id);
-      const next = exists ? current.filter((item) => String(item) !== id) : [id, ...current];
-      writePinnedChatIds(user.id, next);
-      return next;
-    });
-  };
-
-  useEffect(() => () => {
-    document.body.classList.remove("chat-keyboard-mode");
-  }, []);
-
   useEffect(() => {
     if (!user?.id) return undefined;
 
@@ -611,6 +564,10 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
 
     return unsubscribe;
   }, [user?.id, selectedChatId]);
+
+  useEffect(() => {
+    setPinnedIds(readPinnedChatIds(user?.id));
+  }, [user?.id]);
 
   useEffect(() => {
     if (!selectedChatId) {
@@ -674,6 +631,18 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   );
 
   const activePeerName = activeChat ? getPeerName(activeChat, user?.id, profileNames) : "Диалог";
+  const activeChatPinned = Boolean(activeChat?.id && pinnedIds.map(String).includes(String(activeChat.id)));
+
+  const handleToggleActivePin = () => {
+    if (!activeChat?.id || !user?.id) return;
+    setPinnedIds((prev) => {
+      const id = String(activeChat.id);
+      const hasPinned = prev.map(String).includes(id);
+      const next = hasPinned ? prev.filter((item) => String(item) !== id) : [id, ...prev.map(String)];
+      writePinnedChatIds(user.id, next);
+      return next;
+    });
+  };
 
   const visibleChats = useMemo(() => {
     const term = normalizeSearchValue(searchQuery);
@@ -706,7 +675,9 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
 
     filtered.sort((a, b) => {
       if (controls.pinnedFirst) {
-        const pinnedDiff = Number(isPinnedChat(b.chat, user?.id) || isLocallyPinned(b.chat.id, pinnedIds)) - Number(isPinnedChat(a.chat, user?.id) || isLocallyPinned(a.chat.id, pinnedIds));
+        const aPinned = isPinnedChat(a.chat, user?.id) || pinnedIds.map(String).includes(String(a.chat.id));
+        const bPinned = isPinnedChat(b.chat, user?.id) || pinnedIds.map(String).includes(String(b.chat.id));
+        const pinnedDiff = Number(bPinned) - Number(aPinned);
         if (pinnedDiff !== 0) return pinnedDiff;
       }
 
@@ -755,10 +726,10 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         chat={activeChat}
         user={user}
         peerName={activePeerName}
-        pinned={isPinnedChat(activeChat, user?.id) || isLocallyPinned(activeChat?.id, pinnedIds)}
-        onTogglePin={toggleChatPin}
         onBack={onBackToList}
         onOpenAd={onOpenAd}
+        isPinned={activeChatPinned}
+        onTogglePin={handleToggleActivePin}
       />
     );
   }
@@ -780,8 +751,6 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            onFocus={handleSearchFocus}
-            onBlur={handleSearchBlur}
             placeholder="Поиск по чатам, товарам и сообщениям"
           />
         </label>
@@ -825,7 +794,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
               chat={chat}
               userId={user.id}
               peerName={peerName}
-              pinned={isPinnedChat(chat, user.id) || isLocallyPinned(chat.id, pinnedIds)}
+              pinnedIds={pinnedIds}
               onClick={() => onSelectChat?.(chat.id)}
             />
           ))
