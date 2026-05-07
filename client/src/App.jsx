@@ -1,13 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import AddAd from "./components/AddAd";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import AdList from "./components/AdList";
-import AdPage from "./components/AdPage";
-import ProfilePage from "./components/ProfilePage";
-import ProfileAdsPage from "./components/ProfileAdsPage";
-import SettingsPage from "./components/SettingsPage";
-import ChatsPage from "./components/ChatsPage";
-import SellerPage from "./components/SellerPage";
-import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import LoginPage from "./components/LoginPage";
 import AuthCallbackPage from "./components/AuthCallbackPage";
@@ -31,6 +23,14 @@ import {
   restoreAuthSession,
 } from "./auth";
 
+const AddAd = lazy(() => import("./components/AddAd"));
+const AdPage = lazy(() => import("./components/AdPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const ProfileAdsPage = lazy(() => import("./components/ProfileAdsPage"));
+const SettingsPage = lazy(() => import("./components/SettingsPage"));
+const ChatsPage = lazy(() => import("./components/ChatsPage"));
+const SellerPage = lazy(() => import("./components/SellerPage"));
+const LegalPage = lazy(() => import("./components/LegalPage"));
 const VALID_PAGES = new Set([
   "list",
   "add",
@@ -378,8 +378,6 @@ export default function App() {
   const [selectedAd, setSelectedAd] = useState(initialSession.selectedAd);
   const [selectedSellerId, setSelectedSellerId] = useState(initialSession.selectedSellerId);
   const [profileStatusPage, setProfileStatusPage] = useState(initialSession.profileStatusPage);
-  const [editingAd, setEditingAd] = useState(null);
-  const [editingAdOriginStatus, setEditingAdOriginStatus] = useState(null);
   const [selectedChatId, setSelectedChatId] = useState(initialSession.selectedChatId);
   const [sellerBackTarget, setSellerBackTarget] = useState(initialSession.sellerBackTarget);
   const [viewBackTarget, setViewBackTarget] = useState(initialSession.viewBackTarget);
@@ -557,15 +555,14 @@ export default function App() {
 
     const boot = async () => {
       logDebugEvent("boot_start");
-      initTelegram();
+      const telegramReadyPromise = initTelegram().catch((error) => {
+        logDebugEvent("telegram_init_error", error);
+        return null;
+      });
 
-      try {
-        const tg = window.Telegram?.WebApp;
-        tg?.ready?.();
-        tg?.expand?.();
-      } catch {
-        // Telegram API может быть недоступен на сайте/PWA.
-      }
+      // Telegram SDK больше не блокирует старт сайта и VK Mini App.
+      // В Telegram-контейнере ждём его недолго, чтобы получить safe-area/initData.
+      await withTimeout(telegramReadyPromise, 900, null);
 
       if (window.location.pathname === "/debug") {
         safeSetProgress(100, "Открываем диагностику…");
@@ -583,10 +580,12 @@ export default function App() {
 
       let vkMiniAppInfo = null;
       if (isVkMiniAppLaunch()) {
-        vkMiniAppInfo = await withTimeout(initVkMiniApp(), 3600, { isVkMiniApp: true });
+        vkMiniAppInfo = await withTimeout(initVkMiniApp(), 1800, { isVkMiniApp: true });
       }
 
-      await resolveAuth(vkMiniAppInfo);
+      // Не держим стартовый экран на Render/Firebase. Если backend просыпается долго,
+      // приложение всё равно открывается, а профиль подтягивается в фоне.
+      await withTimeout(resolveAuth(vkMiniAppInfo), 2200, null);
 
       if (cancelled) return;
 
@@ -646,6 +645,34 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
+  const handleLogoutComplete = () => {
+    setTgUser(null);
+    setProfileCache(null);
+    setSelectedAd(null);
+    setSelectedSellerId(null);
+    setSelectedChatId(null);
+    setProfileStatusPage(null);
+    setSellerBackTarget("list");
+    setViewBackTarget("list");
+    setViewLoading(false);
+    setPage("profile");
+
+    safeSessionSetItem("app_page", "profile");
+    safeSessionRemoveItem("selected_ad");
+    safeSessionRemoveItem("selected_ad_id");
+    safeSessionRemoveItem("selected_seller_id");
+    safeSessionRemoveItem("selected_chat_id");
+    safeSessionRemoveItem("profile_status_page");
+    safeSessionRemoveItem("seller_back_target");
+    safeSessionRemoveItem("view_back_target");
+
+    if (window.location.pathname !== "/") {
+      window.history.replaceState({}, "", "/");
+    }
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
   const goToPage = (nextPage) => {
     setPage(nextPage);
 
@@ -654,8 +681,6 @@ export default function App() {
       setProfileStatusPage(null);
       setSelectedAd(null);
       setSelectedChatId(null);
-      setEditingAd(null);
-      setEditingAdOriginStatus(null);
       setSellerBackTarget("list");
       setViewBackTarget("list");
       setViewLoading(false);
@@ -669,10 +694,6 @@ export default function App() {
     }
 
     if (nextPage !== "chats") setSelectedChatId(null);
-    if (nextPage !== "add") {
-      setEditingAd(null);
-      setEditingAdOriginStatus(null);
-    }
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
@@ -737,31 +758,6 @@ export default function App() {
     }
   };
 
-  const handleEditProfileAd = (ad, editMode = "edit-active") => {
-    if (!ad?.id) return;
-    setEditingAd(ad);
-    setEditingAdOriginStatus(ad.status || (editMode === "fix-rejected" ? "rejected" : "approved"));
-    setPage("add");
-    window.scrollTo({ top: 0, behavior: "auto" });
-  };
-
-  const handleCancelEditAd = () => {
-    const originStatus = editingAdOriginStatus || editingAd?.status || "approved";
-    setEditingAd(null);
-    setEditingAdOriginStatus(null);
-    setProfileStatusPage(originStatus === "rejected" ? "rejected" : originStatus === "archived" ? "archived" : "approved");
-    setPage("profileAds");
-    window.scrollTo({ top: 0, behavior: "auto" });
-  };
-
-  const handleAdSubmittedToModeration = () => {
-    setEditingAd(null);
-    setEditingAdOriginStatus(null);
-    setProfileStatusPage("pending");
-    setPage("profileAds");
-    window.scrollTo({ top: 0, behavior: "auto" });
-  };
-
   const unreadBadgeText = useMemo(() => {
     if (!unreadChatsTotal) return "";
     return unreadChatsTotal > 99 ? "99+" : String(unreadChatsTotal);
@@ -798,6 +794,7 @@ export default function App() {
 
   return (
     <div className={`app theme-animate ${page === "chats" && selectedChatId ? "chat-open" : ""}`}>
+      <Suspense fallback={<LoadingScreen progress={76} subtitle="Открываем раздел…" />}>
       {page === "list" && (
         <AdList
           onOpenSettings={() => goToPage("settings")}
@@ -815,15 +812,9 @@ export default function App() {
 
       {page === "add" && (
         tgUser ? (
-          <AddAd
-            user={tgUser}
-            initialAd={editingAd}
-            mode={editingAd ? (editingAdOriginStatus === "rejected" || editingAd.status === "rejected" ? "fix-rejected" : "edit-active") : "create"}
-            onBack={editingAd ? handleCancelEditAd : () => goToPage("list")}
-            onSubmitSuccess={editingAd ? handleAdSubmittedToModeration : undefined}
-          />
+          <AddAd user={tgUser} onBack={() => goToPage("list")} />
         ) : (
-          <LoginPage returnPage="add" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="add" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 
@@ -833,6 +824,7 @@ export default function App() {
             user={tgUser}
             initialProfileData={profileCache}
             onProfileDataLoaded={setProfileCache}
+            onLogoutComplete={handleLogoutComplete}
             onOpenSection={(status) => {
               setProfileStatusPage(status);
               setPage("profileAds");
@@ -841,7 +833,7 @@ export default function App() {
             onOpenChats={() => goToPage("chats")}
           />
         ) : (
-          <LoginPage returnPage="profile" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="profile" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 
@@ -855,7 +847,7 @@ export default function App() {
             onOpenAd={handleOpenAdFromChat}
           />
         ) : (
-          <LoginPage returnPage="chats" onBack={() => goToPage("list")} />
+          <LoginPage returnPage="chats" onBack={() => goToPage("list")} onAuthSuccess={handleAuthSuccess} />
         )
       )}
 
@@ -864,7 +856,6 @@ export default function App() {
           user={tgUser}
           status={profileStatusPage}
           onBack={() => goToPage("profile")}
-          onEditAd={handleEditProfileAd}
           onOpenAd={(ad) => {
             setSelectedChatId(null);
             setViewBackTarget("profileAds");
@@ -934,6 +925,8 @@ export default function App() {
         />
       )}
 
+      </Suspense>
+
       {page !== "view" && !(page === "add" && tgUser) && !(page === "chats" && selectedChatId) && (
         <div className="bottom-nav">
           <button
@@ -953,7 +946,7 @@ export default function App() {
 
           <button
             className={`nav-item ${page === "add" ? "active" : ""}`}
-            onClick={() => { setEditingAd(null); setEditingAdOriginStatus(null); goToPage("add"); }}
+            onClick={() => goToPage("add")}
           >
             <span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">

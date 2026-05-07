@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   getUserProfile,
   saveUserProfile,
@@ -9,53 +9,12 @@ import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { CATEGORIES } from "../categories";
 
-function normalizeImageUrls(ad) {
-  if (!ad) return [];
-  const urls = Array.isArray(ad.imageUrls) ? ad.imageUrls : [];
-  const first = ad.imageUrl ? [ad.imageUrl] : [];
-  return Array.from(new Set([...urls, ...first].filter(Boolean)));
-}
-
-function getEditModeCopy(mode, initialAd) {
-  if (mode === "fix-rejected") {
-    return {
-      title: "Исправить объявление",
-      submit: "Отправить на модерацию",
-      loading: "Отправляем на повторную модерацию...",
-      success: "✅ Объявление отправлено на повторную модерацию",
-      note: "После исправления объявление снова проверит модератор",
-    };
-  }
-
-  if (mode === "edit-active") {
-    return {
-      title: "Редактировать объявление",
-      submit: "Сохранить и отправить на модерацию",
-      loading: "Сохраняем изменения...",
-      success: "✅ Изменения отправлены на модерацию",
-      note: "После изменения активное объявление временно уйдёт на проверку",
-    };
-  }
-
-  return {
-    title: "Создание объявления",
-    submit: "Отправить на модерацию",
-    loading: "Отправляем...",
-    success: "✅ Отправлено на модерацию",
-    note: "Объявление будет проверено модератором",
-  };
-}
-
-export default function AddAd({ user, onBack, initialAd = null, mode = "create", onSubmitSuccess }) {
-  const isEditMode = Boolean(initialAd?.id) && mode !== "create";
-  const modeCopy = useMemo(() => getEditModeCopy(mode, initialAd), [mode, initialAd]);
-
+export default function AddAd({ user, onBack }) {
   const [images, setImages] = useState([]);
-  const [existingImageUrls, setExistingImageUrls] = useState(() => normalizeImageUrls(initialAd));
-  const [title, setTitle] = useState(initialAd?.title || "");
-  const [price, setPrice] = useState(initialAd?.price ? String(initialAd.price).replace(/[^0-9]/g, "") : "");
-  const [description, setDescription] = useState(initialAd?.description || "");
-  const [category, setCategory] = useState(initialAd?.category || "");
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -66,18 +25,6 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
   }, []);
 
   useEffect(() => {
-    if (!initialAd?.id) return;
-
-    setTitle(initialAd.title || "");
-    setPrice(initialAd.price ? String(initialAd.price).replace(/[^0-9]/g, "") : "");
-    setDescription(initialAd.description || "");
-    setCategory(initialAd.category || "");
-    setExistingImageUrls(normalizeImageUrls(initialAd));
-    setImages([]);
-    setMessage("");
-  }, [initialAd?.id]);
-
-  useEffect(() => {
     const previews = images.map((file) => URL.createObjectURL(file));
     setImagePreviews(previews);
 
@@ -86,87 +33,32 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
     };
   }, [images]);
 
-  const totalImageCount = existingImageUrls.length + images.length;
-  const previewUrls = [...existingImageUrls, ...imagePreviews];
-
-  const handleFileChange = (files) => {
-    const selected = Array.from(files || []);
-    const remainingSlots = Math.max(0, 10 - existingImageUrls.length);
-    setImages(selected.slice(0, remainingSlots));
-  };
-
-  const removeExistingImage = (url) => {
-    setExistingImageUrls((prev) => prev.filter((item) => item !== url));
-  };
-
-  const removeNewImage = (index) => {
-    setImages((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
-  };
-
-  const notifyModeration = (payload) => {
-    const apiBase =
-      import.meta.env.VITE_API_BASE_URL ||
-      import.meta.env.VITE_SERVER_URL ||
-      "https://miniapp-1wzi.onrender.com";
-
-    window.setTimeout(() => {
-      fetch(`${apiBase}/new-ad`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-        .then(async (response) => {
-          const text = await response.text();
-          let result = {};
-          try {
-            result = JSON.parse(text);
-          } catch {
-            result = { ok: false, error: text };
-          }
-
-          if (!response.ok || !result.ok) {
-            throw new Error(result.error || "Сервер не принял объявление");
-          }
-
-          logDebugEvent("ad_submit_moderation_notify_success", { id: payload.id });
-        })
-        .catch((error) => {
-          console.warn("Не удалось отправить уведомление модератору:", error);
-          logDebugEvent("ad_submit_moderation_notify_error", error);
-        });
-    }, 0);
-  };
-
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    logDebugEvent(isEditMode ? "ad_resubmit_start" : "ad_submit_start", {
-      imageCount: totalImageCount,
-      mode,
-      adId: initialAd?.id || null,
-    });
+    logDebugEvent("ad_submit_start", { imageCount: images.length });
 
     const tg = window.Telegram?.WebApp;
     let realUser = user || tg?.initDataUnsafe?.user || null;
 
     if (!realUser) {
-      setMessage("⏳ Получаем данные пользователя...");
+      setMessage("⏳ Получаем данные Telegram...");
       await new Promise((resolve) => setTimeout(resolve, 800));
-      realUser = user || tg?.initDataUnsafe?.user || null;
+      realUser = tg?.initDataUnsafe?.user || null;
     }
 
     if (!realUser) {
-      setMessage("⚠️ Не удалось получить данные пользователя. Попробуй ещё раз");
+      setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
       setIsSubmitting(false);
       return;
     }
 
     const missing = [];
-    if (!title.trim()) missing.push("Название");
+    if (!title) missing.push("Название");
     if (!price) missing.push("Цена");
-    if (!description.trim()) missing.push("Описание");
+    if (!description) missing.push("Описание");
     if (!category) missing.push("Категория");
-    if (!totalImageCount) missing.push("Изображение");
+    if (!images.length) missing.push("Изображение");
 
     if (missing.length > 0) {
       setMessage("Заполните: " + missing.join(", "));
@@ -174,7 +66,7 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
       return;
     }
 
-    const id = isEditMode ? String(initialAd.id) : Date.now().toString();
+    const id = Date.now().toString();
 
     try {
       setMessage("Подготавливаем профиль...");
@@ -197,27 +89,22 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
         profile = await getUserProfile(realUser.id);
       }
 
-      let uploadedImageUrls = [];
-      if (images.length > 0) {
-        const parallelLimit = getParallelUploadLimit();
-        setMessage(`Сжимаем и загружаем фото 0/${images.length}...`);
-        logDebugEvent("ad_submit_images_upload_start", {
-          total: images.length,
-          parallelLimit,
-        });
+      const parallelLimit = getParallelUploadLimit();
+      setMessage(`Сжимаем и загружаем фото 0/${images.length}...`);
+      logDebugEvent("ad_submit_images_upload_start", {
+        total: images.length,
+        parallelLimit,
+      });
 
-        uploadedImageUrls = await uploadImagesToCloudinary(images, {
-          concurrency: parallelLimit,
-          onProgress: ({ completed, total }) => {
-            setMessage(`Загрузка фото ${completed}/${total}...`);
-            logDebugEvent("ad_submit_images_upload_progress", { completed, total });
-          },
-        });
+      const imageUrls = await uploadImagesToCloudinary(images, {
+        concurrency: parallelLimit,
+        onProgress: ({ completed, total }) => {
+          setMessage(`Загрузка фото ${completed}/${total}...`);
+          logDebugEvent("ad_submit_images_upload_progress", { completed, total });
+        },
+      });
 
-        logDebugEvent("ad_submit_images_upload_success", { total: uploadedImageUrls.length });
-      }
-
-      const imageUrls = [...existingImageUrls, ...uploadedImageUrls];
+      logDebugEvent("ad_submit_images_upload_success", { total: imageUrls.length });
 
       const sellerDisplayName =
         profile?.displayName ||
@@ -227,76 +114,94 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
 
       const sellerAvatarUrl =
         profile?.avatarUrl ||
-        profile?.vkAvatarUrl ||
         profile?.telegramAvatarUrl ||
         "";
 
-      setMessage(isEditMode ? modeCopy.loading : "Сохраняем объявление...");
+      setMessage("Сохраняем объявление...");
 
-      const now = Date.now();
-      const payload = {
+      await setDoc(doc(db, "ads", id), {
         id,
-        title: title.trim(),
+        title,
         price,
-        description: description.trim(),
+        description,
         category,
         imageUrls,
         imageUrl: imageUrls[0],
         status: "pending",
-        moderationStatus: "pending",
-        moderationMode: isEditMode ? mode : "create",
-        updatedAt: now,
-        resubmittedAt: isEditMode ? now : null,
-        rejectionReason: "",
-        moderationRejectReason: "",
-        rejectedAt: null,
+        createdAt: Date.now(),
+        views: 0,
         userId: realUser.id,
-        username: realUser.username || initialAd?.username || null,
-        firstName: realUser.first_name || initialAd?.firstName || "Гость",
+        username: realUser.username || null,
+        firstName: realUser.first_name || "Гость",
         sellerDisplayName,
         sellerAvatarUrl,
+      });
+
+      logDebugEvent("ad_submit_firestore_saved", { id, imageCount: imageUrls.length });
+
+      const apiBase = String(
+        import.meta.env.VITE_API_BASE_URL ||
+          import.meta.env.VITE_SERVER_URL ||
+          "https://miniapp-1wzi.onrender.com"
+      ).replace(/\/+$/, "");
+
+      const moderationPayload = {
+        id,
+        title,
+        price,
+        description,
+        category,
+        imageUrls,
+        imageUrl: imageUrls[0],
+        userId: realUser.id,
       };
 
-      if (!isEditMode) {
-        payload.createdAt = now;
-        payload.views = 0;
-      } else {
-        payload.createdAt = initialAd.createdAt || now;
-        payload.views = Number(initialAd.views || 0);
-        payload.previousStatus = initialAd.status || null;
-        payload.wasApprovedBeforeEdit = initialAd.status === "approved" || mode === "edit-active";
-      }
+      setMessage("Отправляем модератору...");
+      logDebugEvent("ad_submit_moderation_notify_start", { id, apiBase });
 
-      await setDoc(doc(db, "ads", id), payload, { merge: true });
-
-      setMessage(modeCopy.success);
-      logDebugEvent(isEditMode ? "ad_resubmit_firestore_saved" : "ad_submit_firestore_saved", {
-        id,
-        imageCount: imageUrls.length,
-        mode,
+      const moderationResponse = await fetch(`${apiBase}/new-ad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(moderationPayload),
       });
 
-      notifyModeration({
-        ...payload,
-        moderationMode: isEditMode ? mode : "create",
-      });
+      const moderationText = await moderationResponse.text();
+      let moderationResult = {};
 
-      if (isEditMode) {
-        window.setTimeout(() => {
-          onSubmitSuccess?.(id, payload);
-        }, 750);
-      } else {
-        setTitle("");
-        setPrice("");
-        setDescription("");
-        setCategory("");
-        setImages([]);
-        setExistingImageUrls([]);
-        onSubmitSuccess?.(id, payload);
+      try {
+        moderationResult = moderationText ? JSON.parse(moderationText) : {};
+      } catch {
+        moderationResult = { ok: false, error: moderationText };
       }
+
+      if (!moderationResponse.ok || !moderationResult.ok) {
+        const errorMessage =
+          moderationResult.error ||
+          `Сервер модерации вернул HTTP ${moderationResponse.status}`;
+
+        logDebugEvent("ad_submit_moderation_notify_error", {
+          id,
+          apiBase,
+          status: moderationResponse.status,
+          error: errorMessage,
+          response: moderationText.slice(0, 900),
+        });
+
+        setMessage(`⚠️ Объявление сохранено, но Telegram-модератору не ушло: ${errorMessage}`);
+        return;
+      }
+
+      logDebugEvent("ad_submit_moderation_notify_success", { id, apiBase });
+      setMessage("✅ Отправлено на модерацию");
+
+      setTitle("");
+      setPrice("");
+      setDescription("");
+      setCategory("");
+      setImages([]);
     } catch (err) {
       console.error(err);
-      logDebugEvent(isEditMode ? "ad_resubmit_error" : "ad_submit_error", err);
+      logDebugEvent("ad_submit_error", err);
       setMessage(`❌ Ошибка отправки: ${err?.message || "попробуй ещё раз"}`);
     } finally {
       setIsSubmitting(false);
@@ -318,27 +223,17 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
         </button>
 
         <div className="create-premium-title">
-          <h1>{modeCopy.title}</h1>
-          {isEditMode && (
-            <p className="create-edit-subtitle">{initialAd?.title}</p>
-          )}
+          <h1>Создание объявления</h1>
         </div>
 
         <div className="create-top-spacer" aria-hidden="true" />
       </div>
 
-      {isEditMode && (initialAd?.rejectionReason || initialAd?.moderationRejectReason) && (
-        <div className="create-edit-warning">
-          <strong>Причина отклонения</strong>
-          <span>{initialAd.rejectionReason || initialAd.moderationRejectReason}</span>
-        </div>
-      )}
-
       <div className="create-steps-stack">
         <section className="create-step-card create-photo-step">
           <div className="create-step-head">
             <div className="create-step-title">1. Фото</div>
-            <div className="create-counter">{totalImageCount}/10</div>
+            <div className="create-counter">{images.length}/10</div>
           </div>
 
           <div className="create-photo-row">
@@ -347,7 +242,7 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={(e) => handleFileChange(e.target.files)}
+                onChange={(e) => setImages(Array.from(e.target.files || []).slice(0, 10))}
               />
               <span className="create-photo-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -356,35 +251,21 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
                   <circle cx="12" cy="13" r="3" />
                 </svg>
               </span>
-              <span>{isEditMode ? "Добавить ещё" : "Добавить фото"}</span>
+              <span>Добавить фото</span>
             </label>
 
             {Array.from({ length: 3 }).map((_, index) => {
-              const preview = previewUrls[index];
-              const isExisting = index < existingImageUrls.length;
-              const newImageIndex = index - existingImageUrls.length;
+              const preview = imagePreviews[index];
               return (
                 <div key={index} className={`create-photo-slot ${preview ? "filled" : ""}`}>
                   {preview && <img src={preview} alt={`Фото ${index + 1}`} />}
-                  {preview && (
-                    <button
-                      type="button"
-                      className="create-photo-remove"
-                      onClick={() => isExisting ? removeExistingImage(preview) : removeNewImage(newImageIndex)}
-                      aria-label="Удалить фото"
-                    >
-                      ×
-                    </button>
-                  )}
                 </div>
               );
             })}
           </div>
 
           <p className="create-step-note">
-            {isEditMode
-              ? "Можно оставить текущие фото, удалить лишние или добавить новые. Минимум одно фото обязательно."
-              : "Добавьте от 1 до 10 фото. Хорошие фото увеличивают шансы на быструю продажу."}
+            Добавьте от 1 до 10 фото. Хорошие фото увеличивают шансы на быструю продажу.
           </p>
         </section>
 
@@ -448,7 +329,7 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
           <path d="M21 4L10 15" />
           <path d="M21 4L14 21L10 15L3 11L21 4Z" />
         </svg>
-        <span>{isSubmitting ? modeCopy.loading : modeCopy.submit}</span>
+        <span>{isSubmitting ? "Отправляем..." : "Отправить на модерацию"}</span>
       </button>
 
       <div className="create-moderation-note">
@@ -456,7 +337,7 @@ export default function AddAd({ user, onBack, initialAd = null, mode = "create",
           <rect x="6" y="10" width="12" height="10" rx="2" />
           <path d="M9 10V7.8C9 6.1 10.3 5 12 5C13.7 5 15 6.1 15 7.8V10" />
         </svg>
-        <span>{modeCopy.note}</span>
+        <span>Объявление будет проверено модератором</span>
       </div>
 
       {!!message && <p className="create-message">{message}</p>}
