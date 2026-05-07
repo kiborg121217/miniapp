@@ -1624,11 +1624,25 @@ app.post("/notify-chat-message", async (req, res) => {
 
 app.post("/new-ad", async (req, res) => {
   try {
-    const ad = req.body || {};
+    if (!BOT_TOKEN) {
+      return res.status(500).json({
+        ok: false,
+        error: "BOT_TOKEN не настроен на Render",
+      });
+    }
+
+    if (!ADMIN_ID || !Number.isFinite(ADMIN_ID)) {
+      return res.status(500).json({
+        ok: false,
+        error: "ADMIN_ID не настроен на Render или имеет неверный формат",
+      });
+    }
+
+    const ad = req.body;
 
     const imageUrls =
       Array.isArray(ad?.imageUrls) && ad.imageUrls.length > 0
-        ? ad.imageUrls
+        ? ad.imageUrls.filter(Boolean)
         : ad?.imageUrl
         ? [ad.imageUrl]
         : [];
@@ -1640,16 +1654,48 @@ app.post("/new-ad", async (req, res) => {
       });
     }
 
-    const isResubmission = ad.moderationMode === "fix-rejected" || ad.moderationMode === "edit-active" || ad.resubmittedAt;
-    const moderationTitle = isResubmission ? "✏️ Повторная модерация объявления" : "📦 Новое объявление";
-    const description = String(ad.description || "").trim();
-    const shortDescription = description.length > 280 ? `${description.slice(0, 280)}…` : description;
+    const TELEGRAM_CAPTION_SAFE_LIMIT = 900;
+    const TELEGRAM_MESSAGE_SAFE_LIMIT = 3500;
 
-    const shortCaption = `${moderationTitle}\n\nID: ${ad.id}\n📌 ${ad.title}\n🗂 Категория: ${ad.category || "Без категории"}\n💰 ${ad.price} ₽\n\n📝 ${shortDescription}`.slice(0, 950);
+    const toTelegramSafeText = (value, maxLength) => {
+      const normalized = String(value ?? "").trim();
+      const chars = Array.from(normalized);
 
-    const fullText = `${moderationTitle}\n\nID: ${ad.id}\n📌 ${ad.title}\n🗂 Категория: ${ad.category || "Без категории"}\n💰 ${ad.price} ₽\n\n📝 Полное описание:\n${description.slice(0, 3600)}${description.length > 3600 ? "…" : ""}`;
+      if (chars.length <= maxLength) {
+        return normalized;
+      }
 
-    const moderationKeyboard = {
+      return `${chars.slice(0, Math.max(0, maxLength - 1)).join("")}…`;
+    };
+
+    const splitTelegramMessage = (value, maxLength = TELEGRAM_MESSAGE_SAFE_LIMIT) => {
+      const chars = Array.from(String(value ?? ""));
+      const chunks = [];
+
+      for (let index = 0; index < chars.length; index += maxLength) {
+        chunks.push(chars.slice(index, index + maxLength).join(""));
+      }
+
+      return chunks.length > 0 ? chunks : [""];
+    };
+
+    const headerText = `📦 Новое объявление
+
+🆔 ${ad.id}
+📌 ${ad.title}
+🗂 Категория: ${ad.category || "Без категории"}
+💰 ${ad.price} ₽`;
+
+    // В подписи к фото держим только короткую шапку объявления.
+    // Полное описание отправляется отдельным сообщением ниже, чтобы не дублировать текст
+    // и не упираться в лимит caption у Telegram.
+    const caption = toTelegramSafeText(headerText, TELEGRAM_CAPTION_SAFE_LIMIT);
+
+    const fullText = `📝 Полное описание:
+${ad.description}`;
+    const fullTextChunks = splitTelegramMessage(fullText);
+
+    const keyboard = {
       reply_markup: {
         inline_keyboard: [
           [
@@ -1661,25 +1707,41 @@ app.post("/new-ad", async (req, res) => {
     };
 
     if (imageUrls.length > 1) {
-      const media = imageUrls.slice(0, 10).map((url, index) => ({
+      const media = imageUrls.map((url, index) => ({
         type: "photo",
         media: url,
-        ...(index === 0 ? { caption: shortCaption } : {}),
+        ...(index === 0 ? { caption } : {}),
       }));
 
       await bot.sendMediaGroup(ADMIN_ID, media);
-      await bot.sendMessage(ADMIN_ID, fullText, moderationKeyboard);
     } else {
-      await bot.sendPhoto(ADMIN_ID, imageUrls[0], { caption: shortCaption });
-      await bot.sendMessage(ADMIN_ID, fullText, moderationKeyboard);
+      await bot.sendPhoto(ADMIN_ID, imageUrls[0], {
+        caption,
+      });
+    }
+
+    for (let index = 0; index < fullTextChunks.length; index += 1) {
+      const isLastChunk = index === fullTextChunks.length - 1;
+
+      await bot.sendMessage(
+        ADMIN_ID,
+        fullTextChunks[index],
+        isLastChunk ? keyboard : undefined
+      );
     }
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error("Ошибка /new-ad:", error);
+    console.error("Ошибка /new-ad:", {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body || error.response,
+    });
+
     return res.status(500).json({
       ok: false,
       error: error.message || "Не удалось отправить объявление в Telegram",
+      telegramError: error.response?.body || null,
     });
   }
 });

@@ -114,14 +114,7 @@ function writeProfileCache(userId, value) {
   }
 }
 
-export default function ProfilePage({
-  user,
-  onOpenSection,
-  onOpenChats,
-  initialProfileData,
-  onProfileDataLoaded,
-  onLogoutComplete,
-}) {
+export default function ProfilePage({ user, onOpenSection, onOpenChats, initialProfileData, onProfileDataLoaded }) {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [activeAds, setActiveAds] = useState([]);
@@ -262,6 +255,9 @@ export default function ProfilePage({
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
+    const confirmed = window.confirm("Выйти из аккаунта?");
+    if (!confirmed) return;
+
     try {
       setIsLoggingOut(true);
       setMessage("Выходим из аккаунта...");
@@ -272,11 +268,6 @@ export default function ProfilePage({
         if (user?.id) {
           window.localStorage.removeItem(`${PROFILE_CACHE_PREFIX}_${user.id}`);
         }
-        window.localStorage.removeItem("baraholka_user");
-        window.localStorage.removeItem("baraholka_profile");
-        window.localStorage.removeItem("baraholka_auth_user");
-        window.localStorage.removeItem("baraholka_auth_session");
-        window.localStorage.removeItem("baraholka_auth_session_v1");
       } catch {
         // ignore storage errors
       }
@@ -294,12 +285,10 @@ export default function ProfilePage({
         // ignore storage errors
       }
 
-      onLogoutComplete?.();
+      window.location.replace("/");
     } catch (error) {
       console.error("Ошибка выхода из аккаунта:", error);
-      setMessage("Сессия на устройстве сброшена. Обновляем профиль...");
-      onLogoutComplete?.();
-    } finally {
+      setMessage("Не удалось выйти из аккаунта. Попробуй ещё раз.");
       setIsLoggingOut(false);
     }
   };
@@ -465,7 +454,17 @@ export default function ProfilePage({
 
       <section className="profile-menu-section">
         <div className="profile-menu-label">МОЙ РАЗДЕЛ</div>
-<button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
+
+        <button className="profile-menu-tile accent-cyan" onClick={onOpenChats}>
+          <span className="profile-menu-icon"><ProfileTileIcon type="chat" /></span>
+          <span className="profile-menu-copy">
+            <strong>Чаты</strong>
+            <span>Быстрый доступ к перепискам по объявлениям</span>
+          </span>
+          <span className="profile-menu-arrow">›</span>
+        </button>
+
+        <button className="profile-menu-tile accent-pink profile-favorites-tile" onClick={() => onOpenSection("favorites")}>
           <span className="profile-menu-icon"><ProfileTileIcon type="favorite" /></span>
           <span className="profile-menu-copy">
             <strong>Избранное</strong>

@@ -24,6 +24,15 @@ function formatChatTime(value) {
     return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   }
 
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+
+  if (isYesterday) return "Вчера";
+
   return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
 
@@ -89,59 +98,34 @@ function getPeerName(chat, userId, profileNames = {}) {
   return chat?.adTitle || "Диалог";
 }
 
-function ChatMessageIcon() {
+function getInitials(value) {
+  const text = String(value || "").trim();
+  if (!text) return "?";
+  const parts = text.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
+}
+
+function formatPrice(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return `${number.toLocaleString("ru-RU")} ₽`;
+}
+
+function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-      <rect x="3.5" y="5" width="17" height="13" rx="2.8" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M4.8 6.6L12 12.1L19.2 6.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16L20 20" />
     </svg>
-  );
-}
-
-function ChatPlaceholderImage({ compact = false }) {
-  return (
-    <div className={`chat-list-image chat-list-image-placeholder ${compact ? "compact" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none">
-        <rect x="4" y="5" width="16" height="14" rx="3" />
-        <path d="M7.5 15L10.2 12.4L12.7 14.5L14.4 12.8L17 15.5" />
-        <circle cx="9" cy="9" r="1.1" />
-      </svg>
-    </div>
-  );
-}
-
-function ChatListItem({ chat, userId, peerName, onClick }) {
-  const unread = getUnreadCount(chat, userId);
-  const adTitle = chat.adTitle || "Объявление";
-
-  return (
-    <button type="button" className="chat-list-item" onClick={onClick}>
-      {chat.adImage ? (
-        <img className="chat-list-image" src={chat.adImage} alt="" loading="lazy" />
-      ) : (
-        <ChatPlaceholderImage />
-      )}
-
-      <span className="chat-list-body">
-        <span className="chat-list-topline">
-          <span className="chat-list-title chat-list-peer-name">{peerName}</span>
-          <span className="chat-list-time">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
-        </span>
-        <span className="chat-list-ad-title">{adTitle}</span>
-        <span className="chat-list-subline">
-          <span className="chat-list-message">{chat.lastMessage || "Диалог создан. Напишите первое сообщение."}</span>
-          {unread > 0 && <span className="chat-unread-badge">{unread > 99 ? "99+" : unread}</span>}
-        </span>
-      </span>
-    </button>
   );
 }
 
 function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4.5 11.2L19.1 4.8C19.9 4.45 20.72 5.28 20.36 6.08L13.86 20.6C13.5 21.4 12.34 21.32 12.1 20.48L10.48 14.8L4.82 13.12C4 12.88 3.7 11.55 4.5 11.2Z" />
-      <path d="M10.7 14.45L14.7 10.45" />
+      <path d="M4.8 11.7L19 5.5C19.85 5.12 20.71 6 20.33 6.84L14.05 20.88C13.66 21.74 12.42 21.62 12.2 20.71L10.61 14.43L4.32 12.54C3.45 12.28 3.97 12.06 4.8 11.7Z" />
+      <path d="M10.5 14.5L14.8 10.2" />
     </svg>
   );
 }
@@ -151,6 +135,45 @@ function BackIcon() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M15.5 5.5L9 12L15.5 18.5" />
     </svg>
+  );
+}
+
+function ChatBubbleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 6.8C5 5.25 6.25 4 7.8 4H16.2C17.75 4 19 5.25 19 6.8V12.2C19 13.75 17.75 15 16.2 15H11L7 18.5V15H7.8C6.25 15 5 13.75 5 12.2V6.8Z" />
+      <path d="M8.5 8.5H15.5" />
+      <path d="M8.5 11.2H13.5" />
+    </svg>
+  );
+}
+
+function AvatarBadge({ name, imageUrl, className = "" }) {
+  if (imageUrl) {
+    return <img className={`chat-avatar-badge ${className}`.trim()} src={imageUrl} alt="" loading="lazy" />;
+  }
+
+  return <div className={`chat-avatar-badge chat-avatar-fallback ${className}`.trim()}>{getInitials(name)}</div>;
+}
+
+function ChatListItem({ chat, userId, peerName, onClick }) {
+  const unread = getUnreadCount(chat, userId);
+
+  return (
+    <button type="button" className="chat-thread-item" onClick={onClick}>
+      <AvatarBadge name={peerName} imageUrl={chat.adImage || ""} className="chat-thread-avatar" />
+
+      <span className="chat-thread-content">
+        <span className="chat-thread-topline">
+          <span className="chat-thread-name">{peerName}</span>
+          <span className="chat-thread-time">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
+        </span>
+        <span className="chat-thread-message">{chat.lastMessage || "Диалог создан. Напишите первое сообщение."}</span>
+        <span className="chat-thread-ad-title">{chat.adTitle || "Объявление"}</span>
+      </span>
+
+      {unread > 0 && <span className="chat-thread-unread">{unread > 99 ? "99+" : unread}</span>}
+    </button>
   );
 }
 
@@ -229,34 +252,51 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
   };
 
   return (
-    <div className="chat-dialog-page page-enter" role="region" aria-label="Диалог по объявлению">
-      <section className="chat-dialog-header">
+    <div className="chat-dialog-shell page-enter" role="region" aria-label="Диалог по объявлению">
+      <section className="chat-dialog-topbar">
         <button type="button" className="chat-header-back" onClick={onBack} aria-label="Назад к списку чатов">
           <BackIcon />
         </button>
 
-        {chat?.adImage ? (
-          <img className="chat-header-image" src={chat.adImage} alt="" />
-        ) : (
-          <ChatPlaceholderImage compact />
-        )}
-
-        <div className="chat-header-text">
-          <h2>{peerName || "Диалог"}</h2>
-          <p>{chat?.adTitle || "Чат по объявлению"}</p>
+        <div className="chat-dialog-peer">
+          <AvatarBadge name={peerName} imageUrl="" className="chat-dialog-peer-avatar" />
+          <div className="chat-dialog-peer-text">
+            <h2>{peerName || "Диалог"}</h2>
+            <p>{chat?.adTitle ? `Диалог по объявлению` : "Сообщения"}</p>
+          </div>
         </div>
 
-        {chat?.adId && (
-          <button type="button" className="chat-open-ad-btn" onClick={handleOpenAd} disabled={openingAd}>
-            {openingAd ? "Открываем…" : "Объявление"}
-          </button>
-        )}
+        <button type="button" className="chat-header-more" aria-label="Меню">
+          <span />
+          <span />
+          <span />
+        </button>
       </section>
 
-      <section className="chat-messages-card" ref={messagesRef}>
+      {chat?.adId && (
+        <button type="button" className="chat-dialog-product" onClick={handleOpenAd} disabled={openingAd}>
+          {chat?.adImage ? (
+            <img className="chat-dialog-product-image" src={chat.adImage} alt="" loading="lazy" />
+          ) : (
+            <div className="chat-dialog-product-image chat-dialog-product-placeholder">
+              <ChatBubbleIcon />
+            </div>
+          )}
+
+          <span className="chat-dialog-product-content">
+            <span className="chat-dialog-product-label">Объявление</span>
+            <strong>{chat?.adTitle || "Открыть объявление"}</strong>
+            {formatPrice(chat?.adPrice) && <span>{formatPrice(chat?.adPrice)}</span>}
+          </span>
+
+          <span className="chat-dialog-product-arrow">›</span>
+        </button>
+      )}
+
+      <section className="chat-dialog-messages" ref={messagesRef}>
         {messages.length === 0 ? (
           <div className="chat-empty-state chat-empty-state-dialog">
-            <div className="chat-empty-icon"><ChatMessageIcon /></div>
+            <div className="chat-empty-icon"><ChatBubbleIcon /></div>
             <h3>Сообщений пока нет</h3>
             <p>Напишите первое сообщение по объявлению.</p>
           </div>
@@ -266,6 +306,7 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
               const isOwn = String(message.senderId) === String(user.id);
               return (
                 <div key={message.id} className={`chat-message-row ${isOwn ? "own" : "other"}`}>
+                  {!isOwn && <AvatarBadge name={peerName} imageUrl="" className="chat-message-avatar" />}
                   <div className="chat-message-bubble">
                     <p>{message.text}</p>
                     <span>{formatChatTime(message.createdAt)}</span>
@@ -284,7 +325,7 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd }) {
             ref={textareaRef}
             value={text}
             onChange={(event) => setText(event.target.value)}
-            placeholder="Написать сообщение..."
+            placeholder="Напишите сообщение..."
             rows={1}
             maxLength={1200}
             enterKeyHint="send"
@@ -308,6 +349,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   const [chats, setChats] = useState(() => readChatCache(user?.id));
   const [fallbackChat, setFallbackChat] = useState(null);
   const [profileNames, setProfileNames] = useState({});
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -326,14 +368,14 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         writeChatCache(user.id, items);
         setError("");
       },
-      (error) => {
-        logDebugEvent("chats_snapshot_error", error);
+      (listenerError) => {
+        logDebugEvent("chats_snapshot_error", listenerError);
         setError("Не удалось загрузить чаты");
       }
     );
 
     return unsubscribe;
-  }, [user?.id]);
+  }, [user?.id, selectedChatId]);
 
   useEffect(() => {
     if (!selectedChatId) {
@@ -349,8 +391,8 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
         logDebugEvent("chat_fallback_load_done", { found: !!chat });
         setFallbackChat(chat);
       })
-      .catch((error) => {
-        logDebugEvent("chat_fallback_load_error", error);
+      .catch((fallbackError) => {
+        logDebugEvent("chat_fallback_load_error", fallbackError);
         setFallbackChat(null);
       });
   }, [selectedChatId, chats]);
@@ -370,7 +412,7 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
       ids.slice(0, 30).map(async (id) => {
         try {
           const profile = await getUserProfile(id);
-          return [id, getProfileName(profile, id)]
+          return [id, getProfileName(profile, id)];
         } catch {
           return [id, null];
         }
@@ -398,6 +440,18 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
 
   const activePeerName = activeChat ? getPeerName(activeChat, user?.id, profileNames) : "Диалог";
 
+  const filteredChats = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return chats;
+
+    return chats.filter((chat) => {
+      const peer = getPeerName(chat, user?.id, profileNames).toLowerCase();
+      const adTitle = String(chat?.adTitle || "").toLowerCase();
+      const lastMessage = String(chat?.lastMessage || "").toLowerCase();
+      return peer.includes(term) || adTitle.includes(term) || lastMessage.includes(term);
+    });
+  }, [chats, profileNames, search, user?.id]);
+
   if (selectedChatId) {
     return (
       <ChatDialog
@@ -412,26 +466,39 @@ export default function ChatsPage({ user, selectedChatId, onSelectChat, onBackTo
   }
 
   return (
-    <div className="chats-page page-enter">
-      <section className="chats-hero">
-        <div className="chats-hero-icon"><ChatMessageIcon /></div>
+    <div className="chats-shell page-enter">
+      <section className="chats-header">
         <div>
           <h1>Чаты</h1>
-          <p>Переписка по объявлениям внутри приложения</p>
+          <p>Ваши диалоги по объявлениям</p>
         </div>
       </section>
 
+      <label className="chats-search">
+        <span className="chats-search-icon"><SearchIcon /></span>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Поиск по чатам"
+        />
+      </label>
+
       {error && <div className="chat-error">{error}</div>}
 
-      <section className="chat-list-card">
-        {chats.length === 0 ? (
+      <section className="chat-thread-list">
+        {filteredChats.length === 0 ? (
           <div className="chat-empty-state">
-            <div className="chat-empty-icon"><ChatMessageIcon /></div>
-            <h3>Диалогов пока нет</h3>
-            <p>Откройте объявление и нажмите «Написать», чтобы начать переписку с продавцом.</p>
+            <div className="chat-empty-icon"><ChatBubbleIcon /></div>
+            <h3>{chats.length === 0 ? "Диалогов пока нет" : "Ничего не найдено"}</h3>
+            <p>
+              {chats.length === 0
+                ? "Откройте объявление и нажмите «Написать», чтобы начать переписку с продавцом."
+                : "Попробуйте изменить запрос поиска."}
+            </p>
           </div>
         ) : (
-          chats.map((chat) => (
+          filteredChats.map((chat) => (
             <ChatListItem
               key={chat.id}
               chat={chat}

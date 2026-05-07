@@ -208,7 +208,7 @@ function setCachedAdsForStatus(userId, status, ads) {
   });
 }
 
-export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
+export default function ProfileAdsPage({ user, status, onOpenAd, onEditAd, onBack }) {
   const [ads, setAds] = useState(() => getCachedAdsForStatus(user?.id, status));
   const [loading, setLoading] = useState(true);
   const [showPromoteSheet, setShowPromoteSheet] = useState(false);
@@ -264,6 +264,19 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
     await restoreAd(adId);
     await loadAds();
   };
+
+  const handleEditAd = (ad, editMode = "edit-active") => {
+    if (!ad?.id) return;
+    onEditAd?.(ad, editMode);
+  };
+
+  const getRejectReason = (ad) => (
+    ad?.rejectionReason ||
+    ad?.moderationRejectReason ||
+    ad?.rejectReason ||
+    ad?.moderationComment ||
+    "Исправь объявление и отправь его на повторную проверку."
+  );
 
   const openPromote = (ad) => {
     setSelectedAd(ad);
@@ -369,6 +382,11 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
                       <span>Просмотры: {ad.views || 0}</span>
                     </div>
                     <PromoteState ad={ad} />
+                    {status === "rejected" && (
+                      <div className="profile-ad-reject-reason">
+                        <span>Причина:</span> {getRejectReason(ad)}
+                      </div>
+                    )}
                   </div>
                 </button>
 
@@ -379,6 +397,9 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
 
                   {status === "approved" && (
                     <>
+                      <button className="soft-action-btn profile-ad-edit-btn" onClick={() => handleEditAd(ad, "edit-active")}>
+                        Редактировать
+                      </button>
                       <button className="soft-premium-btn" onClick={() => openPromote(ad)}>
                         Продвинуть
                       </button>
@@ -386,6 +407,12 @@ export default function ProfileAdsPage({ user, status, onOpenAd, onBack }) {
                         Снять
                       </button>
                     </>
+                  )}
+
+                  {status === "rejected" && (
+                    <button className="soft-premium-btn profile-ad-fix-btn" onClick={() => handleEditAd(ad, "fix-rejected")}>
+                      Исправить
+                    </button>
                   )}
 
                   {status === "archived" && (
