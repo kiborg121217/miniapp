@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ensureTelegramSdkLoaded } from "../telegram";
 
 function readVkParamsFromCurrentUrl() {
   const merged = new URLSearchParams();
@@ -246,16 +247,25 @@ function applyTelegramViewportVars() {
 
 export default function useTelegramViewport() {
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
+    let disposed = false;
+    let tg = window.Telegram?.WebApp;
 
-    try {
-      tg?.ready?.();
-      tg?.expand?.();
-    } catch {
-      // Старые клиенты Telegram могут поддерживать только часть API.
-    }
+    const applyAfterTelegramReady = async () => {
+      tg = await ensureTelegramSdkLoaded({ timeoutMs: 2200 });
+      if (disposed) return;
+
+      try {
+        tg?.ready?.();
+        tg?.expand?.();
+      } catch {
+        // Старые клиенты Telegram могут поддерживать только часть API.
+      }
+
+      applyTelegramViewportVars();
+    };
 
     applyTelegramViewportVars();
+    applyAfterTelegramReady();
 
     const handleResize = () => applyTelegramViewportVars();
     const handleViewportChanged = () => applyTelegramViewportVars();
@@ -273,6 +283,7 @@ export default function useTelegramViewport() {
     const timers = [80, 350, 900, 1800, 3200].map((delay) => window.setTimeout(applyTelegramViewportVars, delay));
 
     return () => {
+      disposed = true;
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
       window.visualViewport?.removeEventListener?.("resize", handleResize);

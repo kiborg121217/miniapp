@@ -1,13 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import AddAd from "./components/AddAd";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import AdList from "./components/AdList";
-import AdPage from "./components/AdPage";
-import ProfilePage from "./components/ProfilePage";
-import ProfileAdsPage from "./components/ProfileAdsPage";
-import SettingsPage from "./components/SettingsPage";
-import ChatsPage from "./components/ChatsPage";
-import SellerPage from "./components/SellerPage";
-import LegalPage from "./components/LegalPage";
 import PageBackButton from "./components/PageBackButton";
 import LoginPage from "./components/LoginPage";
 import AuthCallbackPage from "./components/AuthCallbackPage";
@@ -31,6 +23,14 @@ import {
   restoreAuthSession,
 } from "./auth";
 
+const AddAd = lazy(() => import("./components/AddAd"));
+const AdPage = lazy(() => import("./components/AdPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const ProfileAdsPage = lazy(() => import("./components/ProfileAdsPage"));
+const SettingsPage = lazy(() => import("./components/SettingsPage"));
+const ChatsPage = lazy(() => import("./components/ChatsPage"));
+const SellerPage = lazy(() => import("./components/SellerPage"));
+const LegalPage = lazy(() => import("./components/LegalPage"));
 const VALID_PAGES = new Set([
   "list",
   "add",
@@ -555,15 +555,14 @@ export default function App() {
 
     const boot = async () => {
       logDebugEvent("boot_start");
-      initTelegram();
+      const telegramReadyPromise = initTelegram().catch((error) => {
+        logDebugEvent("telegram_init_error", error);
+        return null;
+      });
 
-      try {
-        const tg = window.Telegram?.WebApp;
-        tg?.ready?.();
-        tg?.expand?.();
-      } catch {
-        // Telegram API может быть недоступен на сайте/PWA.
-      }
+      // Telegram SDK больше не блокирует старт сайта и VK Mini App.
+      // В Telegram-контейнере ждём его недолго, чтобы получить safe-area/initData.
+      await withTimeout(telegramReadyPromise, 900, null);
 
       if (window.location.pathname === "/debug") {
         safeSetProgress(100, "Открываем диагностику…");
@@ -581,10 +580,12 @@ export default function App() {
 
       let vkMiniAppInfo = null;
       if (isVkMiniAppLaunch()) {
-        vkMiniAppInfo = await withTimeout(initVkMiniApp(), 3600, { isVkMiniApp: true });
+        vkMiniAppInfo = await withTimeout(initVkMiniApp(), 1800, { isVkMiniApp: true });
       }
 
-      await resolveAuth(vkMiniAppInfo);
+      // Не держим стартовый экран на Render/Firebase. Если backend просыпается долго,
+      // приложение всё равно открывается, а профиль подтягивается в фоне.
+      await withTimeout(resolveAuth(vkMiniAppInfo), 2200, null);
 
       if (cancelled) return;
 
@@ -793,6 +794,7 @@ export default function App() {
 
   return (
     <div className={`app theme-animate ${page === "chats" && selectedChatId ? "chat-open" : ""}`}>
+      <Suspense fallback={<LoadingScreen progress={76} subtitle="Открываем раздел…" />}>
       {page === "list" && (
         <AdList
           onOpenSettings={() => goToPage("settings")}
@@ -922,6 +924,8 @@ export default function App() {
           onWrite={handleStartChat}
         />
       )}
+
+      </Suspense>
 
       {page !== "view" && !(page === "add" && tgUser) && !(page === "chats" && selectedChatId) && (
         <div className="bottom-nav">

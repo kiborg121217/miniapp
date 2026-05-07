@@ -80,6 +80,15 @@ app.get("/", (req, res) => {
   res.send("Server is working 🚀");
 });
 
+app.get(["/health", "/healthz"], (req, res) => {
+  res.json({
+    ok: true,
+    service: "baraholka-api",
+    uptime: Math.round(process.uptime()),
+    time: new Date().toISOString(),
+  });
+});
+
 async function sendUserNotification(userId, text, notificationKey = "chatMessages", options = {}) {
   if (!userId) return { ok: false, skipped: true, reason: "missing_user" };
 

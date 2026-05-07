@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:vk": "vite build --mode vk --base=./",
+    "vk:deploy": "npm run build:vk && cd .. && npx @vkontakte/vk-miniapps-deploy"
   },
   "dependencies": {
     "firebase": "^12.11.0",

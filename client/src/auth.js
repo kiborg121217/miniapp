@@ -1,3 +1,4 @@
+import { getTelegram, readTelegramInitDataFromLocation, readTelegramUnsafeUserFromLocation } from "./telegram";
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_SERVER_URL ||
@@ -161,11 +162,11 @@ async function postJson(path, body, timeoutMs = 16000) {
 }
 
 export function getTelegramInitData() {
-  return window.Telegram?.WebApp?.initData || "";
+  return getTelegram()?.initData || readTelegramInitDataFromLocation() || "";
 }
 
 export function getTelegramUnsafeUser() {
-  return normalizeUser(window.Telegram?.WebApp?.initDataUnsafe?.user || null);
+  return normalizeUser(getTelegram()?.initDataUnsafe?.user || readTelegramUnsafeUserFromLocation() || null);
 }
 
 
