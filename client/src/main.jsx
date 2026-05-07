@@ -1,64 +1,24 @@
-import React, { Component } from "react";
-import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.jsx";
-import { installDebugLogListeners, logDebugEvent } from "./debugLog";
 import { sendVkBridgeInitEarly } from "./vkMiniApp";
 
-installDebugLogListeners();
-sendVkBridgeInitEarly();
+// ВАЖНО для модерации VK Mini Apps:
+// VKWebAppInit должен уйти до загрузки тяжёлого React/Firebase-кода.
+// Поэтому главный UI импортируется ниже динамически, только после раннего init.
+sendVkBridgeInitEarly({ force: true });
 
-class AppErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+import("./appEntry.jsx").catch((error) => {
+  console.error("Не удалось загрузить интерфейс приложения:", error);
 
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, info) {
-    console.error("Критическая ошибка интерфейса:", error, info);
-    logDebugEvent("react_error_boundary", { error, componentStack: info?.componentStack || "" });
-  }
-
-  handleReset = () => {
-    logDebugEvent("react_error_boundary_reset");
-    try {
-      sessionStorage.removeItem("app_page");
-      sessionStorage.removeItem("selected_ad");
-      sessionStorage.removeItem("selected_seller_id");
-      sessionStorage.removeItem("selected_chat_id");
-      sessionStorage.removeItem("profile_status_page");
-      sessionStorage.removeItem("seller_back_target");
-      sessionStorage.removeItem("view_back_target");
-    } catch {
-      // ignore storage errors
-    }
-
-    window.location.replace("/");
-  };
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="app-crash-screen" role="alert">
-          <div className="app-crash-card">
-            <div className="app-crash-title">Барахолка</div>
-            <p>Интерфейс перезапущен из-за ошибки WebView. Нажмите кнопку ниже, чтобы открыть главную.</p>
-            <button type="button" onClick={this.handleReset}>На главную</button>
-          </div>
+  const root = document.getElementById("root");
+  if (root) {
+    root.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b0714;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+        <div style="max-width:420px;border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:24px;background:rgba(255,255,255,.08);">
+          <div style="font-size:22px;font-weight:800;margin-bottom:8px;">Барахолка</div>
+          <div style="font-size:15px;line-height:1.45;color:rgba(255,255,255,.82);">Не удалось загрузить интерфейс. Проверьте подключение к сети и откройте приложение заново.</div>
+          <button type="button" onclick="window.location.reload()" style="margin-top:18px;width:100%;border:0;border-radius:14px;padding:13px 16px;font-weight:800;background:#4da3ff;color:#fff;">Обновить</button>
         </div>
-      );
-    }
-
-    return this.props.children;
+      </div>
+    `;
   }
-}
-
-createRoot(document.getElementById("root")).render(
-  <AppErrorBoundary>
-    <App />
-  </AppErrorBoundary>
-);
+});

@@ -11,8 +11,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
+            // VK Bridge не выносим в отдельный vendor chunk: он нужен в самом раннем
+            // entry-коде, чтобы VKWebAppInit ушёл до загрузки React/Firebase.
+            if (id.includes("@vkontakte/vk-bridge")) return undefined;
             if (id.includes("firebase")) return "vendor-firebase";
-            if (id.includes("@vkontakte/vk-bridge")) return "vendor-vk-bridge";
             if (id.includes("react") || id.includes("react-dom")) return "vendor-react";
             return "vendor";
           }

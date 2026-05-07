@@ -133,12 +133,24 @@ function setVkDataset(info = {}) {
   }
 }
 
-export function sendVkBridgeInitEarly() {
-  if (!isVkMiniAppLaunch()) return null;
+export function sendVkBridgeInitEarly(options = {}) {
+  const force = typeof options === "boolean" ? options : Boolean(options?.force);
+
+  // В режиме VK Mini Apps событие VKWebAppInit должно быть отправлено сразу при запуске.
+  // Проверка среды через query/referrer/ancestorOrigins не всегда надёжна в VK WebView,
+  // поэтому main.jsx вызывает эту функцию с force=true. В обычном браузере bridge
+  // просто вернёт ошибку/false, но сайт продолжит работать.
+  if (!force && !isVkMiniAppLaunch()) return null;
   if (bridgeInitPromise) return bridgeInitPromise;
 
   const launchParams = readVkLaunchParams();
   setVkDataset({ launchParams });
+
+  try {
+    window.__baraholkaVkBridgeInitStartedAt = Date.now();
+  } catch {
+    // ignore
+  }
 
   bridgeInitPromise = bridge
     .send("VKWebAppInit")
