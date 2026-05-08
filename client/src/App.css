@@ -15619,3 +15619,127 @@ html[data-android-app="true"] .settings-ios-page {
     box-shadow: inset 0 0 0 1px rgba(15,23,42,0.025) !important;
   }
 }
+
+/* =========================================================
+   FINAL MOBILE NAV CORRECTION — no glare, solid browser bottom.
+   Исправляет предыдущую полировку: убирает лишнюю засветку в VK/TG,
+   делает активную плашку меньше и закрывает Safari bottom controls
+   непрозрачным цветом навигации. Только телефоны.
+   ========================================================= */
+@media (max-width: 859px) and (pointer: coarse) {
+  :root {
+    --baraholka-nav-solid-dark: #111116;
+    --baraholka-nav-solid-light: #ffffff;
+    --baraholka-mobile-browser-bottom-cover: 230px;
+  }
+
+  .bottom-nav,
+  html[data-vk-mini-app="true"] .bottom-nav,
+  html[data-telegram-app="true"] .bottom-nav,
+  html[data-telegram-mini-app="true"] .bottom-nav,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  html[data-mobile-browser="true"] .bottom-nav,
+  html[data-ios-browser="true"] .bottom-nav,
+  html[data-standalone-app="true"] .bottom-nav {
+    overflow: hidden !important;
+    background: var(--baraholka-nav-solid-dark) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.36) !important;
+    isolation: isolate !important;
+  }
+
+  [data-theme="light"] .bottom-nav,
+  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-ios-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-standalone-app="true"] .bottom-nav {
+    background: var(--baraholka-nav-solid-light) !important;
+    box-shadow: 0 -16px 34px rgba(15, 23, 42, 0.12) !important;
+  }
+
+  /* В VK и Telegram дополнительная браузерная подложка не нужна: она давала засвет сверху. */
+  .bottom-nav::after,
+  html[data-vk-mini-app="true"] .bottom-nav::after,
+  html[data-telegram-app="true"] .bottom-nav::after,
+  html[data-telegram-mini-app="true"] .bottom-nav::after,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav::after,
+  html[data-standalone-app="true"] .bottom-nav::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    width: calc(100% - 22px) !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    border-radius: 16px !important;
+    margin-top: 2px !important;
+    overflow: hidden !important;
+  }
+
+  .bottom-nav .nav-item.active {
+    background: rgba(255, 255, 255, 0.055) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.035) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item.active {
+    background: rgba(15, 23, 42, 0.052) !important;
+    box-shadow: inset 0 0 0 1px rgba(15,23,42,0.03) !important;
+  }
+
+  .bottom-nav .nav-icon,
+  .bottom-nav .nav-icon svg {
+    width: 23px !important;
+    height: 23px !important;
+    min-width: 23px !important;
+  }
+
+  .bottom-nav .nav-label {
+    font-size: 12.5px !important;
+  }
+}
+
+/* Только обычный мобильный браузер/Safari: сплошная подложка под системной нижней панелью. */
+@media (max-width: 859px) and (pointer: coarse) {
+  html[data-mobile-browser="true"] body::after,
+  html[data-ios-browser="true"] body::after {
+    content: "" !important;
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: var(--baraholka-mobile-browser-bottom-cover) !important;
+    pointer-events: none !important;
+    z-index: 9998 !important;
+    background: var(--baraholka-nav-solid-dark) !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  [data-theme="light"] html[data-mobile-browser="true"] body::after,
+  [data-theme="light"] html[data-ios-browser="true"] body::after {
+    background: var(--baraholka-nav-solid-light) !important;
+  }
+
+  html[data-mobile-browser="true"] .bottom-nav,
+  html[data-ios-browser="true"] .bottom-nav {
+    z-index: 9999 !important;
+  }
+
+  html[data-vk-mini-app="true"] body::after,
+  html[data-telegram-app="true"] body::after,
+  html[data-telegram-mini-app="true"] body::after,
+  html[data-tg-fullscreen-safe="true"] body::after,
+  html[data-standalone-app="true"] body::after {
+    display: none !important;
+    content: none !important;
+  }
+}
