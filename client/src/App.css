@@ -15701,3 +15701,111 @@ html[data-android-app="true"] .settings-ios-page {
     font-size: 15px !important;
   }
 }
+
+/* =========================================================
+   V3.8 — HOME DESKTOP HEADER FINAL ALIGNMENT
+   Only desktop homepage. Mobile, chats, and other pages untouched.
+   Goal:
+   - brand sits higher, closer to the top
+   - nav sits on the same visual row as city and settings
+   - nav and brand no longer overlap
+   ========================================================= */
+
+@media (min-width: 860px) {
+  body:has(.market-home) .market-home,
+  .app:has(.market-home) .market-home {
+    padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  body:has(.market-home) .market-home .market-header,
+  .app:has(.market-home) .market-home .market-header {
+    min-height: 138px !important;
+    height: 138px !important;
+    margin: 0 0 18px !important;
+    align-items: end !important;
+  }
+
+  /* Brand: higher and visually separated from navigation */
+  body:has(.market-home) .market-home .market-title-wrap,
+  .app:has(.market-home) .market-home .market-title-wrap {
+    top: calc(-56px + env(safe-area-inset-top, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 4 !important;
+    width: max-content !important;
+    min-width: 220px !important;
+    text-align: center !important;
+  }
+
+  body:has(.market-home) .market-home .market-title-wrap h1,
+  .app:has(.market-home) .market-home .market-title-wrap h1 {
+    font-size: 28px !important;
+    line-height: 1 !important;
+    font-weight: 850 !important;
+  }
+
+  body:has(.market-home) .market-home .market-title-wrap p,
+  .app:has(.market-home) .market-home .market-title-wrap p {
+    margin-top: 5px !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+  }
+
+  /* Lower row: city left, nav center, settings right on one line */
+  body:has(.market-home) .market-home .market-city,
+  .app:has(.market-home) .market-home .market-city {
+    align-self: end !important;
+    margin: 0 0 8px !important;
+    transform: none !important;
+  }
+
+  body:has(.market-home) .market-home .market-header-actions,
+  .app:has(.market-home) .market-home .market-header-actions {
+    align-self: end !important;
+    justify-self: end !important;
+    margin: 0 0 0 !important;
+    transform: none !important;
+  }
+
+  body:has(.market-home) .bottom-nav,
+  .app:has(.market-home) .bottom-nav {
+    top: calc(164px + env(safe-area-inset-top, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 5 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    width: auto !important;
+    max-width: min(760px, calc(100vw - 460px)) !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item,
+  .app:has(.market-home) .bottom-nav .nav-item {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 24px !important;
+  }
+}
+
+@media (min-width: 860px) and (max-width: 1180px) {
+  body:has(.market-home) .market-home .market-title-wrap,
+  .app:has(.market-home) .market-home .market-title-wrap {
+    top: calc(-50px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  body:has(.market-home) .bottom-nav,
+  .app:has(.market-home) .bottom-nav {
+    top: calc(160px + env(safe-area-inset-top, 0px)) !important;
+    max-width: min(650px, calc(100vw - 320px)) !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item,
+  .app:has(.market-home) .bottom-nav .nav-item {
+    padding: 0 18px !important;
+  }
+}
