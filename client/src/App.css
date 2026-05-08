@@ -15278,3 +15278,189 @@ html[data-android-app="true"] .settings-ios-page {
     --baraholka-desktop-nav-top: 18px;
   }
 }
+
+/* =========================================================
+   V3.6 — MAIN DESKTOP HEADER SWAP ONLY
+   Goal: on desktop homepage only, swap the centered title and nav:
+   - "Барахолка / мини-приложение" moves to the top nav position
+   - navigation moves into the center header/title position
+   - city on the left and settings on the right stay where they are
+   - all other pages keep the v3.5 navigation behavior
+   ========================================================= */
+
+@media (min-width: 860px) {
+  /* Homepage only: detect the main screen by .market-home and override global desktop nav */
+  body:has(.market-home) .bottom-nav,
+  .app:has(.market-home) .bottom-nav {
+    position: absolute !important;
+    top: calc(105px + env(safe-area-inset-top, 0px)) !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    max-width: min(720px, calc(100vw - 420px)) !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item,
+  .app:has(.market-home) .bottom-nav .nav-item {
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 0 26px !important;
+    gap: 10px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: rgba(244, 250, 255, 0.74) !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item + .nav-item::before,
+  .app:has(.market-home) .bottom-nav .nav-item + .nav-item::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 10px !important;
+    bottom: 10px !important;
+    width: 1px !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-icon,
+  body:has(.market-home) .bottom-nav .nav-icon svg,
+  .app:has(.market-home) .bottom-nav .nav-icon,
+  .app:has(.market-home) .bottom-nav .nav-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-label,
+  .app:has(.market-home) .bottom-nav .nav-label {
+    display: inline-block !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    font-weight: 760 !important;
+    letter-spacing: -0.035em !important;
+    color: currentColor !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item.active,
+  body:has(.market-home) .bottom-nav .nav-item.active .nav-icon,
+  .app:has(.market-home) .bottom-nav .nav-item.active,
+  .app:has(.market-home) .bottom-nav .nav-item.active .nav-icon {
+    color: var(--market-accent, #45f0ee) !important;
+    filter: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item:hover,
+  .app:has(.market-home) .bottom-nav .nav-item:hover {
+    color: #ffffff !important;
+    transform: none !important;
+  }
+
+  /* Move the title to the old top navigation position */
+  .market-home .market-header {
+    position: relative !important;
+    grid-template-columns: minmax(160px, 1fr) minmax(280px, 1fr) minmax(160px, 1fr) !important;
+    min-height: 132px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .market-home .market-title-wrap {
+    position: absolute !important;
+    top: calc(-12px + env(safe-area-inset-top, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 3 !important;
+    min-width: 220px !important;
+    text-align: center !important;
+    pointer-events: none !important;
+  }
+
+  .market-home .market-title-wrap h1 {
+    font-size: 27px !important;
+    line-height: 1.04 !important;
+    font-weight: 820 !important;
+    letter-spacing: -0.055em !important;
+  }
+
+  .market-home .market-title-wrap p {
+    margin-top: 4px !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    font-weight: 620 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  /* Keep city and settings in their original visual line */
+  .market-home .market-city,
+  .market-home .market-header-actions {
+    align-self: end !important;
+    margin-bottom: 12px !important;
+  }
+
+  .market-home .market-header-actions {
+    justify-self: end !important;
+  }
+
+  /* The content below should not jump too low after the swap */
+  .market-home {
+    padding-top: calc(34px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  [data-theme="light"] body:has(.market-home) .bottom-nav .nav-item,
+  [data-theme="light"] .app:has(.market-home) .bottom-nav .nav-item {
+    color: rgba(16, 33, 42, 0.62) !important;
+  }
+
+  [data-theme="light"] body:has(.market-home) .bottom-nav .nav-item + .nav-item::before,
+  [data-theme="light"] .app:has(.market-home) .bottom-nav .nav-item + .nav-item::before {
+    background: rgba(16, 33, 42, 0.14) !important;
+  }
+
+  [data-theme="light"] body:has(.market-home) .bottom-nav .nav-item.active,
+  [data-theme="light"] body:has(.market-home) .bottom-nav .nav-item.active .nav-icon,
+  [data-theme="light"] .app:has(.market-home) .bottom-nav .nav-item.active,
+  [data-theme="light"] .app:has(.market-home) .bottom-nav .nav-item.active .nav-icon {
+    color: #069ea1 !important;
+  }
+}
+
+@media (min-width: 860px) and (max-width: 1180px) {
+  body:has(.market-home) .bottom-nav,
+  .app:has(.market-home) .bottom-nav {
+    top: calc(104px + env(safe-area-inset-top, 0px)) !important;
+    max-width: calc(100vw - 320px) !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-item,
+  .app:has(.market-home) .bottom-nav .nav-item {
+    padding: 0 18px !important;
+  }
+
+  body:has(.market-home) .bottom-nav .nav-label,
+  .app:has(.market-home) .bottom-nav .nav-label {
+    font-size: 15px !important;
+  }
+}
