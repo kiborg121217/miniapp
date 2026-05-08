@@ -15621,65 +15621,157 @@ html[data-android-app="true"] .settings-ios-page {
 }
 
 /* =========================================================
-   MOBILE NAV V6 — VK/Telegram no bottom cover, browser unchanged
-   Точечный финальный слой. ПК не трогает: только телефоны/touch.
-   1) В VK и Telegram полностью убирает нижнюю подложку под навигацией.
-   2) В браузере оставляет уже настроенную нижнюю подложку без изменений.
-   3) Чуть увеличивает подсветку активного раздела, но не доводит её до разделителей.
+   BARAHOLKA MOBILE NAV HOTFIX — VK/Telegram no curtain,
+   browser curtain kept behind nav, readable light theme,
+   balanced active highlight.
+   Put last in file so it wins over previous duplicated rules.
    ========================================================= */
-@media (max-width: 768px) and (pointer: coarse) {
-  /* Активный раздел: немного больше, чем в предыдущей версии. */
-  .bottom-nav .nav-item.active::after {
-    left: 5px !important;
-    right: 5px !important;
-    top: 5px !important;
-    bottom: 5px !important;
-    border-radius: 21px !important;
+@media (max-width: 859px) and (pointer: coarse) {
+  :root {
+    --baraholka-mobile-browser-curtain: 132px;
+    --baraholka-nav-bg-dark: rgba(9, 18, 25, 0.96);
+    --baraholka-nav-bg-light: rgba(255, 255, 255, 0.96);
   }
 
-  /* VK Mini App: никаких перекрытий/заливок под навигацией. */
+  .bottom-nav,
+  html[data-vk-mini-app="true"] .bottom-nav,
+  html[data-telegram-app="true"] .bottom-nav,
+  html[data-telegram-mini-app="true"] .bottom-nav,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  html[data-mobile-browser="true"] .bottom-nav,
+  html[data-ios-browser="true"] .bottom-nav,
+  html[data-standalone-app="true"] .bottom-nav {
+    isolation: isolate !important;
+    overflow: visible !important;
+    height: 74px !important;
+    min-height: 74px !important;
+    padding: 8px 6px !important;
+    border-radius: 24px !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)),
+      var(--baraholka-nav-bg-dark) !important;
+    border: 1px solid rgba(255,255,255,0.13) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 18px 40px rgba(0,0,0,0.38) !important;
+    backdrop-filter: blur(22px) !important;
+    -webkit-backdrop-filter: blur(22px) !important;
+  }
+
+  [data-theme="light"] .bottom-nav,
+  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-ios-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-standalone-app="true"] .bottom-nav {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,252,253,0.94)),
+      var(--baraholka-nav-bg-light) !important;
+    border-color: rgba(16, 33, 42, 0.12) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.88),
+      0 16px 34px rgba(20,54,70,0.13) !important;
+  }
+
+  /* No bottom curtain inside VK and Telegram. */
   html[data-vk-mini-app="true"] .bottom-nav::after,
-  html[data-vk-mini-app="1"] .bottom-nav::after,
-  html[data-vk-mini-app] .bottom-nav::after {
-    content: none !important;
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  /* Telegram Mini App / Telegram WebApp: никаких перекрытий/заливок под навигацией. */
-  html[data-telegram-mini-app="true"] .bottom-nav::after,
-  html[data-telegram-mini-app="1"] .bottom-nav::after,
-  html[data-telegram-mini-app] .bottom-nav::after,
   html[data-telegram-app="true"] .bottom-nav::after,
-  html[data-telegram-app="1"] .bottom-nav::after,
-  html[data-telegram-app] .bottom-nav::after,
+  html[data-telegram-mini-app="true"] .bottom-nav::after,
   html[data-tg-fullscreen-safe="true"] .bottom-nav::after,
-  html[data-tg-fullscreen-safe="1"] .bottom-nav::after,
-  html[data-tg-fullscreen-safe] .bottom-nav::after {
-    content: none !important;
+  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-telegram-mini-app="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-tg-fullscreen-safe="true"] .bottom-nav::after {
     display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
+    content: none !important;
+  }
+
+  /* Browser-only curtain stays below/behind the capsule, not on top of it. */
+  html[data-mobile-browser="true"] .bottom-nav::after,
+  html[data-ios-browser="true"] .bottom-nav::after,
+  html[data-standalone-app="true"] .bottom-nav::after {
+    content: "" !important;
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(-1 * var(--baraholka-mobile-browser-curtain)) !important;
+    width: 100vw !important;
+    height: calc(var(--baraholka-mobile-browser-curtain) + env(safe-area-inset-bottom, 0px) + 46px) !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    background: var(--baraholka-nav-bg-dark) !important;
+  }
+
+  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-ios-browser="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-standalone-app="true"] .bottom-nav::after {
+    background: var(--baraholka-nav-bg-light) !important;
+  }
+
+  .bottom-nav::before,
+  html[data-mobile-browser="true"] .bottom-nav::before,
+  html[data-ios-browser="true"] .bottom-nav::before,
+  html[data-standalone-app="true"] .bottom-nav::before,
+  html[data-vk-mini-app="true"] .bottom-nav::before,
+  html[data-telegram-app="true"] .bottom-nav::before,
+  html[data-telegram-mini-app="true"] .bottom-nav::before,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    align-self: center !important;
+    justify-self: center !important;
+    width: calc(100% - 8px) !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    max-height: 64px !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
     background: transparent !important;
     box-shadow: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    color: rgba(244,250,255,0.76) !important;
   }
-}
 
-@media (max-width: 420px) and (pointer: coarse) {
-  .bottom-nav .nav-item.active::after {
-    left: 6px !important;
-    right: 6px !important;
-    top: 6px !important;
-    bottom: 6px !important;
-    border-radius: 20px !important;
+  [data-theme="light"] .bottom-nav .nav-item {
+    color: rgba(16, 33, 42, 0.68) !important;
+  }
+
+  .bottom-nav .nav-item.active {
+    color: var(--market-accent, #43e6e3) !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03)),
+      rgba(255,255,255,0.045) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item.active {
+    color: #069ea1 !important;
+    background:
+      linear-gradient(180deg, rgba(6,158,161,0.12), rgba(6,158,161,0.045)),
+      rgba(255,255,255,0.38) !important;
+    box-shadow: inset 0 0 0 1px rgba(6,158,161,0.055) !important;
+  }
+
+  .bottom-nav .nav-icon,
+  .bottom-nav .nav-icon svg {
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+  }
+
+  .bottom-nav .nav-label {
+    color: currentColor !important;
+    opacity: 1 !important;
+    font-size: 12.5px !important;
+    line-height: 1 !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.025em !important;
   }
 }
