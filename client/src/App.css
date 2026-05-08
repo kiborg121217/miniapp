@@ -15541,3 +15541,81 @@ html[data-android-app="true"] .settings-ios-page {
     padding-bottom: calc(var(--baraholka-mobile-nav-total) + 18px) !important;
   }
 }
+
+/* =========================================================
+   Mobile nav final polish for iPhone Safari/VK/Telegram.
+   1) active tab highlight is smaller and no longer clipped;
+   2) an extra fixed bottom curtain paints behind translucent iOS browser controls.
+   Phones only; desktop/tablet rules above are untouched.
+   ========================================================= */
+@media (max-width: 859px) and (pointer: coarse) {
+  :root {
+    --baraholka-mobile-browser-curtain: 132px;
+  }
+
+  .bottom-nav,
+  html[data-vk-mini-app="true"] .bottom-nav,
+  html[data-telegram-app="true"] .bottom-nav,
+  html[data-telegram-mini-app="true"] .bottom-nav,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  html[data-mobile-browser="true"] .bottom-nav,
+  html[data-ios-browser="true"] .bottom-nav,
+  html[data-standalone-app="true"] .bottom-nav {
+    overflow: visible !important;
+    padding-top: 10px !important;
+    padding-left: max(14px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(14px, env(safe-area-inset-right, 0px)) !important;
+    z-index: 9999 !important;
+  }
+
+  .bottom-nav::after,
+  html[data-mobile-browser="true"] .bottom-nav::after,
+  html[data-ios-browser="true"] .bottom-nav::after,
+  html[data-vk-mini-app="true"] .bottom-nav::after,
+  html[data-telegram-app="true"] .bottom-nav::after,
+  html[data-telegram-mini-app="true"] .bottom-nav::after {
+    content: "" !important;
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(-1 * var(--baraholka-mobile-browser-curtain)) !important;
+    width: 100vw !important;
+    height: calc(var(--baraholka-mobile-browser-curtain) + env(safe-area-inset-bottom, 0px) + 48px) !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    background: var(--baraholka-nav-bg-dark) !important;
+  }
+
+  [data-theme="light"] .bottom-nav::after,
+  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-ios-browser="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav::after,
+  [data-theme="light"] html[data-telegram-mini-app="true"] .bottom-nav::after {
+    background: var(--baraholka-nav-bg-light) !important;
+  }
+
+  .bottom-nav .nav-item {
+    align-self: start !important;
+    justify-self: center !important;
+    width: calc(100% - 12px) !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  .bottom-nav .nav-item.active {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)),
+      rgba(255, 255, 255, 0.045) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item.active {
+    background: rgba(15, 23, 42, 0.045) !important;
+    box-shadow: inset 0 0 0 1px rgba(15,23,42,0.025) !important;
+  }
+}
