@@ -15354,3 +15354,190 @@ html[data-android-app="true"] .settings-ios-page {
     color: #069ea1 !important;
   }
 }
+
+/* =========================================================
+   FINAL MOBILE BOTTOM NAV SAFE-AREA FIX — 2026-05-08
+   Только телефоны: браузер, VK WebView/Mini App, Telegram WebApp.
+   Цель: нижняя навигация больше не «висит» над контентом, а полностью
+   закрывает низ экрана/системную safe-area сплошным фоном навигации.
+   ПК/ноутбуки остаются на правилах выше через min-width: 860px.
+   ========================================================= */
+@media (max-width: 859px) and (pointer: coarse) {
+  :root {
+    --baraholka-nav-bg-dark: rgba(17, 17, 22, 0.96);
+    --baraholka-nav-bg-light: rgba(255, 255, 255, 0.97);
+    --baraholka-mobile-nav-core: 84px;
+    --baraholka-mobile-nav-bottom-fill: max(
+      18px,
+      env(safe-area-inset-bottom, 0px),
+      var(--real-safe-bottom, 0px),
+      var(--browser-bottom-controls, 0px),
+      var(--tg-safe-bottom, 0px),
+      var(--tg-content-safe-bottom, 0px)
+    );
+    --baraholka-mobile-nav-total: calc(var(--baraholka-mobile-nav-core) + var(--baraholka-mobile-nav-bottom-fill));
+  }
+
+  html,
+  body,
+  #root,
+  .app {
+    background-color: var(--baraholka-nav-bg-dark) !important;
+  }
+
+  [data-theme="light"] html,
+  [data-theme="light"] body,
+  [data-theme="light"] #root,
+  [data-theme="light"] .app {
+    background-color: var(--baraholka-nav-bg-light) !important;
+  }
+
+  .bottom-nav,
+  html[data-vk-mini-app="true"] .bottom-nav,
+  html[data-telegram-app="true"] .bottom-nav,
+  html[data-telegram-mini-app="true"] .bottom-nav,
+  html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  html[data-mobile-browser="true"] .bottom-nav,
+  html[data-ios-browser="true"] .bottom-nav,
+  html[data-standalone-app="true"] .bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: none !important;
+
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
+    height: var(--baraholka-mobile-nav-total) !important;
+    min-height: var(--baraholka-mobile-nav-total) !important;
+
+    padding:
+      12px
+      max(12px, env(safe-area-inset-right, 0px))
+      var(--baraholka-mobile-nav-bottom-fill)
+      max(12px, env(safe-area-inset-left, 0px)) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: start !important;
+    gap: 0 !important;
+
+    border-radius: 30px 30px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    overflow: hidden !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018)),
+      var(--baraholka-nav-bg-dark) !important;
+    box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.34) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+  }
+
+  [data-theme="light"] .bottom-nav,
+  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-telegram-mini-app="true"] .bottom-nav,
+  [data-theme="light"] html[data-tg-fullscreen-safe="true"] .bottom-nav,
+  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-ios-browser="true"] .bottom-nav,
+  [data-theme="light"] html[data-standalone-app="true"] .bottom-nav {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94)),
+      var(--baraholka-nav-bg-light) !important;
+    border-top-color: rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 -16px 34px rgba(15, 23, 42, 0.10) !important;
+  }
+
+  .bottom-nav::before,
+  .bottom-nav::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    position: relative !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 68px !important;
+    min-height: 68px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .bottom-nav .nav-item.active {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)),
+      rgba(255, 255, 255, 0.05) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item.active {
+    background: rgba(15, 23, 42, 0.055) !important;
+  }
+
+  .bottom-nav .nav-icon,
+  .bottom-nav .nav-icon svg {
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px !important;
+  }
+
+  .bottom-nav .nav-label {
+    font-size: 13px !important;
+    line-height: 1 !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  .bottom-nav .nav-item + .nav-item::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 14px !important;
+    bottom: 14px !important;
+    width: 1px !important;
+    background: rgba(255, 255, 255, 0.10) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item + .nav-item::before {
+    background: rgba(16, 33, 42, 0.11) !important;
+  }
+
+  .app,
+  .market-home,
+  .chats-page,
+  .chats-page-redesign,
+  .profile-page,
+  .profile-premium-page,
+  .profile-ads-page,
+  .profile-ads-premium-page,
+  .settings-ios-page,
+  .settings-page,
+  .settings-detail-page,
+  .seller-premium-page,
+  .seller-page,
+  .premium-page,
+  .form,
+  .create-premium-page,
+  .add-ad-page,
+  .help-page,
+  .legal-page,
+  .ad-page-wrap {
+    padding-bottom: calc(var(--baraholka-mobile-nav-total) + 18px) !important;
+  }
+}
