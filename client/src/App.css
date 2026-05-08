@@ -13050,115 +13050,1938 @@ html[data-vk-mini-app="true"] .bottom-nav {
 }
 
 
-/* ======================================================================
-   MOBILE BOTTOM NAV — AVITO-LIKE DOCK FINAL
-   Только мобильная нижняя навигация. Не трогает список чатов/диалог.
-   Идея: панель приклеена к самому низу, а её фон уходит чуть ниже viewport,
-   поэтому снизу не появляется щель в браузере, VK и Telegram.
-   ====================================================================== */
-@media (max-width: 759px) {
-  html {
-    --baraholka-nav-underfill: max(22px, env(safe-area-inset-bottom, 0px));
-    --baraholka-nav-visible: 78px;
+/* Logout button must stay tappable above fixed nav / WebView overlays */
+.profile-logout-tile {
+  position: relative !important;
+  z-index: 5 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: rgba(255, 122, 122, 0.18);
+}
+
+.profile-logout-tile > * {
+  pointer-events: none !important;
+}
+
+
+/* === Android vertical scroll emergency fix ===
+   Android WebView/Chrome inside Telegram/VK can freeze page scrolling when
+   the layout viewport is locked to 100dvh and parent nodes hide overflow.
+   Keep document/body as the only vertical scroll container on Android. */
+html[data-android-app="true"],
+html[data-android-app="true"] body,
+html[data-android-app="true"] #root {
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: auto !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html[data-android-app="true"] body {
+  position: static !important;
+}
+
+html[data-android-app="true"] .app {
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: var(--tg-viewport-height, 100vh) !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  overscroll-behavior-y: auto !important;
+  touch-action: pan-y !important;
+}
+
+html[data-android-app="true"] .market-home,
+html[data-android-app="true"] .profile-page,
+html[data-android-app="true"] .profile-premium-page,
+html[data-android-app="true"] .profile-ads-page,
+html[data-android-app="true"] .profile-ads-premium-page,
+html[data-android-app="true"] .seller-page,
+html[data-android-app="true"] .seller-premium-page,
+html[data-android-app="true"] .create-premium-page,
+html[data-android-app="true"] .add-ad-page,
+html[data-android-app="true"] .chats-page,
+html[data-android-app="true"] .settings-page,
+html[data-android-app="true"] .settings-ios-page,
+html[data-android-app="true"] .settings-detail-page,
+html[data-android-app="true"] .help-page,
+html[data-android-app="true"] .legal-page,
+html[data-android-app="true"] .ad-page-wrap {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100vh !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  overscroll-behavior-y: auto !important;
+  touch-action: pan-y !important;
+}
+
+html[data-android-app="true"] .app::before,
+html[data-android-app="true"] .app::after,
+html[data-android-app="true"] body::before,
+html[data-android-app="true"] body::after {
+  pointer-events: none !important;
+}
+
+html[data-android-app="true"] .bottom-nav,
+html[data-android-app="true"] .header,
+html[data-android-app="true"] .header-shell,
+html[data-android-app="true"] .back-btn,
+html[data-android-app="true"] .premium-back-btn,
+html[data-android-app="true"] .share-top-btn,
+html[data-android-app="true"] .favorite-top-btn {
+  touch-action: manipulation !important;
+}
+
+/* =========================================================
+   Chats redesign + grounded bottom navigation
+   Safe patch: only visual/layout styles for existing pages
+   ========================================================= */
+
+.chats-page-redesign {
+  --chat-surface: rgba(14, 24, 35, 0.72);
+  --chat-surface-strong: rgba(17, 28, 40, 0.9);
+  --chat-border: rgba(255, 255, 255, 0.08);
+  --chat-border-soft: rgba(255, 255, 255, 0.055);
+  --chat-text: rgba(255, 255, 255, 0.94);
+  --chat-muted: rgba(221, 230, 236, 0.62);
+  --chat-muted-strong: rgba(226, 234, 240, 0.76);
+  --chat-accent: #55efe8;
+  --chat-accent-blue: #2684ff;
+  --chat-card-radius: 26px;
+  --chat-row-radius: 23px;
+  --chat-shadow: 0 22px 52px rgba(0, 0, 0, 0.2);
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) clamp(16px, 3vw, 30px) calc(126px + env(safe-area-inset-bottom, 0px));
+}
+
+.chats-page-redesign .chats-hero {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 22px;
+  min-height: 142px;
+  margin: 0 0 24px;
+  padding: 22px clamp(22px, 4vw, 34px);
+  border-radius: 32px;
+  background:
+    linear-gradient(135deg, rgba(33, 71, 72, 0.36), rgba(12, 18, 28, 0.62)),
+    rgba(13, 23, 34, 0.72);
+  border: 1px solid var(--chat-border);
+  box-shadow: var(--chat-shadow);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.chats-page-redesign .chats-hero-icon {
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5ffff;
+  background: linear-gradient(145deg, rgba(85, 239, 232, 0.18), rgba(40, 83, 111, 0.22));
+  border: 1px solid rgba(85, 239, 232, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.chats-page-redesign .chats-hero-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.chats-page-redesign .chats-hero h1 {
+  margin: 0;
+  color: var(--chat-text);
+  font-size: clamp(2.45rem, 7vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+  font-weight: 850;
+}
+
+.chats-page-redesign .chats-hero p {
+  max-width: 520px;
+  margin: 14px 0 0;
+  color: var(--chat-muted);
+  font-size: clamp(1.02rem, 2.9vw, 1.22rem);
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.chat-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.chat-search-field,
+.chat-filter-button {
+  height: 68px;
+  border-radius: 24px;
+  border: 1px solid var(--chat-border);
+  background: rgba(14, 24, 35, 0.62);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.13);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.chat-search-field {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+}
+
+.chat-search-field span,
+.chat-filter-button svg {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  color: var(--chat-muted);
+}
+
+.chat-search-field svg,
+.chat-filter-button svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chat-search-field input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--chat-text);
+  font: inherit;
+  font-size: clamp(0.96rem, 2.7vw, 1.1rem);
+  letter-spacing: 0.005em;
+}
+
+.chat-search-field input::placeholder {
+  color: rgba(219, 229, 235, 0.48);
+}
+
+.chat-filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--chat-text);
+}
+
+.chat-filter-button:active,
+.chat-filter-row button:active,
+.chat-list-item:active {
+  transform: scale(0.985);
+}
+
+.chat-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.chat-filter-row button {
+  min-width: 0;
+  height: 54px;
+  padding: 0 10px;
+  border-radius: 19px;
+  border: 1px solid var(--chat-border);
+  background: rgba(13, 23, 34, 0.58);
+  color: var(--chat-muted-strong);
+  font-size: clamp(0.84rem, 2.35vw, 0.98rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.09);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.chat-filter-row button.active {
+  color: #052223;
+  border-color: rgba(85, 239, 232, 0.38);
+  background: linear-gradient(135deg, rgba(85, 239, 232, 0.95), rgba(80, 180, 255, 0.88));
+  box-shadow: 0 12px 26px rgba(38, 132, 255, 0.22);
+}
+
+.chat-list-summary {
+  margin: 2px 2px 12px;
+  color: var(--chat-muted);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.chats-page-redesign .chat-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chats-page-redesign .chat-list-item {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 18px;
+  width: 100%;
+  min-height: 120px;
+  padding: 18px 20px;
+  border-radius: var(--chat-row-radius);
+  border: 1px solid var(--chat-border-soft);
+  background: linear-gradient(180deg, rgba(15, 25, 37, 0.78), rgba(12, 21, 31, 0.66));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.13);
+  text-align: left;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.chats-page-redesign .chat-list-item.has-unread {
+  border-color: rgba(85, 239, 232, 0.12);
+  background: linear-gradient(180deg, rgba(17, 31, 43, 0.86), rgba(12, 22, 32, 0.72));
+}
+
+.chats-page-redesign .chat-list-image-wrap {
+  position: relative;
+  align-self: center;
+  width: 82px;
+  height: 82px;
+  border-radius: 23px;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.chats-page-redesign .chat-list-image,
+.chats-page-redesign .chat-list-image-placeholder {
+  width: 82px;
+  height: 82px;
+  border-radius: 23px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chats-page-redesign .chat-list-image-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--chat-muted);
+}
+
+.chats-page-redesign .chat-list-image-placeholder svg {
+  width: 30px;
+  height: 30px;
+  stroke: currentColor;
+}
+
+.chat-online-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #26d463;
+  border: 4px solid #0d1723;
+  box-shadow: 0 0 0 1px rgba(38, 212, 99, 0.26);
+}
+
+.chats-page-redesign .chat-list-body {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  align-self: center;
+}
+
+.chats-page-redesign .chat-list-topline,
+.chats-page-redesign .chat-list-subline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.chats-page-redesign .chat-list-title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: var(--chat-text);
+  font-size: clamp(1.18rem, 3.4vw, 1.52rem);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-pin-badge {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--chat-accent);
+  flex-shrink: 0;
+}
+
+.chat-pin-badge svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chats-page-redesign .chat-list-time {
+  color: rgba(223, 231, 237, 0.6);
+  font-size: clamp(0.88rem, 2.4vw, 1.02rem);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chats-page-redesign .chat-list-ad-title {
+  min-width: 0;
+  color: var(--chat-muted-strong);
+  font-size: clamp(1rem, 2.9vw, 1.16rem);
+  font-weight: 720;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chats-page-redesign .chat-list-message {
+  min-width: 0;
+  color: var(--chat-muted);
+  font-size: clamp(0.96rem, 2.7vw, 1.08rem);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chats-page-redesign .chat-unread-badge {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #052223;
+  background: linear-gradient(135deg, var(--chat-accent), #54b9ff);
+  font-size: 0.92rem;
+  font-weight: 850;
+  box-shadow: 0 9px 20px rgba(38, 132, 255, 0.24);
+}
+
+.chats-page-redesign .chat-empty-state {
+  min-height: 320px;
+  border-radius: 28px;
+  border: 1px dashed var(--chat-border);
+  background: rgba(15, 25, 37, 0.48);
+  color: var(--chat-text);
+}
+
+.chats-page-redesign .chat-empty-state p {
+  color: var(--chat-muted);
+}
+
+.chat-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.chat-settings-sheet {
+  width: min(680px, 100%);
+  padding: 10px 18px 18px;
+  border-radius: 30px;
+  background: rgba(12, 20, 31, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.42);
+}
+
+.chat-settings-handle {
+  width: 46px;
+  height: 5px;
+  border-radius: 999px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.chat-settings-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.chat-settings-head h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+}
+
+.chat-settings-head p {
+  margin: 6px 0 0;
+  color: rgba(226, 234, 240, 0.62);
+}
+
+.chat-settings-head button {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: currentColor;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.chat-settings-group {
+  margin: 16px 0;
+}
+
+.chat-settings-group h3 {
+  margin: 0 0 10px;
+  color: rgba(226, 234, 240, 0.72);
+  font-size: 0.95rem;
+}
+
+.chat-radio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chat-radio-grid button {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 700;
+}
+
+.chat-radio-grid button.active {
+  background: rgba(85, 239, 232, 0.16);
+  border-color: rgba(85, 239, 232, 0.28);
+  color: #dffffd;
+}
+
+.chat-switch-row {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.chat-switch-row strong,
+.chat-switch-row small {
+  display: block;
+}
+
+.chat-switch-row small {
+  margin-top: 4px;
+  color: rgba(226, 234, 240, 0.58);
+}
+
+.chat-switch-row input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--chat-accent);
+}
+
+.chat-settings-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.chat-settings-actions button {
+  min-height: 52px;
+  border-radius: 17px;
+  font-weight: 800;
+}
+
+.chat-settings-reset {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.chat-settings-apply {
+  border: 0;
+  background: linear-gradient(135deg, var(--chat-accent), #54b9ff);
+  color: #052223;
+}
+
+/* Bottom navigation: filled to the bottom, rounded only on upper side */
+.bottom-nav {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  min-height: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  padding: 10px max(18px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-right, 0px)) !important;
+  border-radius: 30px 30px 0 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  background:
+    linear-gradient(180deg, rgba(22, 33, 44, 0.94), rgba(12, 18, 26, 0.98)) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.28) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+}
+
+.bottom-nav::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: max(16px, env(safe-area-inset-bottom, 0px));
+  background: rgba(12, 18, 26, 0.98);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bottom-nav .nav-item,
+.nav-item {
+  min-width: 0 !important;
+  height: 64px !important;
+  border-radius: 20px !important;
+}
+
+.bottom-nav .nav-icon {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.bottom-nav .nav-label {
+  margin-top: 5px !important;
+  font-size: 0.8rem !important;
+}
+
+.bottom-nav .nav-item.active {
+  color: #55efe8 !important;
+}
+
+.bottom-nav .nav-item.active .nav-icon {
+  color: #55efe8 !important;
+}
+
+[data-theme="light"] .chats-page-redesign {
+  --chat-surface: rgba(255, 255, 255, 0.8);
+  --chat-surface-strong: rgba(255, 255, 255, 0.94);
+  --chat-border: rgba(15, 23, 42, 0.09);
+  --chat-border-soft: rgba(15, 23, 42, 0.075);
+  --chat-text: #111827;
+  --chat-muted: rgba(74, 85, 104, 0.66);
+  --chat-muted-strong: rgba(52, 64, 84, 0.76);
+  --chat-accent: #0a73ff;
+  --chat-accent-blue: #0a73ff;
+}
+
+[data-theme="light"] .chats-page-redesign .chats-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.88)),
+    rgba(255, 255, 255, 0.86);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 52px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .chats-page-redesign .chats-hero-icon {
+  color: #0a73ff;
+  background: linear-gradient(145deg, rgba(10, 115, 255, 0.12), rgba(226, 241, 255, 0.85));
+  border-color: rgba(10, 115, 255, 0.08);
+}
+
+[data-theme="light"] .chat-search-field,
+[data-theme="light"] .chat-filter-button,
+[data-theme="light"] .chat-filter-row button,
+[data-theme="light"] .chats-page-redesign .chat-list-item {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme="light"] .chat-search-field input::placeholder {
+  color: rgba(82, 93, 111, 0.48);
+}
+
+[data-theme="light"] .chat-filter-row button.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0a73ff, #27a8ff);
+  border-color: rgba(10, 115, 255, 0.28);
+}
+
+[data-theme="light"] .chats-page-redesign .chat-list-item.has-unread {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(10, 115, 255, 0.12);
+}
+
+[data-theme="light"] .chat-online-dot {
+  border-color: #ffffff;
+}
+
+[data-theme="light"] .chats-page-redesign .chat-unread-badge {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0a73ff, #27a8ff);
+  box-shadow: 0 9px 20px rgba(10, 115, 255, 0.22);
+}
+
+[data-theme="light"] .chat-settings-sheet {
+  background: rgba(255, 255, 255, 0.97);
+  color: #111827;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .chat-settings-head p,
+[data-theme="light"] .chat-settings-group h3,
+[data-theme="light"] .chat-switch-row small {
+  color: rgba(74, 85, 104, 0.66);
+}
+
+[data-theme="light"] .chat-settings-head button,
+[data-theme="light"] .chat-radio-grid button,
+[data-theme="light"] .chat-switch-row,
+[data-theme="light"] .chat-settings-reset {
+  color: rgba(17, 24, 39, 0.78);
+  background: rgba(15, 23, 42, 0.045);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .chat-radio-grid button.active {
+  color: #0a73ff;
+  background: rgba(10, 115, 255, 0.09);
+  border-color: rgba(10, 115, 255, 0.16);
+}
+
+[data-theme="light"] .chat-settings-apply {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0a73ff, #27a8ff);
+}
+
+[data-theme="light"] .bottom-nav {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(250, 252, 255, 0.99)) !important;
+  border-top-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 -16px 38px rgba(15, 23, 42, 0.1) !important;
+}
+
+[data-theme="light"] .bottom-nav::after {
+  background: rgba(250, 252, 255, 0.99);
+}
+
+[data-theme="light"] .bottom-nav .nav-item.active,
+[data-theme="light"] .bottom-nav .nav-item.active .nav-icon {
+  color: #0a73ff !important;
+}
+
+@media (min-width: 900px) {
+  .chats-page-redesign {
+    padding-left: 34px;
+    padding-right: 34px;
   }
 
-  html[data-ios-browser="true"],
-  html[data-ios="true"],
-  html[data-telegram-app="true"],
-  html[data-tg-fullscreen-safe="true"],
-  html[data-vk-mini-app="true"] {
-    --baraholka-nav-underfill: max(26px, env(safe-area-inset-bottom, 0px));
-    --baraholka-nav-visible: 80px;
+  .chats-page-redesign .chats-hero {
+    grid-template-columns: 106px 1fr;
   }
 
-  .bottom-nav,
-  html[data-vk-mini-app="true"] .bottom-nav,
-  html[data-telegram-app="true"] .bottom-nav,
-  html[data-tg-fullscreen-safe="true"] .bottom-nav,
-  html[data-standalone-app="true"] .bottom-nav,
-  html[data-mobile-browser="true"] .bottom-nav {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: calc(-1 * var(--baraholka-nav-underfill)) !important;
-    transform: none !important;
-    z-index: 1800 !important;
+  .chats-page-redesign .chat-list-item {
+    min-height: 126px;
+    padding: 20px 24px;
+  }
 
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 100% !important;
-    height: calc(var(--baraholka-nav-visible) + var(--baraholka-nav-underfill)) !important;
-    min-height: calc(var(--baraholka-nav-visible) + var(--baraholka-nav-underfill)) !important;
+  .bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(860px, 100%) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+}
 
-    padding:
-      10px
-      max(8px, env(safe-area-inset-left, 0px))
-      var(--baraholka-nav-underfill)
-      max(8px, env(safe-area-inset-right, 0px)) !important;
+@media (max-width: 640px) {
+  .chats-page-redesign {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+  }
 
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    align-items: end !important;
-    gap: 0 !important;
+  .chats-page-redesign .chats-hero {
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    min-height: 132px;
+    padding: 18px;
+    border-radius: 28px;
+    margin-bottom: 18px;
+  }
 
-    border-radius: 26px 26px 0 0 !important;
-    border-left: 0 !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-    border-top: 1px solid rgba(255,255,255,0.13) !important;
+  .chats-page-redesign .chats-hero-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+  }
 
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025)),
-      rgba(9, 18, 25, 0.98) !important;
+  .chats-page-redesign .chats-hero-icon svg {
+    width: 34px;
+    height: 34px;
+  }
 
-    box-shadow:
-      0 -18px 44px rgba(0, 0, 0, 0.32),
-      inset 0 1px 0 rgba(255,255,255,0.07) !important;
+  .chat-toolbar {
+    grid-template-columns: minmax(0, 1fr) 62px;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 
-    backdrop-filter: blur(22px) saturate(145%) !important;
-    -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
+  .chat-search-field,
+  .chat-filter-button {
+    height: 60px;
+    border-radius: 21px;
+  }
+
+  .chat-search-field {
+    padding: 0 16px;
+  }
+
+  .chat-filter-row {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .chat-filter-row button {
+    height: 46px;
+    border-radius: 16px;
+    padding: 0 8px;
+  }
+
+  .chats-page-redesign .chat-list-item {
+    grid-template-columns: 70px minmax(0, 1fr);
+    min-height: 106px;
+    gap: 14px;
+    padding: 15px;
+    border-radius: 22px;
+  }
+
+  .chats-page-redesign .chat-list-image-wrap,
+  .chats-page-redesign .chat-list-image,
+  .chats-page-redesign .chat-list-image-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
+  }
+
+  .chat-online-dot {
+    width: 15px;
+    height: 15px;
+    border-width: 3px;
+  }
+
+  .chats-page-redesign .chat-list-body {
+    gap: 6px;
+  }
+
+  .chats-page-redesign .chat-list-topline,
+  .chats-page-redesign .chat-list-subline {
+    gap: 9px;
+  }
+
+  .chats-page-redesign .chat-unread-badge {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+  }
+
+  .chat-settings-backdrop {
+    padding: 10px;
+  }
+
+  .chat-settings-sheet {
+    border-radius: 26px;
+  }
+
+  .chat-radio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-nav {
+    min-height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    border-radius: 28px 28px 0 0 !important;
   }
 
   .bottom-nav .nav-item,
-  .bottom-nav .nav-item.active {
-    position: relative !important;
+  .nav-item {
+    height: 58px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .chats-page-redesign .chats-hero h1 {
+    font-size: 2.35rem;
+  }
+
+  .chats-page-redesign .chats-hero p {
+    font-size: 0.98rem;
+  }
+
+  .chat-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chats-page-redesign .chat-list-item {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px;
+  }
+
+  .chats-page-redesign .chat-list-image-wrap,
+  .chats-page-redesign .chat-list-image,
+  .chats-page-redesign .chat-list-image-placeholder {
+    width: 62px;
+    height: 62px;
+    border-radius: 18px;
+  }
+}
+
+/* =========================================================
+   HOTFIX 2026-05-07: chats controls + bottom nav geometry
+   Fixes mobile horizontal offset, desktop sheet overlap,
+   close button placement and removes heavy glow effects.
+   ========================================================= */
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+.app {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+/* Global bottom navigation: filled bottom bar, never shifted off-screen */
+.bottom-nav {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+  transform: none !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-height: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  padding:
+    8px max(10px, env(safe-area-inset-right, 0px))
+    calc(10px + env(safe-area-inset-bottom, 0px))
+    max(10px, env(safe-area-inset-left, 0px)) !important;
+  border-radius: 30px 30px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.11) !important;
+  background: linear-gradient(180deg, rgba(22, 32, 42, 0.97), rgba(10, 16, 23, 1)) !important;
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32) !important;
+  backdrop-filter: blur(22px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(130%) !important;
+  z-index: 9000 !important;
+}
+
+.bottom-nav::before,
+.bottom-nav::after {
+  display: none !important;
+  content: none !important;
+}
+
+.bottom-nav .nav-item,
+.nav-item {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  margin: 0 !important;
+  padding: 6px 4px 4px !important;
+  border-radius: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.bottom-nav .nav-icon,
+.nav-icon {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.bottom-nav .nav-label,
+.nav-label {
+  display: block !important;
+  max-width: 100% !important;
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.bottom-nav .nav-item.active,
+.bottom-nav .nav-item.active .nav-icon {
+  color: #55efe8 !important;
+}
+
+[data-theme="light"] .bottom-nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 253, 1)) !important;
+  border-top-color: rgba(15, 23, 42, 0.09) !important;
+  box-shadow: 0 -16px 38px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .bottom-nav .nav-item.active,
+[data-theme="light"] .bottom-nav .nav-item.active .nav-icon {
+  color: #0a73ff !important;
+}
+
+@media (min-width: 860px) {
+  .bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(860px, calc(100vw - 40px)) !important;
+    max-width: min(860px, calc(100vw - 40px)) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 30px 30px 0 0 !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .bottom-nav {
+    min-height: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: 5px !important;
+  }
+
+  .bottom-nav .nav-item,
+  .nav-item {
+    height: 56px !important;
+    min-height: 56px !important;
+  }
+
+  .bottom-nav .nav-label,
+  .nav-label {
+    font-size: 0.72rem !important;
+  }
+}
+
+/* Chats page: keep controls symmetric and readable */
+.chats-page-redesign {
+  width: 100% !important;
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  padding-left: clamp(14px, 4vw, 34px) !important;
+  padding-right: clamp(14px, 4vw, 34px) !important;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.chat-toolbar {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 64px !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.chat-search-field,
+.chat-filter-button {
+  height: 62px !important;
+  min-height: 62px !important;
+  box-sizing: border-box !important;
+}
+
+.chat-filter-button {
+  width: 64px !important;
+  min-width: 64px !important;
+  padding: 0 !important;
+}
+
+.chat-filter-row {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+}
+
+.chat-filter-row button {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 50px !important;
+  padding: 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+}
+
+.chats-page-redesign .chat-list-item {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 430px) {
+  .chat-toolbar {
+    grid-template-columns: minmax(0, 1fr) 58px !important;
+    gap: 10px !important;
+  }
+
+  .chat-search-field,
+  .chat-filter-button {
+    height: 58px !important;
+    min-height: 58px !important;
+  }
+
+  .chat-filter-button {
+    width: 58px !important;
+    min-width: 58px !important;
+  }
+
+  .chat-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .chat-filter-row button {
+    height: 46px !important;
+  }
+}
+
+/* Settings sheet: above nav, clean, no random glow, close aligned */
+.chat-settings-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding:
+    18px max(14px, env(safe-area-inset-right, 0px))
+    max(18px, env(safe-area-inset-bottom, 0px))
+    max(14px, env(safe-area-inset-left, 0px)) !important;
+  background: rgba(2, 7, 13, 0.62) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-sizing: border-box !important;
+}
+
+.chat-settings-sheet {
+  position: relative !important;
+  width: min(100%, 720px) !important;
+  max-height: min(82vh, 680px) !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+  padding: 22px !important;
+  padding-top: 18px !important;
+  border-radius: 28px !important;
+  background: linear-gradient(180deg, rgba(19, 29, 43, 0.98), rgba(10, 16, 25, 0.99)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(18px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(120%) !important;
+}
+
+.chat-settings-sheet::before,
+.chat-settings-sheet::after {
+  display: none !important;
+  content: none !important;
+}
+
+.chat-settings-handle {
+  display: block !important;
+  width: 58px !important;
+  height: 6px !important;
+  min-height: 6px !important;
+  padding: 0 !important;
+  margin: 0 auto 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(226, 234, 240, 0.42) !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-handle:active {
+  transform: translateY(1px) !important;
+}
+
+.chat-settings-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 46px !important;
+  align-items: start !important;
+  gap: 14px !important;
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+}
+
+.chat-settings-head h2 {
+  margin: 0 !important;
+  font-size: clamp(1.45rem, 3vw, 2rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.chat-settings-head p {
+  margin: 8px 0 0 !important;
+  color: rgba(226, 234, 240, 0.66) !important;
+  line-height: 1.35 !important;
+}
+
+.chat-settings-head button {
+  position: static !important;
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-size: 1.7rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-group {
+  margin: 18px 0 0 !important;
+}
+
+.chat-settings-group h3 {
+  margin: 0 0 10px !important;
+  color: rgba(226, 234, 240, 0.72) !important;
+}
+
+.chat-radio-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.chat-radio-grid button {
+  width: 100% !important;
+  min-height: 50px !important;
+  padding: 0 10px !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.chat-radio-grid button.active,
+.chat-switch-row input:checked {
+  box-shadow: none !important;
+}
+
+.chat-switch-row {
+  margin-top: 18px !important;
+  box-shadow: none !important;
+}
+
+.chat-settings-actions {
+  margin-top: 20px !important;
+  padding-bottom: 0 !important;
+}
+
+.chat-settings-actions button {
+  box-shadow: none !important;
+}
+
+@media (min-width: 860px) and (min-height: 650px) {
+  .chat-settings-backdrop {
+    align-items: center !important;
+    padding-bottom: 120px !important;
+  }
+
+  .chat-settings-sheet {
+    width: min(720px, calc(100vw - 64px)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .chat-settings-backdrop {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .chat-settings-sheet {
+    width: 100% !important;
+    max-height: 86vh !important;
+    padding: 18px !important;
+    border-radius: 26px !important;
+  }
+
+  .chat-radio-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chat-settings-actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .chat-settings-backdrop {
+    align-items: center !important;
+    padding: 10px 16px 86px !important;
+  }
+
+  .chat-settings-sheet {
+    width: min(760px, calc(100vw - 32px)) !important;
+    max-height: calc(100vh - 110px) !important;
+    padding: 16px !important;
+    border-radius: 24px !important;
+  }
+
+  .chat-radio-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+[data-theme="light"] .chat-settings-backdrop {
+  background: rgba(248, 250, 252, 0.74) !important;
+}
+
+[data-theme="light"] .chat-settings-sheet {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #111827 !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 26px 80px rgba(15, 23, 42, 0.18) !important;
+}
+
+[data-theme="light"] .chat-settings-handle {
+  background: rgba(15, 23, 42, 0.22) !important;
+}
+
+[data-theme="light"] .chat-settings-head p,
+[data-theme="light"] .chat-settings-group h3 {
+  color: rgba(52, 64, 84, 0.72) !important;
+}
+
+[data-theme="light"] .chat-settings-head button {
+  background: rgba(15, 23, 42, 0.055) !important;
+  border-color: rgba(15, 23, 42, 0.09) !important;
+  color: rgba(15, 23, 42, 0.72) !important;
+}
+
+/* =========================================================
+   CHATS V3.2 FINAL FIX — geometry, VK/TG WebView, bottom nav
+   ========================================================= */
+:root {
+  --baraholka-bottom-nav-height: 84px;
+  --baraholka-bottom-safe: max(env(safe-area-inset-bottom, 0px), 0px);
+  --baraholka-chat-top-extra: 18px;
+}
+
+/* Больше воздуха сверху в VK/Telegram WebView, чтобы контент не залезал под системные кнопки */
+.chats-page-redesign {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 34px) !important;
+  padding-bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 24px) !important;
+}
+
+html[data-vk-mini-app="true"] .chats-page-redesign,
+html[data-telegram-mini-app="true"] .chats-page-redesign,
+html[data-android-app="true"] .chats-page-redesign {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 54px) !important;
+}
+
+/* Поиск: поле реально заполняет всю область без внутреннего обрыва */
+.chat-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 56px !important;
+  gap: 10px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.chat-search-field {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  padding: 0 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border-radius: 19px !important;
+  box-shadow: none !important;
+}
+
+.chat-search-field input {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.chat-filter-button {
+  width: 56px !important;
+  min-width: 56px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  padding: 0 !important;
+  border-radius: 19px !important;
+  box-shadow: none !important;
+}
+
+.chat-filter-button svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* Фильтры снова компактные, без тяжёлых теней */
+.chat-filter-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 1px 7px !important;
+  margin: 0 0 12px !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.chat-filter-row::-webkit-scrollbar {
+  display: none !important;
+}
+
+.chat-filter-row button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 76px !important;
+  max-width: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 15px !important;
+  border-radius: 999px !important;
+  font-size: 0.92rem !important;
+  font-weight: 760 !important;
+  letter-spacing: -0.02em !important;
+  box-shadow: none !important;
+}
+
+.chat-filter-row button.active {
+  box-shadow: none !important;
+}
+
+/* Список чатов: без зелёной точки, крупнее и полностью заполненное фото */
+.chat-online-dot {
+  display: none !important;
+}
+
+.chats-page-redesign .chat-list-item {
+  grid-template-columns: 82px minmax(0, 1fr) !important;
+  min-height: 112px !important;
+  padding: 13px 15px !important;
+  gap: 15px !important;
+}
+
+.chats-page-redesign .chat-list-image-wrap,
+.chats-page-redesign .chat-list-image,
+.chats-page-redesign .chat-list-image-placeholder {
+  width: 82px !important;
+  height: 82px !important;
+  border-radius: 20px !important;
+}
+
+.chats-page-redesign .chat-list-image {
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+.chats-page-redesign .chat-list-image-placeholder svg {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.chat-pin-badge svg {
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+}
+
+/* Диалог: фото+имя+название — единая кнопка открытия объявления, отдельная кнопка пина */
+.chat-dialog-header {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.chat-header-back,
+.chat-pin-action {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 17px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+.chat-header-ad-link {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 64px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  display: grid !important;
+  grid-template-columns: 58px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.chat-header-ad-link:disabled {
+  opacity: 1 !important;
+}
+
+.chat-header-image,
+.chat-dialog-header .chat-list-image-placeholder.compact {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  border-radius: 17px !important;
+  object-fit: cover !important;
+}
+
+.chat-header-text {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.chat-header-text h2,
+.chat-header-text p {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.chat-pin-action {
+  background: rgba(255,255,255,0.055) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: var(--chat-text, #fff) !important;
+}
+
+.chat-pin-action svg {
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+}
+
+.chat-pin-action.active {
+  background: rgba(58, 152, 255, 0.13) !important;
+  border-color: rgba(58, 152, 255, 0.34) !important;
+}
+
+.chat-open-ad-btn {
+  display: none !important;
+}
+
+/* Настройки списка: окно заканчивается НАД навигацией и нормально скроллится в VK/Telegram */
+.chat-settings-backdrop {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe)) !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.chat-settings-sheet {
+  width: min(100%, 720px) !important;
+  max-height: calc(100dvh - var(--baraholka-bottom-nav-height) - var(--baraholka-bottom-safe) - env(safe-area-inset-top, 0px) - 34px) !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding: 18px 18px 20px !important;
+  box-sizing: border-box !important;
+  touch-action: pan-y !important;
+}
+
+.chat-settings-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+  padding: 12px 0 0 !important;
+  background: linear-gradient(180deg, rgba(10,16,25,0), rgba(10,16,25,0.98) 34%) !important;
+}
+
+[data-theme="light"] .chat-settings-actions {
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.98) 34%) !important;
+}
+
+.chat-settings-handle {
+  cursor: pointer !important;
+  transition: transform 0.22s ease, opacity 0.22s ease !important;
+}
+
+.chat-settings-handle:active {
+  transform: translateY(5px) scaleX(0.86) !important;
+  opacity: 0.75 !important;
+}
+
+@supports not (height: 100dvh) {
+  .chat-settings-sheet {
+    max-height: calc(100vh - var(--baraholka-bottom-nav-height) - var(--baraholka-bottom-safe) - env(safe-area-inset-top, 0px) - 34px) !important;
+  }
+}
+
+/* Нижняя навигация: без пустот слева/справа/снизу, фиксирована во всю ширину */
+.bottom-nav {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  transform: none !important;
+  width: 100vw !important;
+  max-width: none !important;
+  min-width: 100vw !important;
+  height: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe)) !important;
+  min-height: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe)) !important;
+  padding: 9px max(8px, env(safe-area-inset-right, 0px)) calc(9px + var(--baraholka-bottom-safe)) max(8px, env(safe-area-inset-left, 0px)) !important;
+  margin: 0 !important;
+  border-radius: 28px 28px 0 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.bottom-nav::before,
+.bottom-nav::after {
+  display: none !important;
+  content: none !important;
+}
+
+@media (min-width: 860px) {
+  .bottom-nav {
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: none !important;
+    border-radius: 30px 30px 0 0 !important;
+  }
+}
+
+/* При вводе с клавиатурой навигация уходит вниз и не висит над input */
+html:has(.chat-search-field input:focus) .bottom-nav,
+html:has(.chat-compose textarea:focus) .bottom-nav,
+body:has(.chat-search-field input:focus) .bottom-nav,
+body:has(.chat-compose textarea:focus) .bottom-nav {
+  transform: translateY(110%) !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 560px) {
+  .chats-page-redesign .chats-hero {
+    grid-template-columns: 78px 1fr !important;
+    gap: 16px !important;
+    min-height: 126px !important;
+  }
+
+  .chats-page-redesign .chat-list-item {
+    grid-template-columns: 76px minmax(0, 1fr) !important;
+    min-height: 104px !important;
+    padding: 12px 13px !important;
+    gap: 13px !important;
+  }
+
+  .chats-page-redesign .chat-list-image-wrap,
+  .chats-page-redesign .chat-list-image,
+  .chats-page-redesign .chat-list-image-placeholder {
+    width: 76px !important;
+    height: 76px !important;
+    border-radius: 19px !important;
+  }
+
+  .chat-dialog-header {
+    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+    gap: 8px !important;
+  }
+
+  .chat-header-back,
+  .chat-pin-action {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 15px !important;
+  }
+
+  .chat-header-ad-link {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+    height: 58px !important;
+    gap: 10px !important;
+  }
+
+  .chat-header-image,
+  .chat-dialog-header .chat-list-image-placeholder.compact {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    border-radius: 16px !important;
+  }
+
+  .chat-pin-action svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  .chat-settings-backdrop {
+    bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe)) !important;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 10px 10px !important;
+  }
+
+  .chat-settings-sheet {
+    max-height: calc(100dvh - var(--baraholka-bottom-nav-height) - var(--baraholka-bottom-safe) - env(safe-area-inset-top, 0px) - 28px) !important;
+    border-radius: 24px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  :root {
+    --baraholka-bottom-nav-height: 70px;
+  }
+
+  .chat-settings-backdrop {
+    align-items: flex-end !important;
+    padding-top: 8px !important;
+  }
+
+  .chat-settings-sheet {
+    max-height: calc(100dvh - var(--baraholka-bottom-nav-height) - var(--baraholka-bottom-safe) - 20px) !important;
+  }
+}
+
+/* =========================================================
+   CHATS V3.3 FINAL POLISH — nav, sheet animation, WebView offsets
+   ========================================================= */
+:root {
+  --baraholka-bottom-nav-height: 84px;
+  --baraholka-bottom-safe: max(env(safe-area-inset-bottom, 0px), 0px);
+}
+
+/* Чаты в VK/Telegram опускаем ниже, чтобы не залезали под системные кнопки */
+html[data-vk-mini-app="true"] .chats-page-redesign,
+html[data-telegram-mini-app="true"] .chats-page-redesign,
+html[data-android-app="true"] .chats-page-redesign {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+}
+
+/* Остальные основные страницы в WebView чуть ниже, без сильного сдвига макета */
+html[data-vk-mini-app="true"] .market-home,
+html[data-telegram-mini-app="true"] .market-home,
+html[data-android-app="true"] .market-home {
+  padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important;
+}
+
+html[data-vk-mini-app="true"] .ad-page-wrap,
+html[data-telegram-mini-app="true"] .ad-page-wrap,
+html[data-android-app="true"] .ad-page-wrap,
+html[data-vk-mini-app="true"] .help-page,
+html[data-telegram-mini-app="true"] .help-page,
+html[data-android-app="true"] .help-page,
+html[data-vk-mini-app="true"] .premium-page,
+html[data-telegram-mini-app="true"] .premium-page,
+html[data-android-app="true"] .premium-page,
+html[data-vk-mini-app="true"] .form,
+html[data-telegram-mini-app="true"] .form,
+html[data-android-app="true"] .form,
+html[data-vk-mini-app="true"] .seller-premium-page,
+html[data-telegram-mini-app="true"] .seller-premium-page,
+html[data-android-app="true"] .seller-premium-page,
+html[data-vk-mini-app="true"] .settings-ios-page,
+html[data-telegram-mini-app="true"] .settings-ios-page,
+html[data-android-app="true"] .settings-ios-page {
+  padding-top: calc(var(--page-original-top, 0px) + env(safe-area-inset-top, 0px) + 86px) !important;
+}
+
+/* Время в светлой теме должно быть читаемым */
+[data-theme="light"] .chat-list-time,
+[data-theme="light"] .chat-dialog-time,
+[data-theme="light"] .chat-message-time {
+  color: rgba(16, 24, 39, 0.58) !important;
+}
+
+/* Навигация на телефонах: нормальная посадка кнопок + заливка системного низа
+   Важно: это не меняет дизайн списка чатов и не добавляет псевдо-закрывашки. */
+@media (max-width: 859px) {
+  :root {
+    /* Видимая зона кнопок. Низ браузера/safe-area — отдельная заливка ниже. */
+    --baraholka-mobile-nav-core: 84px;
+    --baraholka-mobile-nav-fill: max(env(safe-area-inset-bottom, 0px), var(--browser-bottom-controls, 0px), 0px);
+    --baraholka-mobile-nav-total: calc(var(--baraholka-mobile-nav-core) + var(--baraholka-mobile-nav-fill));
+  }
+
+  .app {
+    padding-bottom: calc(var(--baraholka-mobile-nav-total) + 18px) !important;
+  }
+
+  .bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
+    height: var(--baraholka-mobile-nav-total) !important;
+    min-height: var(--baraholka-mobile-nav-total) !important;
+
+    /* Кнопки сидят ниже внутри панели, а нижняя системная зона остаётся просто цветом навигации. */
+    padding: 14px max(12px, env(safe-area-inset-right, 0px)) var(--baraholka-mobile-nav-fill) max(12px, env(safe-area-inset-left, 0px)) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: start !important;
+    gap: 0 !important;
+
+    border-radius: 30px 30px 0 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .bottom-nav::before,
+  .bottom-nav::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    height: 66px !important;
+    min-height: 66px !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: 64px !important;
-    min-height: 64px !important;
-    max-height: 64px !important;
     padding: 0 !important;
     margin: 0 !important;
-    border: 0 !important;
     border-radius: 18px !important;
-
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 5px !important;
-
+    gap: 6px !important;
     background: transparent !important;
     box-shadow: none !important;
-    color: rgba(244,250,255,0.74) !important;
-    overflow: visible !important;
-  }
-
-  .bottom-nav .nav-item.active {
-    color: var(--market-accent, #43e6e3) !important;
-  }
-
-  .bottom-nav .nav-item + .nav-item::before {
-    content: "" !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 13px !important;
-    bottom: 13px !important;
-    width: 1px !important;
-    background: rgba(255,255,255,0.10) !important;
-    border-radius: 999px !important;
   }
 
   .bottom-nav .nav-icon,
@@ -13167,59 +14990,367 @@ html[data-vk-mini-app="true"] .bottom-nav {
     height: 25px !important;
   }
 
+  .bottom-nav .nav-label {
+    font-size: 13px !important;
+    line-height: 1 !important;
+    font-weight: 750 !important;
+  }
+
+  .bottom-nav .nav-item + .nav-item::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 13px !important;
+    bottom: 17px !important;
+    width: 1px !important;
+    background: rgba(255, 255, 255, 0.10) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item + .nav-item::before {
+    background: rgba(16, 33, 42, 0.12) !important;
+  }
+
+  .market-home,
+  .chats-page,
+  .chats-page-redesign,
+  .profile-page,
+  .profile-premium-page,
+  .profile-ads-page,
+  .profile-ads-premium-page,
+  .settings-ios-page,
+  .settings-detail-page,
+  .seller-premium-page,
+  .premium-page,
+  .form,
+  .create-premium-page,
+  .help-page,
+  .legal-page,
+  .ad-page-wrap {
+    padding-bottom: calc(var(--baraholka-mobile-nav-total) + 22px) !important;
+  }
+
+  /* Когда пользователь печатает, меню должно уходить полностью, без зависания над клавиатурой. */
+  html:has(.chat-search-field input:focus) .bottom-nav,
+  html:has(.chat-compose textarea:focus) .bottom-nav,
+  body:has(.chat-search-field input:focus) .bottom-nav,
+  body:has(.chat-compose textarea:focus) .bottom-nav {
+    transform: translateY(120%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* В VK / Telegram / Android WebView кнопки можно посадить чуть ниже без роста панели. */
+@media (max-width: 859px) {
+  html[data-vk-mini-app="true"] .bottom-nav,
+  html[data-telegram-mini-app="true"] .bottom-nav,
+  html[data-telegram-app="true"] .bottom-nav,
+  html[data-android-app="true"] .bottom-nav {
+    padding-top: 16px !important;
+  }
+
+  html[data-vk-mini-app="true"] .bottom-nav .nav-item,
+  html[data-telegram-mini-app="true"] .bottom-nav .nav-item,
+  html[data-telegram-app="true"] .bottom-nav .nav-item,
+  html[data-android-app="true"] .bottom-nav .nav-item {
+    height: 64px !important;
+    min-height: 64px !important;
+  }
+}
+
+/* Ноутбуки/ПК: нижнюю мобильную капсулу превращаем в компактную верхнюю навигацию */
+@media (min-width: 860px) {
+  .app {
+    padding-bottom: 34px !important;
+    padding-top: 78px !important;
+  }
+
+  .bottom-nav {
+    position: fixed !important;
+    top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    min-width: 520px !important;
+    max-width: min(760px, calc(100vw - 32px)) !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    padding: 7px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,255,255,0.13) !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+
+  .bottom-nav::after,
+  .bottom-nav::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    flex: 0 0 auto !important;
+    min-width: 118px !important;
+    height: 46px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    flex-direction: row !important;
+    gap: 9px !important;
+  }
+
+  .bottom-nav .nav-icon,
   .bottom-nav .nav-icon svg {
-    stroke: currentColor !important;
-    stroke-width: 1.9 !important;
+    width: 22px !important;
+    height: 22px !important;
   }
 
   .bottom-nav .nav-label {
-    display: block !important;
-    font-size: 12px !important;
+    font-size: 14px !important;
     line-height: 1 !important;
-    font-weight: 750 !important;
-    letter-spacing: -0.025em !important;
+  }
+
+  .bottom-nav .nav-item + .nav-item::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .chats-page-redesign {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+  }
+}
+
+/* Настройки списка: плавное закрытие вниз и рабочий скролл над навигацией */
+.chat-settings-backdrop {
+  transition: opacity 0.24s ease !important;
+}
+
+.chat-settings-sheet {
+  animation: chatSettingsSheetIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+
+.chat-settings-backdrop.is-closing {
+  opacity: 0 !important;
+}
+
+.chat-settings-sheet.is-closing {
+  animation: chatSettingsSheetOut 0.24s cubic-bezier(0.4, 0, 1, 1) both !important;
+}
+
+@keyframes chatSettingsSheetIn {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes chatSettingsSheetOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(42px); opacity: 0; }
+}
+
+@media (max-width: 859px) {
+  .chat-settings-backdrop {
+    top: 0 !important;
+    bottom: calc(var(--baraholka-bottom-nav-height) + var(--baraholka-bottom-safe) + 28px) !important;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 10px 10px !important;
+    overflow: hidden !important;
+  }
+
+  .chat-settings-sheet {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-bottom: 18px !important;
+  }
+}
+
+/* Фильтры без некрасивых теней */
+.chat-filter-row button,
+.chat-filter-row button.active,
+.chat-filter-button,
+.chat-search-field {
+  box-shadow: none !important;
+}
+
+/* =========================================================
+   V3.5 — ONLY NAVIGATION HOTFIX
+   - Do not touch chats list styles/components
+   - Mobile nav: visually lower, no bottom gap
+   - Desktop nav: static top text nav, centered, no pill/window
+   ========================================================= */
+
+:root {
+  --baraholka-mobile-nav-drop: 20px;
+  --baraholka-desktop-nav-top: 22px;
+}
+
+/* Desktop / laptop: top centered text navigation, not fixed to viewport */
+@media (min-width: 860px) {
+  .app {
+    padding-top: 56px !important;
+    padding-bottom: 34px !important;
+  }
+
+  .bottom-nav {
+    position: absolute !important;
+    top: var(--baraholka-desktop-nav-top) !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    z-index: 900 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 48px) !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+
+  .bottom-nav::before,
+  .bottom-nav::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bottom-nav .nav-item {
+    position: relative !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 24px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgba(244, 250, 255, 0.74) !important;
+    white-space: nowrap !important;
+  }
+
+  .bottom-nav .nav-item + .nav-item::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 9px !important;
+    bottom: 9px !important;
+    width: 1px !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+  }
+
+  .bottom-nav .nav-icon,
+  .bottom-nav .nav-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+  }
+
+  .bottom-nav .nav-label {
+    display: inline-block !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    font-weight: 760 !important;
+    letter-spacing: -0.035em !important;
     color: currentColor !important;
   }
 
-  .bottom-nav .nav-unread-badge {
-    transform: translate(8px, -7px) !important;
-  }
-
-  [data-theme="light"] .bottom-nav,
-  [data-theme="light"] html[data-vk-mini-app="true"] .bottom-nav,
-  [data-theme="light"] html[data-telegram-app="true"] .bottom-nav,
-  [data-theme="light"] html[data-mobile-browser="true"] .bottom-nav {
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.94), rgba(246,250,251,0.86)),
-      rgba(255,255,255,0.98) !important;
-    border-top-color: rgba(16,33,42,0.10) !important;
-    box-shadow:
-      0 -18px 42px rgba(20,54,70,0.13),
-      inset 0 1px 0 rgba(255,255,255,0.86) !important;
-  }
-
-  [data-theme="light"] .bottom-nav .nav-item,
-  [data-theme="light"] .bottom-nav .nav-item.active {
+  .bottom-nav .nav-item.active,
+  .bottom-nav .nav-item.active .nav-icon {
+    color: var(--market-accent, #45f0ee) !important;
+    filter: none !important;
     background: transparent !important;
     box-shadow: none !important;
   }
 
-  [data-theme="light"] .bottom-nav .nav-item {
-    color: rgba(16,33,42,0.62) !important;
+  .bottom-nav .nav-item:hover {
+    color: #ffffff !important;
+    transform: none !important;
   }
 
-  [data-theme="light"] .bottom-nav .nav-item.active {
-    color: #069ea1 !important;
+  .bottom-nav .nav-item:active {
+    transform: scale(0.98) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item {
+    color: rgba(16, 33, 42, 0.62) !important;
   }
 
   [data-theme="light"] .bottom-nav .nav-item + .nav-item::before {
-    background: rgba(16,33,42,0.12) !important;
+    background: rgba(16, 33, 42, 0.14) !important;
   }
 
-  body.chat-keyboard-open .bottom-nav,
-  body.keyboard-open .bottom-nav {
-    transform: translateY(120%) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+  [data-theme="light"] .bottom-nav .nav-item.active,
+  [data-theme="light"] .bottom-nav .nav-item.active .nav-icon {
+    color: #069ea1 !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item:hover {
+    color: #10212a !important;
+  }
+
+  /* Less top gap specifically for the desktop home screen */
+  .market-home {
+    padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  .chats-page-redesign {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 70px) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --baraholka-desktop-nav-top: 18px;
+  }
+}
+
+@media (min-width: 900px) {
+  [data-theme="light"] .bottom-nav {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item + .nav-item::before {
+    background: rgba(16, 33, 42, 0.16) !important;
+  }
+
+  [data-theme="light"] .bottom-nav .nav-item.active {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #069ea1 !important;
   }
 }
