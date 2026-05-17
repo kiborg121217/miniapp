@@ -15031,14 +15031,37 @@ html[data-android-app="true"] .settings-ios-page {
   }
 
   /* Когда пользователь печатает, меню должно уходить полностью, без зависания над клавиатурой. */
-  html:has(.chat-search-field input:focus) .bottom-nav,
-  html:has(.chat-compose textarea:focus) .bottom-nav,
-  body:has(.chat-search-field input:focus) .bottom-nav,
-  body:has(.chat-compose textarea:focus) .bottom-nav {
-    transform: translateY(120%) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
+html:has(.chat-search-field input:focus) .bottom-nav,
+html:has(.chat-compose textarea:focus) .bottom-nav,
+body:has(.chat-search-field input:focus) .bottom-nav,
+body:has(.chat-compose textarea:focus) .bottom-nav {
+  transform: translateY(120%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* === Chat keyboard viewport fix 2026-05-17 ===
+   В мобильном браузере и VK WebView visualViewport при открытии клавиатуры
+   может смещаться относительно layout viewport. Диалог чата живёт в fixed-
+   слое, поэтому во время ввода привязываем его к реальной видимой области,
+   а не к исходному top:0 + transform центру. */
+.chat-dialog-page {
+  left: 0 !important;
+  right: 0 !important;
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+.chat-dialog-page[data-chat-keyboard-open="true"] {
+  top: var(--chat-visual-offset-top, 0px) !important;
+  height: var(--chat-visual-height, var(--app-viewport-height, 100dvh)) !important;
+  max-height: var(--chat-visual-height, var(--app-viewport-height, 100dvh)) !important;
+  padding-bottom: calc(max(6px, var(--real-safe-bottom, env(safe-area-inset-bottom, 0px)))) !important;
+}
+
+.chat-dialog-page[data-chat-keyboard-open="true"] .chat-messages-card {
+  scroll-padding-bottom: 12px !important;
+}
 }
 
 /* В VK / Telegram / Android WebView кнопки можно посадить чуть ниже без роста панели. */

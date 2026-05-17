@@ -373,8 +373,20 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd, isPinned, 
   const [sending, setSending] = useState(false);
   const [openingAd, setOpeningAd] = useState(false);
   const [error, setError] = useState("");
+  const [viewportState, setViewportState] = useState({
+    keyboardOpen: false,
+    offsetTop: 0,
+    visibleHeight: 0,
+    keyboardInset: 0,
+  });
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const scrollMessagesToBottom = (behavior = "auto") => {
+    const node = messagesRef.current;
+    if (!node) return;
+    node.scrollTo({ top: node.scrollHeight, behavior });
+  };
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -390,9 +402,7 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd, isPinned, 
   }, [chatId]);
 
   useEffect(() => {
-    const node = messagesRef.current;
-    if (!node) return;
-    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+    scrollMessagesToBottom("smooth");
   }, [messages.length]);
 
   useEffect(() => {
@@ -406,6 +416,104 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd, isPinned, 
     node.style.height = "auto";
     node.style.height = `${Math.min(node.scrollHeight, 118)}px`;
   }, [text]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    let frameId = 0;
+    let blurTimer = 0;
+
+    const updateViewportState = () => {
+      const layoutHeight = Math.max(
+        window.innerHeight || 0,
+        document.documentElement?.clientHeight || 0,
+        0
+      );
+      const vv = window.visualViewport;
+      const visibleHeight = Math.max(0, Math.round(vv?.height || layoutHeight));
+      const offsetTop = Math.max(0, Math.round(vv?.offsetTop || 0));
+      const keyboardInset = Math.max(0, Math.round(layoutHeight - visibleHeight - offsetTop));
+      const isFocused = document.activeElement === textareaRef.current;
+      const keyboardOpen = Boolean(
+        isFocused && layoutHeight > 0 && (keyboardInset > 90 || visibleHeight < layoutHeight * 0.82)
+      );
+
+      setViewportState((prev) => {
+        const next = keyboardOpen
+          ? {
+              keyboardOpen: true,
+              offsetTop,
+              visibleHeight,
+              keyboardInset,
+            }
+          : {
+              keyboardOpen: false,
+              offsetTop: 0,
+              visibleHeight: 0,
+              keyboardInset: 0,
+            };
+
+        if (
+          prev.keyboardOpen === next.keyboardOpen &&
+          prev.offsetTop === next.offsetTop &&
+          prev.visibleHeight === next.visibleHeight &&
+          prev.keyboardInset === next.keyboardInset
+        ) {
+          return prev;
+        }
+
+        return next;
+      });
+    };
+
+    const scheduleViewportUpdate = () => {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(updateViewportState);
+    };
+
+    const handleFocusIn = (event) => {
+      if (event.target !== textareaRef.current) return;
+      scheduleViewportUpdate();
+      window.setTimeout(() => scrollMessagesToBottom("auto"), 180);
+    };
+
+    const handleFocusOut = (event) => {
+      if (event.target !== textareaRef.current) return;
+      window.clearTimeout(blurTimer);
+      blurTimer = window.setTimeout(scheduleViewportUpdate, 160);
+    };
+
+    scheduleViewportUpdate();
+    window.visualViewport?.addEventListener?.("resize", scheduleViewportUpdate, { passive: true });
+    window.visualViewport?.addEventListener?.("scroll", scheduleViewportUpdate, { passive: true });
+    window.addEventListener("orientationchange", scheduleViewportUpdate, { passive: true });
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(blurTimer);
+      window.visualViewport?.removeEventListener?.("resize", scheduleViewportUpdate);
+      window.visualViewport?.removeEventListener?.("scroll", scheduleViewportUpdate);
+      window.removeEventListener("orientationchange", scheduleViewportUpdate);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!viewportState.keyboardOpen) return undefined;
+    const timer = window.setTimeout(() => scrollMessagesToBottom("auto"), 120);
+    return () => window.clearTimeout(timer);
+  }, [viewportState.keyboardOpen, viewportState.visibleHeight]);
+
+  const dialogStyle = {
+    "--chat-visual-offset-top": `${viewportState.offsetTop}px`,
+    "--chat-visual-height": viewportState.keyboardOpen
+      ? `${viewportState.visibleHeight}px`
+      : "var(--app-viewport-height, 100dvh)",
+    "--chat-keyboard-inset": `${viewportState.keyboardInset}px`,
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -442,7 +550,13 @@ function ChatDialog({ chatId, chat, user, peerName, onBack, onOpenAd, isPinned, 
   };
 
   return (
-    <div className="chat-dialog-page page-enter" role="region" aria-label="Диалог по объявлению">
+    <div
+      className="chat-dialog-page page-enter"
+      role="region"
+      aria-label="Диалог по объявлению"
+      data-chat-keyboard-open={viewportState.keyboardOpen ? "true" : "false"}
+      style={dialogStyle}
+    >
       <section className="chat-dialog-header">
         <button type="button" className="chat-header-back" onClick={onBack} aria-label="Назад к списку чатов">
           <BackIcon />
