@@ -5,6 +5,9 @@ const DEFAULT_FOLDER = "baraholka";
 const DEFAULT_MAX_DIMENSION = 1920;
 const DEFAULT_QUALITY = 0.82;
 const DEFAULT_PARALLEL_UPLOADS = 3;
+const DEFAULT_CLOUDINARY_CLOUD_NAME = "dkrym4hu7";
+const DEFAULT_CLOUDINARY_UPLOAD_PRESET = "baraholka_unsigned";
+const DEFAULT_CLOUDINARY_UPLOAD_TIMEOUT_MS = 45000;
 const FIREBASE_UPLOAD_APP_NAME = "baraholka-upload-fallback";
 let firebaseFallbackStorage = null;
 
@@ -18,11 +21,15 @@ const firebaseUploadConfig = {
 };
 
 function getCloudinaryCloudName() {
-  return String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "").trim();
+  return String(
+    import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUDINARY_CLOUD_NAME
+  ).trim();
 }
 
 function getCloudinaryUploadPreset() {
-  return String(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "").trim();
+  return String(
+    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || DEFAULT_CLOUDINARY_UPLOAD_PRESET
+  ).trim();
 }
 
 function getCloudinaryFolder() {
@@ -48,6 +55,19 @@ export function getParallelUploadLimit() {
 
 function hasCloudinaryConfig() {
   return Boolean(getCloudinaryCloudName() && getCloudinaryUploadPreset());
+}
+
+function isRetryableCloudinaryError(error) {
+  const message = String(error?.message || "").toLowerCase();
+
+  return (
+    error?.name === "AbortError" ||
+    message.includes("timeout") ||
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("load failed") ||
+    message.includes("failed to fetch")
+  );
 }
 
 function getFileBaseName(file) {
@@ -214,31 +234,63 @@ export async function uploadImageToCloudinary(file, options = {}) {
   if (!hasCloudinaryConfig()) {
     return await uploadPreparedFileToFirebaseStorage(preparedFile, folder);
   }
+  const timeoutMs = Number(options.timeoutMs || DEFAULT_CLOUDINARY_UPLOAD_TIMEOUT_MS);
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 2));
+  let lastError = null;
 
-  const formData = new FormData();
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const formData = new FormData();
+    formData.append("file", preparedFile);
+    formData.append("upload_preset", uploadPreset);
+    formData.append("tags", "baraholka,user_upload");
 
-  formData.append("file", preparedFile);
-  formData.append("upload_preset", uploadPreset);
-  formData.append("tags", "baraholka,user_upload");
+    // New Cloudinary accounts use dynamic folders: asset_folder puts files in Media Library folder.
+    // Also set the same folder inside the unsigned upload preset as the source of truth.
+    formData.append("asset_folder", folder);
 
-  // New Cloudinary accounts use dynamic folders: asset_folder puts files in Media Library folder.
-  // Also set the same folder inside the unsigned upload preset as the source of truth.
-  formData.append("asset_folder", folder);
+    const controller = new AbortController();
+    const externalSignal = options.signal;
+    const abortFromExternal = () => controller.abort();
+    const timerId = window.setTimeout(() => controller.abort(), timeoutMs);
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData,
-    signal: options.signal,
-  });
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        window.clearTimeout(timerId);
+        throw new DOMException("Aborted", "AbortError");
+      }
+      externalSignal.addEventListener("abort", abortFromExternal, { once: true });
+    }
 
-  const data = await res.json().catch(() => null);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
 
-  if (!res.ok || !data?.secure_url) {
-    const message = data?.error?.message || `Cloudinary upload failed (${res.status})`;
-    throw new Error(message);
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.secure_url) {
+        const message = data?.error?.message || `Cloudinary upload failed (${res.status})`;
+        throw new Error(message);
+      }
+
+      return data.secure_url;
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableCloudinaryError(error) || attempt === maxAttempts) {
+        break;
+      }
+    } finally {
+      window.clearTimeout(timerId);
+      if (externalSignal) {
+        externalSignal.removeEventListener("abort", abortFromExternal);
+      }
+    }
   }
 
-  return data.secure_url;
+  console.warn("Cloudinary upload failed, trying Firebase fallback:", lastError);
+  return await uploadPreparedFileToFirebaseStorage(preparedFile, folder);
 }
 
 export async function uploadImagesToCloudinary(files, options = {}) {

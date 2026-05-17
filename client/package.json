@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "rm -rf dist && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:vk": "vite build --mode vk --base=./",
+    "build:vk": "rm -rf dist && vite build --mode vk --base=./",
     "vk:deploy": "npm run build:vk && cd .. && npx @vkontakte/vk-miniapps-deploy"
   },
   "dependencies": {
