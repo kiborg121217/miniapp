@@ -133,7 +133,7 @@ export default function AdPage({ ad, onBack, onOpenSeller, onWrite, currentUser 
     if (!ad?.id) return;
 
     if (!currentUser?.id) {
-      setFavoriteMessage("Для добавления товара в избранное нужно быть авторизованным в приложении через Telegram");
+      setFavoriteMessage("Для добавления товара в избранное нужно войти в аккаунт");
       window.setTimeout(() => setFavoriteMessage(""), 3600);
       return;
     }

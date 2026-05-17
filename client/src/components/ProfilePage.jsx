@@ -6,6 +6,7 @@ import {
 } from "../firebase";
 import { getAvatarImageUrl } from "../cloudinary";
 import { logoutAuthSession } from "../auth";
+import { isVkMiniAppLaunch } from "../vkMiniApp";
 
 function UserPlaceholderIcon() {
   return (
@@ -312,7 +313,7 @@ export default function ProfilePage({
             <UserPlaceholderIcon />
           </div>
           <h2>Профиль недоступен</h2>
-          <p>Открой приложение через Telegram, чтобы увидеть свой профиль.</p>
+          <p>Откройте сервис через поддерживаемое мини-приложение, чтобы увидеть свой профиль.</p>
         </div>
       </div>
     );
@@ -340,7 +341,7 @@ export default function ProfilePage({
   const isVkProfile = profile?.authProvider === "vk" || user?.authProvider === "vk" || Boolean(profile?.vkId);
   const isTelegramMiniApp =
     typeof window !== "undefined" && Boolean(window.Telegram?.WebApp?.initData);
-  const canLogout = !isTelegramMiniApp;
+  const canLogout = !isTelegramMiniApp && !isVkMiniAppLaunch();
   const phoneVerificationRequired = profile?.phoneVerificationRequired !== false && !isVkProfile;
   const avatarUrl = getAvatarImageUrl(
     profile?.avatarUrl ||

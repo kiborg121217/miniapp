@@ -1,7 +1,21 @@
+import { getApps, initializeApp } from "firebase/app";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+
 const DEFAULT_FOLDER = "baraholka";
 const DEFAULT_MAX_DIMENSION = 1920;
 const DEFAULT_QUALITY = 0.82;
 const DEFAULT_PARALLEL_UPLOADS = 3;
+const FIREBASE_UPLOAD_APP_NAME = "baraholka-upload-fallback";
+let firebaseFallbackStorage = null;
+
+const firebaseUploadConfig = {
+  apiKey: "AIzaSyB4cSRFhtCSVSbLrymCeGtRsvj9XvmzU2Q",
+  authDomain: "miniapp-35.firebaseapp.com",
+  projectId: "miniapp-35",
+  storageBucket: "miniapp-35.appspot.com",
+  messagingSenderId: "993518423599",
+  appId: "1:993518423599:web:cee1a36018a006c03980da",
+};
 
 function getCloudinaryCloudName() {
   return String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "").trim();
@@ -32,12 +46,28 @@ export function getParallelUploadLimit() {
   return Math.min(4, Math.max(1, Math.floor(value)));
 }
 
+function hasCloudinaryConfig() {
+  return Boolean(getCloudinaryCloudName() && getCloudinaryUploadPreset());
+}
+
 function getFileBaseName(file) {
   const raw = String(file?.name || "image").replace(/\.[^.]+$/, "");
   return raw
     .toLowerCase()
     .replace(/[^a-z0-9а-яё_-]+/gi, "-")
     .replace(/^-+|-+$/g, "") || "image";
+}
+
+function getFileExtension(file) {
+  const name = String(file?.name || "");
+  const match = name.match(/\.([a-z0-9]+)$/i);
+  if (match?.[1]) return match[1].toLowerCase();
+
+  const type = String(file?.type || "");
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  if (type === "image/gif") return "gif";
+  return "jpg";
 }
 
 async function loadImageElement(file) {
@@ -150,14 +180,41 @@ export function getCloudinaryUploadConfig() {
   };
 }
 
+function getFirebaseFallbackStorage() {
+  if (firebaseFallbackStorage) return firebaseFallbackStorage;
+
+  const app = getApps().find((item) => item.name === FIREBASE_UPLOAD_APP_NAME)
+    || initializeApp(firebaseUploadConfig, FIREBASE_UPLOAD_APP_NAME);
+  firebaseFallbackStorage = getStorage(app);
+  return firebaseFallbackStorage;
+}
+
+async function uploadPreparedFileToFirebaseStorage(file, folder) {
+  const storage = getFirebaseFallbackStorage();
+  const timestamp = Date.now();
+  const randomPart =
+    typeof crypto?.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2, 10);
+  const storagePath = `${folder}/${timestamp}-${randomPart}-${getFileBaseName(file)}.${getFileExtension(file)}`;
+  const storageRef = ref(storage, storagePath);
+
+  await uploadBytes(storageRef, file, {
+    contentType: file?.type || "image/jpeg",
+    cacheControl: "public,max-age=31536000,immutable",
+  });
+
+  return await getDownloadURL(storageRef);
+}
+
 export async function uploadImageToCloudinary(file, options = {}) {
   const { cloudName, uploadPreset, folder } = getCloudinaryUploadConfig();
+  const preparedFile = options.skipCompression ? file : await compressImageBeforeUpload(file);
 
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinary не настроен: добавьте VITE_CLOUDINARY_CLOUD_NAME и VITE_CLOUDINARY_UPLOAD_PRESET в Vercel");
+  if (!hasCloudinaryConfig()) {
+    return await uploadPreparedFileToFirebaseStorage(preparedFile, folder);
   }
 
-  const preparedFile = options.skipCompression ? file : await compressImageBeforeUpload(file);
   const formData = new FormData();
 
   formData.append("file", preparedFile);

@@ -17,6 +17,7 @@ import { getDebugLog, clearDebugLog, logDebugEvent } from "./debugLog";
 import {
   authenticateMiniAppInitData,
   authenticateVkMiniAppLaunch,
+  clearStoredAuthSession,
   getStoredAuthSession,
   getTelegramInitData,
   getTelegramUnsafeUser,
@@ -57,7 +58,7 @@ function HelpPage({ onBack }) {
         <div className="help-badge">Помощь</div>
         <h2>Как пользоваться барахолкой</h2>
         <p>
-          Здесь можно покупать и продавать товары через Telegram. Все объявления
+          Здесь можно покупать и продавать товары прямо внутри мини-приложения. Все объявления
           проходят модерацию перед публикацией.
         </p>
       </div>
@@ -65,7 +66,7 @@ function HelpPage({ onBack }) {
       <div className="help-card">
         <div className="help-card-title">Что делать, если что-то не работает</div>
         <p>
-          Попробуй обновить страницу или закрыть и заново открыть мини-приложение через Telegram.
+          Попробуй обновить страницу или закрыть и заново открыть мини-приложение.
           Если проблема сохраняется, проверь подключение к интернету и повтори
           попытку позже. Если ничего не помогает — обратись в тех. поддержку.
         </p>
@@ -93,7 +94,7 @@ function HelpPage({ onBack }) {
         <div className="help-card-title">Как написать продавцу</div>
         <p>
           Кнопка «Написать» создаёт внутренний диалог по объявлению. Чат работает
-          прямо внутри Mini App, поэтому продавцу можно написать даже без Telegram username.
+          прямо внутри Барахолки, поэтому продавцу можно написать даже без внешних мессенджеров.
         </p>
       </div>
 
@@ -311,6 +312,10 @@ function readInitialSessionState() {
 }
 
 function getInitialUser() {
+  if (isVkMiniAppLaunch()) {
+    return getTelegramUnsafeUser() || null;
+  }
+
   const stored = getStoredAuthSession();
   return stored?.user || getTelegramUnsafeUser() || null;
 }
@@ -495,6 +500,7 @@ export default function App() {
       const initData = getTelegramInitData();
       const vkLaunchQuery = getVkLaunchQueryString();
       const stored = getStoredAuthSession();
+      const isVkLaunch = isVkMiniAppLaunch() && !!vkLaunchQuery;
       let user = null;
 
       try {
@@ -504,9 +510,9 @@ export default function App() {
           const auth = await withTimeout(authenticateMiniAppInitData(initData), 8500, null);
           user = auth?.user || null;
           logDebugEvent("auth_miniapp_done", { ok: !!user });
-        } else if (isVkMiniAppLaunch() && vkLaunchQuery) {
+        } else if (isVkLaunch) {
           safeSetProgress(34, "Проверяем VK Mini App…");
-          logDebugEvent("auth_vk_miniapp_start", { hasStoredUser: !!stored?.user });
+          logDebugEvent("auth_vk_miniapp_start", { hasStoredUser: false });
 
           const auth = await withTimeout(
             authenticateVkMiniAppLaunch({
@@ -519,8 +525,6 @@ export default function App() {
 
           user = auth?.user || null;
           logDebugEvent("auth_vk_miniapp_done", { ok: !!user });
-
-          if (!user && stored?.user && !cancelled) setTgUser(stored.user);
         } else {
           if (stored?.user && !cancelled) setTgUser(stored.user);
 
@@ -534,13 +538,16 @@ export default function App() {
         console.warn("Авторизация недоступна, открываем приложение без блокировки:", error);
         logDebugEvent("auth_error_non_blocking", error);
 
-        if (!user && stored?.user) {
+        if (isVkLaunch) {
+          clearStoredAuthSession();
+          if (!cancelled) setTgUser(null);
+        } else if (!user && stored?.user) {
           user = stored.user;
           if (!cancelled) setTgUser(stored.user);
         }
       }
 
-      if (!user) user = getTelegramUnsafeUser();
+      if (!user && !isVkLaunch) user = getTelegramUnsafeUser();
       if (user && !cancelled) setTgUser(user);
 
       if (user?.id) {

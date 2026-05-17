@@ -289,7 +289,7 @@ export async function isAdFavorite(userId, adId) {
 
 export async function toggleFavoriteAd(userId, adId) {
   if (!userId || !adId) {
-    throw new Error("Для добавления в избранное нужно открыть приложение через Telegram");
+    throw new Error("Для добавления в избранное нужно войти в аккаунт");
   }
 
   const ref = doc(db, "user_favorites", getFavoriteDocId(userId, adId));
@@ -396,7 +396,7 @@ async function notifyChatMessage(chatId, messageId) {
       body: JSON.stringify({ chatId, messageId }),
     });
   } catch (error) {
-    console.warn("Не удалось отправить Telegram-уведомление о сообщении:", error);
+    console.warn("Не удалось отправить уведомление о сообщении:", error);
   }
 }
 
@@ -406,7 +406,7 @@ export async function startChatForAd(ad, buyer) {
   }
 
   if (!buyer?.id) {
-    throw new Error("Чтобы написать продавцу, нужно войти через Telegram");
+    throw new Error("Чтобы написать продавцу, нужно войти в аккаунт");
   }
 
   const adId = toId(ad.id);

@@ -42,13 +42,13 @@ export default function AddAd({ user, onBack }) {
     let realUser = user || tg?.initDataUnsafe?.user || null;
 
     if (!realUser) {
-      setMessage("⏳ Получаем данные Telegram...");
+      setMessage("⏳ Получаем данные профиля...");
       await new Promise((resolve) => setTimeout(resolve, 800));
       realUser = tg?.initDataUnsafe?.user || null;
     }
 
     if (!realUser) {
-      setMessage("⚠️ Не удалось получить Telegram данные. Попробуй ещё раз");
+      setMessage("⚠️ Не удалось получить данные профиля. Попробуй ещё раз");
       setIsSubmitting(false);
       return;
     }
@@ -187,7 +187,7 @@ export default function AddAd({ user, onBack }) {
           response: moderationText.slice(0, 900),
         });
 
-        setMessage(`⚠️ Объявление сохранено, но Telegram-модератору не ушло: ${errorMessage}`);
+        setMessage(`⚠️ Объявление сохранено, но уведомление модератору не отправилось: ${errorMessage}`);
         return;
       }
 

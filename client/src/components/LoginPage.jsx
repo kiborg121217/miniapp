@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   BOT_USERNAME,
-  authenticateVkMiniAppLaunch,
   startTelegramOidcLogin,
   startVkIdLogin,
 } from "../auth";
-import { getVkLaunchQueryString, getVkMiniAppCachedInfo, isVkMiniAppLaunch } from "../vkMiniApp";
+import { isVkMiniAppLaunch } from "../vkMiniApp";
 
 const CHANNEL_URL = "https://t.me/baraholka_channel";
 
@@ -48,7 +47,7 @@ function openChannel() {
   window.open(CHANNEL_URL, "_blank", "noopener,noreferrer");
 }
 
-export default function LoginPage({ onBack, returnPage = "profile", onAuthSuccess }) {
+export default function LoginPage({ returnPage = "profile" }) {
   const isVkMiniApp = isVkMiniAppLaunch();
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -77,23 +76,6 @@ export default function LoginPage({ onBack, returnPage = "profile", onAuthSucces
       setIsLoading(true);
       setLoadingProvider("vk");
 
-      if (isVkMiniApp) {
-        const launchParams = getVkLaunchQueryString();
-
-        if (!launchParams) {
-          throw new Error("VK не передал параметры запуска. Закройте сервис и откройте его заново из ВКонтакте.");
-        }
-
-        setStatus("Проверяем вход внутри VK...");
-        const auth = await authenticateVkMiniAppLaunch({
-          launchParams,
-          bridgeUser: getVkMiniAppCachedInfo()?.user || null,
-        });
-
-        onAuthSuccess?.(auth?.user || null, auth?.profile || null);
-        return;
-      }
-
       setStatus("Открываем VK ID...");
       await startVkIdLogin(returnPage);
     } catch (error) {
@@ -114,11 +96,11 @@ export default function LoginPage({ onBack, returnPage = "profile", onAuthSucces
           {isVkMiniApp ? <VkIcon /> : <TelegramIcon />}
         </div>
 
-        <div className="login-kicker">Единый аккаунт</div>
+        <div className="login-kicker">{isVkMiniApp ? "VK Mini Apps" : "Единый аккаунт"}</div>
         <h1>Вход в Барахолку</h1>
         <p>
           {isVkMiniApp
-            ? "Вы открыли Барахолку внутри ВКонтакте. Продолжите через VK, чтобы профиль, объявления, избранное и чаты работали в сервисе."
+            ? "Внутри ВКонтакте вход выполняется автоматически только по launch-параметрам VK Mini Apps. Если профиль не загрузился, откройте сервис заново из ВКонтакте."
             : "На сайте можно войти через Telegram или VK. После входа профиль, объявления, избранное и чаты будут работать внутри Барахолки."}
         </p>
 
@@ -127,21 +109,10 @@ export default function LoginPage({ onBack, returnPage = "profile", onAuthSucces
             <button
               type="button"
               className="vk-id-login-btn"
-              onClick={handleVkLogin}
-              disabled={isLoading}
+              onClick={() => window.location.reload()}
             >
               <VkIcon />
-              <span>{loadingProvider === "vk" ? "Проверяем VK..." : "Продолжить через VK"}</span>
-            </button>
-
-            <button
-              type="button"
-              className="telegram-oidc-login-btn login-secondary-provider"
-              onClick={handleTelegramLogin}
-              disabled={isLoading}
-            >
-              <TelegramIcon />
-              <span>{loadingProvider === "telegram" ? "Открываем Telegram..." : "Войти через Telegram"}</span>
+              <span>Повторить проверку</span>
             </button>
           </>
         ) : (
@@ -172,7 +143,7 @@ export default function LoginPage({ onBack, returnPage = "profile", onAuthSucces
 
         <div className="login-note">
           {isVkMiniApp
-            ? "Первый этап VK Mini App уже активен. Если авто-вход через параметры запуска недоступен без защищённого ключа, используйте кнопку “Продолжить через VK”."
+            ? "Внешние способы входа внутри VK Mini App отключены. Авторизация доступна только при запуске приложения из ВКонтакте с корректными параметрами VK."
             : "В Mini App внутри Telegram авторизация по-прежнему происходит автоматически. В браузере можно выбрать удобный способ входа."}
         </div>
 
